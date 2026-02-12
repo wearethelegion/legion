@@ -1,0 +1,29 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "legion": {
+      "type": "local",
+      "command": ["uv", "run", "--directory", "/path/to/legion/legion-mcp", "legion-mcp"],
+      "environment": {
+        "LEGION_COMPANY_ID": "{env:LEGION_COMPANY_ID}",
+        "LEGION_PROJECT_PATH": "/path/to/this/project",
+        "MCP_USER_EMAIL": "{env:MCP_USER_EMAIL}",
+        "MCP_USER_PASSWORD": "{env:MCP_USER_PASSWORD}",
+        "GRPC_SERVER_HOST": "localhost",
+        "GRPC_SERVER_PORT": "50051"
+      }
+    },
+    "legion-memory": {
+      "type": "local",
+      "command": ["uv", "run", "--directory", "/path/to/legion/legion-memory-mcp", "legion-memory-mcp"],
+      "environment": {
+        "LEGION_COMPANY_ID": "{env:LEGION_COMPANY_ID}",
+        "LEGION_PROJECT_PATH": "/path/to/this/project",
+        "MCP_USER_EMAIL": "{env:MCP_USER_EMAIL}",
+        "MCP_USER_PASSWORD": "{env:MCP_USER_PASSWORD}",
+        "GRPC_SERVER_HOST": "localhost",
+        "GRPC_SERVER_PORT": "50051"
+      }
+    }
+  }
+}
