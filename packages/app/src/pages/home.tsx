@@ -70,6 +70,7 @@ export default function Home() {
 
   return (
     <div class="mx-auto mt-55 w-full md:w-auto px-4">
+      <div class="text-center mb-2 text-14-medium text-text-weak opacity-30 tracking-widest uppercase">We Are The</div>
       <Logo class="md:w-xl opacity-12" />
       <Button
         size="large"

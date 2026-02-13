@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package legion.task;
+
+// Task Management Service
+service TaskService {
+  rpc CreateTask(CreateTaskRequest) returns (CreateTaskResponse);
+  rpc GetTask(GetTaskRequest) returns (GetTaskResponse);
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  rpc UpdateTask(UpdateTaskRequest) returns (UpdateTaskResponse);
+  rpc AssignTask(AssignTaskRequest) returns (AssignTaskResponse);
+  rpc CompleteTask(CompleteTaskRequest) returns (CompleteTaskResponse);
+  rpc LinkArtifact(LinkArtifactRequest) returns (LinkArtifactResponse);
+  rpc GetArtifacts(GetArtifactsRequest) returns (GetArtifactsResponse);
+}
+
+// Create Task
+message CreateTaskRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string project_id = 3;
+  string title = 4;
+  string description = 5;       // Optional
+  string engagement_id = 6;     // Optional
+  string priority = 7;          // low, medium, high, critical (default: medium)
+  string assigned_agent_id = 8; // Optional
+  string created_by_agent_id = 9; // Optional
+  string ultimate_goal = 10;    // REQUIRED - The overarching objective
+}
+
+message CreateTaskResponse {
+  string status = 1;
+  string message = 2;
+  string task_id = 3;
+  string title = 4;
+  string task_status = 5;       // pending, assigned, in_progress, blocked, completed
+  string priority = 6;
+  string created_at = 7;
+  string error_message = 8;
+  string error_code = 9;
+  string ultimate_goal = 10;
+}
+
+// Get Task
+message GetTaskRequest {
+  string user_token = 1;
+  string task_id = 2;
+}
+
+message ArtifactInfo {
+  string id = 1;
+  string artifact_type = 2;     // code, knowledge, expertise, lesson
+  string artifact_id = 3;
+  string linked_at = 4;         // When artifact was linked to task
+}
+
+message GetTaskResponse {
+  string status = 1;
+  string task_id = 2;
+  string title = 3;
+  string description = 4;
+  string task_status = 5;
+  string priority = 6;
+  string company_id = 7;
+  string project_id = 8;
+  string engagement_id = 9;
+  string assigned_agent_id = 10;
+  string created_by_agent_id = 11;
+  string blockers = 12;
+  repeated ArtifactInfo artifacts = 13;
+  string created_at = 14;
+  string updated_at = 15;
+  string completed_at = 16;
+  string error_message = 17;
+  string error_code = 18;
+  string ultimate_goal = 19;
+}
+
+// List Tasks
+message ListTasksRequest {
+  string user_token = 1;
+  string project_id = 2;        // Optional
+  string engagement_id = 3;     // Optional
+  string agent_id = 4;          // Optional (assigned or created by)
+  string status = 5;            // Optional filter
+  int32 limit = 6;
+  int32 offset = 7;             // Pagination offset
+}
+
+message TaskInfo {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string status = 4;
+  string priority = 5;
+  string company_id = 6;
+  string project_id = 7;
+  string engagement_id = 8;
+  string assigned_agent_id = 9;
+  string created_by_agent_id = 10;
+  string blockers = 11;
+  string created_at = 12;
+  string updated_at = 13;
+  string completed_at = 14;
+  string ultimate_goal = 15;
+}
+
+message ListTasksResponse {
+  string status = 1;
+  int32 total_count = 2;
+  repeated TaskInfo tasks = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// Update Task
+message UpdateTaskRequest {
+  string user_token = 1;
+  string task_id = 2;
+  string status = 3;            // Optional
+  string assigned_agent_id = 4; // Optional
+  string blockers = 5;          // Optional
+  string priority = 6;          // Optional
+  string ultimate_goal = 7;     // Optional - only if re-aligning
+}
+
+message UpdateTaskResponse {
+  string status = 1;
+  string message = 2;
+  string task_id = 3;
+  string task_status = 4;
+  string priority = 5;
+  string updated_at = 6;
+  string error_message = 7;
+  string error_code = 8;
+  string ultimate_goal = 9;
+}
+
+// Assign Task
+message AssignTaskRequest {
+  string user_token = 1;
+  string task_id = 2;
+  string agent_id = 3;
+}
+
+message AssignTaskResponse {
+  string status = 1;
+  string message = 2;
+  string task_id = 3;
+  string assigned_agent_id = 4;
+  string task_status = 5;       // Will be 'assigned'
+  string updated_at = 6;
+  string error_message = 7;
+  string error_code = 8;
+}
+
+// Complete Task
+message CompleteTaskRequest {
+  string user_token = 1;
+  string task_id = 2;
+}
+
+message CompleteTaskResponse {
+  string status = 1;
+  string message = 2;
+  string task_id = 3;
+  string task_status = 4;       // Will be 'completed'
+  string completed_at = 5;
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// Link Artifact
+message LinkArtifactRequest {
+  string user_token = 1;
+  string task_id = 2;
+  string artifact_type = 3;     // code, knowledge, expertise, lesson
+  string artifact_id = 4;
+}
+
+message LinkArtifactResponse {
+  string status = 1;
+  string message = 2;
+  string link_id = 3;
+  string task_id = 4;
+  string artifact_type = 5;
+  string artifact_id = 6;
+  string linked_at = 7;        // When artifact was linked to task
+  string error_message = 8;
+  string error_code = 9;
+}
+
+// Get Artifacts
+message GetArtifactsRequest {
+  string user_token = 1;
+  string task_id = 2;
+  string artifact_type = 3;     // Optional filter by type
+}
+
+message GetArtifactsResponse {
+  string status = 1;
+  string task_id = 2;
+  int32 total_count = 3;
+  repeated ArtifactInfo artifacts = 4;
+  string error_message = 5;
+  string error_code = 6;
+}

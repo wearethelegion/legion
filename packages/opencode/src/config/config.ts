@@ -1003,57 +1003,10 @@ export namespace Config {
 
   export const Legion = z
     .object({
-      serverUrl: z.string().optional().describe("LEGION gRPC server URL (default: localhost:50051)"),
+      url: z.string().optional().describe("LEGION gRPC server URL, e.g. localhost:50051"),
       companyId: z.string().uuid().optional().describe("LEGION company UUID"),
-      projectId: z.string().uuid().optional().describe("LEGION project UUID"),
-      agentId: z.string().uuid().optional().describe("Default LEGION agent UUID"),
-      defaultEngagement: z.string().uuid().optional().describe("Default engagement UUID to resume"),
-      tiers: z
-        .object({
-          enabled: z.boolean().optional().default(true).describe("Enable LEGION tool tier system"),
-        })
-        .optional(),
-      middleware: z
-        .object({
-          preRequest: z.boolean().optional().default(true).describe("Enable pre-request middleware"),
-          postResponse: z.boolean().optional().default(true).describe("Enable post-response middleware"),
-          cognitiveExtraction: z.boolean().optional().default(true).describe("Enable cognitive extraction"),
-        })
-        .optional(),
-      context: z
-        .object({
-          warningThreshold: z
-            .number()
-            .min(0)
-            .max(1)
-            .optional()
-            .default(0.7)
-            .describe("Context pressure warning at this % (default: 70%)"),
-          criticalThreshold: z
-            .number()
-            .min(0)
-            .max(1)
-            .optional()
-            .default(0.85)
-            .describe("Context critical/reset at this % (default: 85%)"),
-          enrichment: z
-            .enum(["minimal", "standard", "full"])
-            .optional()
-            .default("standard")
-            .describe("Context enrichment level"),
-        })
-        .optional(),
-      tracking: z
-        .enum(["minimal", "standard", "verbose"])
-        .optional()
-        .default("standard")
-        .describe("Engagement entry tracking verbosity"),
-      memory: z
-        .object({
-          autoRecall: z.boolean().optional().default(true).describe("Auto-recall memories on session start"),
-          autoPersist: z.boolean().optional().default(true).describe("Auto-persist memories on session end"),
-        })
-        .optional(),
+      email: z.string().optional().describe("LEGION auth email"),
+      password: z.string().optional().describe("LEGION auth password"),
     })
     .strict()
     .meta({

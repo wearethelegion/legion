@@ -1,0 +1,222 @@
+syntax = "proto3";
+
+package legion.delegation;
+
+// Delegation Service for non-blocking agent delegation with progress tracking.
+// Supports heartbeat-based orphan detection for robust subprocess coordination.
+service DelegationService {
+  // Create a new delegation record (called before async execution starts)
+  rpc CreateDelegation(CreateDelegationRequest) returns (CreateDelegationResponse);
+
+  // Get current delegation status and progress (verbose, for UI)
+  rpc GetDelegationStatus(GetDelegationStatusRequest) returns (DelegationStatus);
+
+  // Get brief delegation status (minimal, for MCP polling)
+  rpc GetDelegationStatusBrief(GetDelegationStatusRequest) returns (DelegationStatusBrief);
+
+  // Get full delegation result (after completion)
+  rpc GetDelegationResult(GetDelegationResultRequest) returns (DelegationResult);
+
+  // Update delegation progress (called during async execution)
+  rpc UpdateDelegationProgress(UpdateProgressRequest) returns (UpdateProgressResponse);
+
+  // Update delegation status with row-level locking
+  rpc UpdateDelegationStatus(UpdateStatusRequest) returns (UpdateStatusResponse);
+
+  // Mark orphaned delegations as interrupted (called on server startup)
+  // Uses heartbeat-based detection instead of marking all running as interrupted
+  rpc MarkInterrupted(MarkInterruptedRequest) returns (MarkInterruptedResponse);
+
+  // List delegations with optional filters
+  rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
+
+  // Claim ownership of a delegation (sets owner_id and initial heartbeat)
+  rpc ClaimDelegation(ClaimDelegationRequest) returns (ClaimDelegationResponse);
+
+  // Update heartbeat timestamp (called periodically during execution)
+  rpc UpdateHeartbeat(UpdateHeartbeatRequest) returns (UpdateHeartbeatResponse);
+}
+
+// Create Delegation
+message CreateDelegationRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string project_id = 3;        // Optional
+  string agent_id = 4;
+  string task_id = 5;           // Optional link to task
+  string task_description = 6;  // The actual task to perform
+  string context = 7;           // Optional context
+}
+
+message CreateDelegationResponse {
+  string status = 1;            // success or error
+  string message = 2;
+  string delegation_id = 3;
+  string agent_name = 4;
+  string agent_role = 5;
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// Get Status
+message GetDelegationStatusRequest {
+  string user_token = 1;
+  string delegation_id = 2;
+}
+
+message ProgressStep {
+  int32 step = 1;
+  string tool = 2;
+  string input_summary = 3;     // Truncated input for display
+  string timestamp = 4;
+}
+
+message DelegationStatus {
+  string status = 1;            // success or error
+  string delegation_id = 2;
+  string delegation_status = 3; // pending, running, completed, failed, cancelled, interrupted
+  string agent_name = 4;
+  string agent_role = 5;
+  string current_action = 6;
+  int32 steps_completed = 7;
+  repeated ProgressStep progress = 8;  // Last N steps
+  string started_at = 9;
+  string updated_at = 10;
+  string error_message = 11;
+  string error_code = 12;
+}
+
+// Brief status for MCP polling (minimal response)
+message DelegationStatusBrief {
+  string status = 1;              // "success" or "error"
+  string delegation_status = 2;   // pending|running|completed|failed|cancelled|interrupted
+  int32 step_number = 3;          // Current step (from steps_completed)
+  string step_description = 4;    // From latest progress_log entry input_summary
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// Get Result
+message GetDelegationResultRequest {
+  string user_token = 1;
+  string delegation_id = 2;
+}
+
+message DelegationResult {
+  string status = 1;            // success or error
+  string delegation_id = 2;
+  string delegation_status = 3; // completed, failed, cancelled, interrupted
+  string agent_name = 4;
+  string agent_role = 5;
+  string result_summary = 6;
+  repeated string tools_used = 7;
+  int32 turns = 8;
+  double cost_usd = 9;
+  string error_detail = 10;     // Full error message if failed
+  string started_at = 11;
+  string completed_at = 12;
+  string error_message = 13;
+  string error_code = 14;
+}
+
+// Update Progress (called during async execution)
+message UpdateProgressRequest {
+  string delegation_id = 1;
+  string current_action = 2;    // Current tool being executed
+  ProgressStep step = 3;        // New step to add to progress log
+}
+
+message UpdateProgressResponse {
+  string status = 1;
+  int32 steps_completed = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// Update Status (with row-level locking)
+message UpdateStatusRequest {
+  string delegation_id = 1;
+  string new_status = 2;        // pending, running, completed, failed, cancelled, interrupted
+  string result_summary = 3;    // Optional, for completion
+  repeated string tools_used = 4;
+  int32 turns = 5;
+  double cost_usd = 6;
+  string error_message = 7;     // Optional, for failure
+}
+
+message UpdateStatusResponse {
+  string status = 1;            // success or error
+  string delegation_status = 2; // New status after update
+  string updated_at = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// Mark Interrupted (server startup cleanup)
+// Uses heartbeat-based orphan detection
+message MarkInterruptedRequest {
+  string company_id = 1;        // Optional: limit to specific company
+  string owner_id = 2;          // Current process owner_id (excluded from cleanup)
+}
+
+message MarkInterruptedResponse {
+  string status = 1;
+  int32 delegations_marked = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// Claim Delegation (acquire ownership)
+message ClaimDelegationRequest {
+  string delegation_id = 1;
+  string owner_id = 2;          // Unique MCP server process identifier
+}
+
+message ClaimDelegationResponse {
+  string status = 1;            // success or error
+  bool claimed = 2;             // true if ownership was claimed
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// Update Heartbeat (periodic liveness signal)
+message UpdateHeartbeatRequest {
+  string delegation_id = 1;
+  string owner_id = 2;          // Verify we still own it
+}
+
+message UpdateHeartbeatResponse {
+  string status = 1;            // success or error
+  bool success = 2;             // false if ownership lost
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// List Delegations
+message ListDelegationsRequest {
+  string user_token = 1;
+  string project_id = 2;        // Optional filter
+  string agent_id = 3;          // Optional filter
+  string status_filter = 4;     // Optional filter by status
+  int32 limit = 5;              // Default 20
+  int32 offset = 6;             // Pagination offset
+}
+
+message DelegationInfo {
+  string id = 1;
+  string agent_name = 2;
+  string agent_role = 3;
+  string status = 4;
+  string task_summary = 5;      // First 100 chars of task_description
+  int32 steps_completed = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message ListDelegationsResponse {
+  string status = 1;
+  int32 total_count = 2;
+  repeated DelegationInfo delegations = 3;
+  string error_message = 4;
+  string error_code = 5;
+}

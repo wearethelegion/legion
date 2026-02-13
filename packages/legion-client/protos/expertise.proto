@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package legion.expertise;
+
+import "legion_common.proto";
+
+// Expertise Management Service
+service ExpertiseService {
+  rpc CreateExpertise(CreateExpertiseRequest) returns (CreateExpertiseResponse);
+  rpc AddExpertiseChunk(AddExpertiseChunkRequest) returns (AddExpertiseChunkResponse);
+  rpc QueryExpertise(QueryExpertiseRequest) returns (QueryExpertiseResponse);
+  rpc ListExpertise(ListExpertiseRequest) returns (ListExpertiseResponse);
+  rpc GetExpertise(GetExpertiseRequest) returns (GetExpertiseResponse);
+}
+
+// Create Expertise
+// Either project_id OR company_id required. If project_id provided, company_id is derived.
+// If only company_id provided, creates company-level expertise accessible to all projects.
+message CreateExpertiseRequest {
+  string text = 1;
+  string user_token = 2;
+  string project_id = 3;           // Optional: creates project-scoped expertise
+  map<string, string> metadata = 4;
+  string request_id = 5;
+  string company_id = 6;           // Optional: for company-level expertise (no project scope)
+}
+
+message CreateExpertiseResponse {
+  string status = 1;
+  string message = 2;
+  string expertise_id = 3;
+  string project_id = 4;
+  string company_id = 5;
+  string title = 6;
+  string summary = 7;
+  int32 chunks_count = 8;
+  int32 entities_count = 9;
+  int32 relationships_count = 10;
+  string error_message = 11;
+  string error_code = 12;
+}
+
+// Add Expertise Chunk
+message AddExpertiseChunkRequest {
+  string expertise_id = 1;
+  string content = 2;
+  string user_token = 3;
+  string parent_chunk_id = 4;
+  string project_id = 5;
+}
+
+message AddExpertiseChunkResponse {
+  string status = 1;
+  string message = 2;
+  string chunk_id = 3;
+  string expertise_id = 4;
+  string parent_chunk_id = 5;
+  int32 level = 6;
+  int32 position = 7;
+  string error_message = 8;
+  string error_code = 9;
+}
+
+// Query Expertise
+// If project_id provided, searches project + company-level expertise.
+// If only company_id provided, searches company-level expertise only.
+message QueryExpertiseRequest {
+  string query = 1;
+  string user_token = 2;
+  string project_id = 3;           // Optional: search project + company expertise
+  int32 limit = 4;
+  string company_id = 5;           // Optional: search company-level expertise only
+}
+
+message QueryExpertiseResponse {
+  string status = 1;
+  string query = 2;
+  string project_id = 3;
+  int32 results_count = 4;
+  repeated common.QueryResult results = 5;  // Reuse from common.proto
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// List Expertise
+// If project_id provided, lists project expertise + company-level expertise.
+// If only company_id provided, lists company-level expertise only.
+message ListExpertiseRequest {
+  string user_token = 1;
+  string project_id = 2;           // Optional: list project + company expertise
+  int32 limit = 3;
+  int32 offset = 4;
+  string company_id = 5;           // Optional: list company-level expertise only
+}
+
+message ExpertiseInfo {
+  string expertise_id = 1;
+  string title = 2;
+  string summary = 3;
+  int32 chunks_count = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message ListExpertiseResponse {
+  string status = 1;
+  string project_id = 2;
+  int32 total_count = 3;
+  repeated ExpertiseInfo expertise_list = 4;
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// Get Expertise
+message GetExpertiseRequest {
+  string user_token = 1;
+  string expertise_id = 2;
+}
+
+message GetExpertiseResponse {
+  string status = 1;
+  string expertise_id = 2;
+  string title = 3;
+  string summary = 4;
+  string content = 5;
+  int32 chunks_count = 6;
+  string project_id = 7;
+  string company_id = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  string error_message = 11;
+  string error_code = 12;
+}

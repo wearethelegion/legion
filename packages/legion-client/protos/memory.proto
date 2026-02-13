@@ -1,0 +1,243 @@
+syntax = "proto3";
+
+package legion.memory;
+
+import "legion_common.proto";
+
+// ============================================================================
+// Memory Service - Agent persistent memory management
+// ============================================================================
+// Provides CRUD operations for PermanentMemory, working memory operations
+// (Remember/Recall), and status queries for active work.
+// ============================================================================
+
+service MemoryService {
+  // === PermanentMemory CRUD ===
+  rpc CreatePermanentMemory(CreatePermanentMemoryRequest) returns (CreatePermanentMemoryResponse);
+  rpc GetPermanentMemories(GetPermanentMemoriesRequest) returns (GetPermanentMemoriesResponse);
+  rpc UpdatePermanentMemory(UpdatePermanentMemoryRequest) returns (UpdatePermanentMemoryResponse);
+  rpc DeletePermanentMemory(DeletePermanentMemoryRequest) returns (DeletePermanentMemoryResponse);
+
+  // === Working Memory Operations ===
+  rpc Remember(RememberRequest) returns (RememberResponse);
+  rpc Recall(RecallRequest) returns (RecallResponse);
+
+  // === Status ===
+  rpc GetActiveWorkStatus(GetActiveWorkStatusRequest) returns (GetActiveWorkStatusResponse);
+}
+
+// ============================================================================
+// PermanentMemory CRUD Messages
+// ============================================================================
+
+// --- CreatePermanentMemory ---
+
+message CreatePermanentMemoryRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string project_id = 3;
+  string agent_id = 4;               // Optional: associate with specific agent
+  string memory_type = 5;            // e.g., "fact", "preference", "learned_pattern", "instruction"
+  string key = 6;                    // Unique identifier within scope (project/agent)
+  string content = 7;                // Memory content (text, can be markdown)
+  map<string, string> metadata = 8;  // Optional: additional context tags
+  int32 importance = 9;              // 1-10 scale, default 5. Higher = recalled more often
+}
+
+message CreatePermanentMemoryResponse {
+  string status = 1;                 // "success" or "error"
+  string message = 2;
+  string memory_id = 3;
+  string key = 4;
+  string memory_type = 5;
+  string created_at = 6;             // ISO format timestamp
+  string error_message = 7;
+  string error_code = 8;
+}
+
+// --- GetPermanentMemories ---
+// Note: Named "GetPermanentMemories" (plural) to return list by filters
+// Use memory_id OR key (within project/agent scope) to get single memory
+
+message GetPermanentMemoriesRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string agent_id = 3;               // Optional: filter by agent
+  string memory_type = 4;            // Optional: filter by type
+  string memory_id = 5;              // Optional: get specific memory by ID
+  string key = 6;                    // Optional: get specific memory by key
+  int32 limit = 7;                   // Default: 50
+  int32 offset = 8;                  // For pagination
+}
+
+// Lightweight info for lists
+message PermanentMemoryInfo {
+  string id = 1;
+  string memory_type = 2;
+  string key = 3;
+  string content_preview = 4;        // First 200 chars
+  int32 importance = 5;
+  string agent_id = 6;
+  string created_at = 7;
+  string updated_at = 8;
+  int32 access_count = 9;            // Times recalled
+}
+
+// Full memory for single retrieval
+message PermanentMemory {
+  string id = 1;
+  string memory_type = 2;
+  string key = 3;
+  string content = 4;                // Full content
+  map<string, string> metadata = 5;
+  int32 importance = 6;
+  string company_id = 7;
+  string project_id = 8;
+  string agent_id = 9;
+  string created_at = 10;
+  string updated_at = 11;
+  int32 access_count = 12;
+  string last_accessed_at = 13;
+}
+
+message GetPermanentMemoriesResponse {
+  string status = 1;
+  int32 total_count = 2;
+  repeated PermanentMemoryInfo memories = 3;  // For list queries
+  PermanentMemory memory = 4;                 // For single memory (when memory_id or key provided)
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// --- UpdatePermanentMemory ---
+
+message UpdatePermanentMemoryRequest {
+  string user_token = 1;
+  string memory_id = 2;
+  string content = 3;                // Optional: new content
+  map<string, string> metadata = 4;  // Optional: replaces existing metadata
+  int32 importance = 5;              // Optional: new importance (0 = no change)
+}
+
+message UpdatePermanentMemoryResponse {
+  string status = 1;
+  string message = 2;
+  string memory_id = 3;
+  string updated_at = 4;
+  int32 version = 5;                 // Incremented on each update
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// --- DeletePermanentMemory ---
+
+message DeletePermanentMemoryRequest {
+  string user_token = 1;
+  string memory_id = 2;
+}
+
+message DeletePermanentMemoryResponse {
+  string status = 1;
+  string message = 2;
+  bool deleted = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// ============================================================================
+// Working Memory Operations
+// ============================================================================
+
+// --- Remember ---
+// Store short-term memory for current session, optionally promote to permanent
+
+message RememberRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string agent_id = 3;               // Which agent is remembering
+  string engagement_id = 4;          // Current session context
+  string memory_key = 5;             // Short-term memory key
+  string content = 6;                // What to remember
+  int32 ttl_minutes = 7;             // Time-to-live (0 = session-only, expires with engagement)
+  bool promote_to_permanent = 8;     // If true, also create PermanentMemory
+  string memory_type = 9;            // Required if promote_to_permanent=true
+  int32 importance = 10;             // Required if promote_to_permanent=true (1-10)
+}
+
+message RememberResponse {
+  string status = 1;
+  string message = 2;
+  string memory_key = 3;
+  bool stored = 4;
+  string permanent_memory_id = 5;    // If promoted, the new permanent memory ID
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// --- Recall ---
+// Semantic search across memories (working + permanent)
+
+message RecallRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string agent_id = 3;               // Optional: filter by agent
+  string query = 4;                  // Semantic search query
+  int32 limit = 5;                   // Default: 10
+  bool include_permanent = 6;        // Include permanent memories (default: true)
+  bool include_working = 7;          // Include working memories (default: true)
+  string engagement_id = 8;          // Optional: scope working memories to current session
+  string memory_type = 9;            // Optional: filter by type
+  int32 min_importance = 10;         // Optional: minimum importance threshold (1-10)
+}
+
+message RecalledMemory {
+  string id = 1;
+  string source = 2;                 // "permanent" or "working"
+  string memory_type = 3;
+  string key = 4;
+  string content = 5;
+  float relevance_score = 6;         // Semantic similarity score
+  int32 importance = 7;
+  string agent_id = 8;
+  string created_at = 9;
+}
+
+message RecallResponse {
+  string status = 1;
+  int32 results_count = 2;
+  repeated RecalledMemory memories = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// ============================================================================
+// Status Operations
+// ============================================================================
+
+// --- GetActiveWorkStatus ---
+// Get overview of memory state for project/agent(s)
+
+message GetActiveWorkStatusRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string agent_id = 3;               // Optional: specific agent, else all agents
+}
+
+message AgentMemoryStatus {
+  string agent_id = 1;
+  string agent_name = 2;
+  int32 working_memory_count = 3;    // Active session memories
+  int32 permanent_memory_count = 4;  // Total permanent memories
+  string current_engagement_id = 5;  // Most recent active engagement
+  string last_activity_at = 6;
+}
+
+message GetActiveWorkStatusResponse {
+  string status = 1;
+  repeated AgentMemoryStatus agents = 2;
+  int32 total_working_memories = 3;
+  int32 total_permanent_memories = 4;
+  string project_id = 5;
+  string error_message = 6;
+  string error_code = 7;
+}

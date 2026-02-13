@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package legion.proxy;
+
+// ProxyService manages Claude API proxy lifecycle.
+// The proxy runs as a managed service tracked in the database,
+// visible in web app, and controllable via gRPC/MCP.
+service ProxyService {
+  // Start a new proxy instance
+  rpc StartProxy(StartProxyRequest) returns (StartProxyResponse);
+
+  // Stop a running proxy
+  rpc StopProxy(StopProxyRequest) returns (StopProxyResponse);
+
+  // Get status of a specific proxy
+  rpc GetProxyStatus(GetProxyStatusRequest) returns (ProxyStatusResponse);
+
+  // List all proxies for a company/project
+  rpc ListProxies(ListProxiesRequest) returns (ListProxiesResponse);
+
+  // Heartbeat from MCP server managing the proxy process
+  rpc UpdateProxyHeartbeat(ProxyHeartbeatRequest) returns (ProxyHeartbeatResponse);
+
+  // Mark orphaned proxies (startup cleanup, mirrors delegation pattern)
+  rpc CleanupOrphanedProxies(CleanupOrphanedRequest) returns (CleanupOrphanedResponse);
+
+  // Request proxy stop (sets status to stop_requested; MCP heartbeat loop detects and kills locally)
+  rpc RequestStopProxy(RequestStopProxyRequest) returns (RequestStopProxyResponse);
+}
+
+// Start Proxy
+message StartProxyRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string project_id = 3;        // Optional
+  int32 port = 4;               // Default: 34763
+  string proxy_path = 5;        // Path to claude-proxy directory
+  string log_level = 6;         // error/warn/info/debug (default: warn)
+  string host = 7;              // Default: localhost
+}
+
+message StartProxyResponse {
+  string status = 1;            // success or error
+  string proxy_id = 2;
+  int32 pid = 3;
+  int32 port = 4;
+  string message = 5;
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// Stop Proxy
+message StopProxyRequest {
+  string user_token = 1;
+  string proxy_id = 2;
+}
+
+message StopProxyResponse {
+  string status = 1;
+  string message = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// Get Proxy Status
+message GetProxyStatusRequest {
+  string user_token = 1;
+  string proxy_id = 2;
+}
+
+message ProxyStatusResponse {
+  string status = 1;            // success or error
+  string proxy_id = 2;
+  string proxy_status = 3;      // stopped/starting/running/stopping/failed/orphaned
+  string name = 4;
+  string host = 5;
+  int32 port = 6;
+  int32 pid = 7;
+  bool port_healthy = 8;        // Is the port responding?
+  string started_at = 9;
+  string uptime_seconds = 10;
+  string last_heartbeat = 11;
+  string error_message = 12;
+  string error_code = 13;
+}
+
+// List Proxies
+message ListProxiesRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string project_id = 3;        // Optional filter
+  string status_filter = 4;     // Optional filter
+}
+
+message ProxyInfo {
+  string proxy_id = 1;
+  string name = 2;
+  string host = 3;
+  int32 port = 4;
+  string status = 5;
+  string started_at = 6;
+  string updated_at = 7;
+}
+
+message ListProxiesResponse {
+  string status = 1;
+  int32 total_count = 2;
+  repeated ProxyInfo proxies = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// Heartbeat
+message ProxyHeartbeatRequest {
+  string proxy_id = 1;
+  string owner_id = 2;
+}
+
+message ProxyHeartbeatResponse {
+  string status = 1;
+  bool success = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// Cleanup Orphaned
+message CleanupOrphanedRequest {
+  string company_id = 1;
+  int32 heartbeat_timeout_seconds = 2;  // Default: 30
+}
+
+message CleanupOrphanedResponse {
+  string status = 1;
+  int32 proxies_cleaned = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// Request Stop Proxy (web app calls this; MCP heartbeat loop detects and kills locally)
+message RequestStopProxyRequest {
+  string user_token = 1;
+  string proxy_id = 2;          // Specific proxy to stop
+  string company_id = 3;        // If proxy_id empty, stop running proxy for this company
+}
+
+message RequestStopProxyResponse {
+  string status = 1;            // success or error
+  string proxy_id = 2;          // Proxy that was marked for stopping
+  string message = 3;
+  string error_message = 4;
+  string error_code = 5;
+}

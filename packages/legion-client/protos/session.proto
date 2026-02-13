@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package legion.session;
+
+// SessionService manages cognitive extraction session records.
+// Each session corresponds to one Claude Code session and accumulates
+// rolling Haiku extraction data over its lifetime.
+service SessionService {
+  // Create or update a session record (upsert by session_id)
+  rpc UpsertSession(UpsertSessionRequest) returns (UpsertSessionResponse);
+
+  // Get a session by its Anthropic session_id
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+
+  // List sessions with filters
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+
+  // Update session status (active -> completed/abandoned)
+  rpc UpdateSessionStatus(UpdateSessionStatusRequest) returns (UpdateSessionStatusResponse);
+}
+
+// Upsert Session — core operation for per-turn persistence
+message UpsertSessionRequest {
+  string user_token = 1;
+  string session_id = 2;            // Anthropic session UUID (unique key)
+  string agent_id = 3;
+  string company_id = 4;
+  string project_id = 5;            // Optional
+  string engagement_id = 6;         // Optional, may not be known
+  string task_id = 7;               // Optional
+  string entry_id = 8;              // Optional
+
+  int32 turn_number = 9;
+  string extraction = 10;           // JSON string of extraction data
+  string model_primary = 11;
+  int64 total_input_tokens = 12;
+  int64 total_output_tokens = 13;
+}
+
+message UpsertSessionResponse {
+  string status = 1;                // success or error
+  string id = 2;                    // DB row UUID
+  string session_id = 3;
+  bool created = 4;                 // true if new, false if updated
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// Get Session
+message GetSessionRequest {
+  string user_token = 1;
+  string session_id = 2;            // Anthropic session UUID
+}
+
+message GetSessionResponse {
+  string status = 1;
+  SessionRecord session = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// List Sessions
+message ListSessionsRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string agent_id = 3;              // Optional filter
+  string engagement_id = 4;         // Optional filter
+  string status_filter = 5;         // Optional: active, completed, abandoned
+  int32 limit = 6;                  // Default: 50
+  int32 offset = 7;                 // Pagination offset
+}
+
+message ListSessionsResponse {
+  string status = 1;
+  int32 total_count = 2;
+  repeated SessionRecord sessions = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// Update Session Status
+message UpdateSessionStatusRequest {
+  string user_token = 1;
+  string session_id = 2;            // Anthropic session UUID
+  string new_status = 3;            // completed or abandoned
+}
+
+message UpdateSessionStatusResponse {
+  string status = 1;
+  string session_id = 2;
+  string new_status = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// Session record — full data for a single cognitive session
+message SessionRecord {
+  string id = 1;                    // DB row UUID
+  string session_id = 2;            // Anthropic session UUID
+  string user_id = 3;
+  string agent_id = 4;
+  string company_id = 5;
+  string project_id = 6;
+  string engagement_id = 7;
+  string task_id = 8;
+  string entry_id = 9;
+
+  int32 turn_number = 10;
+  string extraction = 11;           // JSON string
+  string model_primary = 12;
+  int64 total_input_tokens = 13;
+  int64 total_output_tokens = 14;
+
+  string status = 15;               // active, completed, abandoned
+  string started_at = 16;
+  string last_turn_at = 17;
+  string completed_at = 18;
+  string created_at = 19;
+  string updated_at = 20;
+}

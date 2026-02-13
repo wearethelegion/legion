@@ -1,0 +1,274 @@
+syntax = "proto3";
+
+package legion.engagement;
+
+import "legion_common.proto";
+
+// Engagement Management Service
+service EngagementService {
+  rpc CreateEngagement(CreateEngagementRequest) returns (CreateEngagementResponse);
+  rpc GetEngagement(GetEngagementRequest) returns (GetEngagementResponse);
+  rpc ListEngagements(ListEngagementsRequest) returns (ListEngagementsResponse);
+  rpc UpdateEngagement(UpdateEngagementRequest) returns (UpdateEngagementResponse);
+  rpc AddEntry(AddEntryRequest) returns (AddEntryResponse);
+  rpc UpdateEntry(UpdateEntryRequest) returns (UpdateEntryResponse);
+  rpc GetEntry(GetEntryRequest) returns (GetEntryResponse);
+  rpc GetEntries(GetEntriesRequest) returns (GetEntriesResponse);
+  rpc SearchEntries(SearchEntriesRequest) returns (SearchEntriesResponse);
+  rpc ResumeEngagement(ResumeEngagementRequest) returns (ResumeEngagementResponse);
+}
+
+// Create Engagement
+message CreateEngagementRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string project_id = 3;
+  string name = 4;
+  string agent_id = 5;         // Optional
+  string user_id = 6;          // Optional
+  string summary = 7;          // Optional
+  string ultimate_goal = 8;    // REQUIRED - The overarching objective
+}
+
+message CreateEngagementResponse {
+  string status = 1;
+  string message = 2;
+  string engagement_id = 3;
+  string name = 4;
+  string engagement_status = 5;  // created, preparation, execution, validation, done
+  string created_at = 6;
+  string error_message = 7;
+  string error_code = 8;
+  string ultimate_goal = 9;
+}
+
+// Get Engagement
+message GetEngagementRequest {
+  string user_token = 1;
+  string engagement_id = 2;
+}
+
+// Entry metadata (lightweight, no full content)
+message EngagementEntryInfo {
+  string id = 1;
+  string entry_type = 2;       // requirement, insight, decision, plan, etc.
+  string title = 3;
+  string content_preview = 4;  // First 200 chars of content (use GetEntry for full)
+  string created_by_agent_id = 5;
+  string created_at = 6;
+  int32 content_length = 7;    // Full content length in chars
+  repeated string references = 8;  // Entry IDs this entry references
+  repeated string tags = 9;        // Tags for categorization and filtering
+  string summary = 10;             // Auto-generated summary for long entries
+  int32 version = 11;              // Entry version number
+}
+
+// Full entry content (used by GetEntry)
+message EngagementEntryFull {
+  string id = 1;
+  string engagement_id = 2;
+  string entry_type = 3;       // requirement, insight, decision, plan, etc.
+  string title = 4;
+  string content = 5;          // Full content
+  string created_by_agent_id = 6;
+  string created_at = 7;
+  repeated string references = 8;  // Entry IDs this entry references
+  repeated string tags = 9;        // Tags for categorization and filtering
+  string summary = 10;             // Auto-generated summary for long entries
+  int32 version = 11;              // Entry version number
+  string updated_at = 12;          // Last update timestamp
+}
+
+message GetEngagementResponse {
+  string status = 1;
+  string engagement_id = 2;
+  string name = 3;
+  string engagement_status = 4;
+  string company_id = 5;
+  string project_id = 6;
+  string agent_id = 7;
+  string user_id = 8;
+  string summary = 9;
+  repeated EngagementEntryInfo entries = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  string error_message = 13;
+  string error_code = 14;
+  string ultimate_goal = 15;
+}
+
+// List Engagements
+message ListEngagementsRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string status = 3;           // Optional filter
+  int32 limit = 4;
+  int32 offset = 5;            // Pagination offset
+}
+
+message EngagementInfo {
+  string id = 1;
+  string name = 2;
+  string status = 3;
+  string company_id = 4;
+  string project_id = 5;
+  string agent_id = 6;
+  string user_id = 7;
+  string summary = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  string ultimate_goal = 11;
+}
+
+message ListEngagementsResponse {
+  string status = 1;
+  string project_id = 2;
+  int32 total_count = 3;
+  repeated EngagementInfo engagements = 4;
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// Update Engagement
+message UpdateEngagementRequest {
+  string user_token = 1;
+  string engagement_id = 2;
+  string name = 3;             // Optional
+  string status = 4;           // Optional
+  string summary = 5;          // Optional
+  string ultimate_goal = 6;    // Optional - only if re-aligning
+}
+
+message UpdateEngagementResponse {
+  string status = 1;
+  string message = 2;
+  string engagement_id = 3;
+  string name = 4;
+  string engagement_status = 5;
+  string updated_at = 6;
+  string error_message = 7;
+  string error_code = 8;
+  string ultimate_goal = 9;
+}
+
+// Add Entry
+message AddEntryRequest {
+  string user_token = 1;
+  string engagement_id = 2;
+  string entry_type = 3;       // requirement, insight, decision, plan, etc.
+  string title = 4;
+  string content = 5;
+  string agent_id = 6;         // Optional - who created this entry
+  repeated string references = 7;  // Optional - entry IDs this entry references
+  repeated string tags = 8;        // Optional - tags for categorization
+}
+
+message AddEntryResponse {
+  string status = 1;
+  string message = 2;
+  string entry_id = 3;
+  string engagement_id = 4;
+  string entry_type = 5;
+  string title = 6;
+  string created_at = 7;
+  string error_message = 8;
+  string error_code = 9;
+  string summary = 10;             // Auto-generated summary (if content > 5000 chars)
+  int32 version = 11;              // Entry version (starts at 1)
+}
+
+// Update Entry
+message UpdateEntryRequest {
+  string user_token = 1;
+  string entry_id = 2;
+  string content = 3;              // Optional - new content
+  repeated string references = 4;  // Optional - new references
+  repeated string tags = 5;        // Optional - new tags
+}
+
+message UpdateEntryResponse {
+  string status = 1;
+  string message = 2;
+  string entry_id = 3;
+  string entry_type = 4;
+  string title = 5;
+  string summary = 6;              // Auto-generated summary (if content > 5000 chars)
+  int32 version = 7;               // New version number
+  string updated_at = 8;
+  string error_message = 9;
+  string error_code = 10;
+}
+
+// Get Single Entry (full content)
+message GetEntryRequest {
+  string user_token = 1;
+  string entry_id = 2;
+}
+
+message GetEntryResponse {
+  string status = 1;
+  EngagementEntryFull entry = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// Get Entries (full content)
+message GetEntriesRequest {
+  string user_token = 1;
+  string engagement_id = 2;
+  string entry_type = 3;       // Optional filter by type
+}
+
+message GetEntriesResponse {
+  string status = 1;
+  string engagement_id = 2;
+  int32 total_count = 3;
+  repeated EngagementEntryFull entries = 4;  // Full content entries
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// Search Entries
+message SearchEntriesRequest {
+  string user_token = 1;
+  string query = 2;
+  string project_id = 3;
+  int32 limit = 4;
+  string entry_type = 5;  // Optional filter by entry type (requirement, insight, decision, plan, note, question)
+  string engagement_id = 6;  // Optional filter to search within a specific engagement
+  int32 offset = 7;        // Pagination offset
+}
+
+message SearchEntriesResponse {
+  string status = 1;
+  string query = 2;
+  string project_id = 3;
+  int32 results_count = 4;
+  repeated common.QueryResult results = 5;  // Reuse from common.proto
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// Resume Engagement
+message ResumeEngagementRequest {
+  string user_token = 1;
+  string engagement_id = 2;
+}
+
+message EntriesByType {
+  string entry_type = 1;
+  repeated EngagementEntryFull entries = 2;  // Resume needs full content
+}
+
+message ResumeEngagementResponse {
+  string status = 1;
+  string engagement_id = 2;
+  string name = 3;
+  string engagement_status = 4;
+  string summary = 5;
+  repeated EntriesByType entries_by_type = 6;
+  int32 total_entries = 7;
+  string error_message = 8;
+  string error_code = 9;
+  string ultimate_goal = 10;
+}

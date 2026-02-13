@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package legion.lessons;
+
+// Lessons Learned Service - Self-improving knowledge base for resolved issues
+service LessonsLearnedService {
+  rpc RecordLesson(RecordLessonRequest) returns (RecordLessonResponse);
+  rpc QueryLessons(QueryLessonsRequest) returns (QueryLessonsResponse);
+}
+
+// Record a new lesson
+message RecordLessonRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string category = 3;              // e.g., "Infrastructure/Docker", "gRPC/Protobuf"
+  string title = 4;                 // e.g., "Volumes Disabled Requires Rebuild"
+  string symptom = 5;               // What error/behavior was observed
+  string root_cause = 6;            // Why it happened
+  string solution = 7;              // Step-by-step fix
+  string prevention = 8;            // How to avoid in future
+  string severity = 9;              // "Low", "Medium", "High", "Critical"
+  repeated string tags = 10;        // ["docker", "volumes", "rebuild"]
+  repeated string files_changed = 11; // ["docker-compose.yml", "Dockerfile"]
+}
+
+message RecordLessonResponse {
+  string status = 1;
+  string lesson_id = 2;
+  string project_id = 3;
+  string category = 4;
+  string title = 5;
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// Query lessons
+message QueryLessonsRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string query = 3;                 // Search query (semantic)
+  string category_filter = 4;       // Optional category filter
+  int32 limit = 5;                  // Max results (default: 10)
+}
+
+message LessonInfo {
+  string lesson_id = 1;
+  string category = 2;
+  string title = 3;
+  string symptom = 4;
+  string root_cause = 5;
+  string solution = 6;
+  string prevention = 7;
+  string severity = 8;
+  repeated string tags = 9;
+  repeated string files_changed = 10;
+  string created_at = 11;
+  float score = 12;                 // Relevance score
+}
+
+message QueryLessonsResponse {
+  string status = 1;
+  repeated LessonInfo lessons = 2;
+  int32 results_count = 3;
+  string error_message = 4;
+  string error_code = 5;
+}

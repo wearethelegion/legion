@@ -1,0 +1,522 @@
+syntax = "proto3";
+
+package legion.agent_skill;
+
+// Agent Skill Service - Agent identity, lifecycle, and skill management
+// Provides whoAmI for agent identity bootstrap, agent CRUD, and skill navigation
+service AgentSkillService {
+  // Identity bootstrap - MUST be called first when starting a session
+  rpc WhoAmI(WhoAmIRequest) returns (WhoAmIResponse);
+
+  // Get agent context for delegation - returns combined system prompt
+  // Combines: company instructions + project instructions + agent system_prompt
+  rpc GetAgentContext(GetAgentContextRequest) returns (GetAgentContextResponse);
+
+  // Agent lifecycle management
+  rpc CreateAgent(CreateAgentRequest) returns (CreateAgentResponse);
+  rpc DeleteAgent(DeleteAgentRequest) returns (DeleteAgentResponse);
+  rpc UpdateAgent(UpdateAgentRequest) returns (UpdateAgentResponse);
+
+  // Skill navigation - Progressive disclosure pattern:
+  // 1. GetAgentSkills → lightweight overview (titles/summaries only)
+  // 2. SearchSkillDetails → semantic search within ONE skill → top-k chunks with content
+  // 3. GetSkillSections → fallback: browse all sections for ONE skill
+  // 4. GetSkillContent → full content of ONE section (if needed)
+  rpc GetAgentSkills(GetAgentSkillsRequest) returns (GetAgentSkillsResponse);
+  rpc SearchSkillDetails(SearchSkillDetailsRequest) returns (SearchSkillDetailsResponse);
+  rpc GetSkillSections(GetSkillSectionsRequest) returns (GetSkillSectionsResponse);
+  rpc GetSkillContent(GetSkillContentRequest) returns (GetSkillContentResponse);
+  rpc LinkAgentSkill(LinkAgentSkillRequest) returns (LinkAgentSkillResponse);
+  rpc UnlinkAgentSkill(UnlinkAgentSkillRequest) returns (UnlinkAgentSkillResponse);
+
+  // Fetch full workflow content by ID for activation
+  rpc GetWorkflowById(GetWorkflowByIdRequest) returns (GetWorkflowByIdResponse);
+
+  // Workflow CRUD operations
+  rpc CreateWorkflow(CreateWorkflowRequest) returns (CreateWorkflowResponse);
+  rpc UpdateWorkflow(UpdateWorkflowRequest) returns (UpdateWorkflowResponse);
+  rpc DeleteWorkflow(DeleteWorkflowRequest) returns (DeleteWorkflowResponse);
+  rpc ListWorkflows(ListWorkflowsRequest) returns (ListWorkflowsResponse);
+
+  // List all agents in a company with their combined system prompts
+  // Used by proxy to prepopulate prompt cache on startup
+  rpc ListCompanyAgents(ListCompanyAgentsRequest) returns (ListCompanyAgentsResponse);
+}
+
+// CreateAgent - Birth a new specialist agent
+message CreateAgentRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string name = 3;                      // Personality name (from Billy Milligan)
+  string role = 4;                      // Functional role (researcher, developer, etc.)
+  string personality = 5;               // Detailed personality description
+  string main_responsibilities = 6;     // What tasks this agent handles
+  string system_prompt = 7;             // Full behavioral instructions
+  repeated string capabilities = 8;     // Skill tags
+  string specialization = 9;            // Primary domain
+  string project_id = 10;               // Optional project scope (NULL = company-wide)
+}
+
+message CreateAgentResponse {
+  string status = 1;
+  string agent_id = 2;
+  string name = 3;
+  string role = 4;
+  bool learning_skill_linked = 5;       // True if "How to Research and Create Skills" was auto-linked
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// DeleteAgent - Remove an agent and clean up all associations
+message DeleteAgentRequest {
+  string user_token = 1;
+  string agent_id = 2;
+}
+
+message DeleteAgentResponse {
+  string status = 1;
+  string agent_id = 2;
+  string name = 3;
+  int32 skills_unlinked = 4;            // Number of skills that were unlinked
+  bool deleted = 5;
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// UpdateAgent - Update an existing agent with sentinel booleans
+// Only fields with *_provided = true are applied. All others keep current values.
+message UpdateAgentRequest {
+  string user_token = 1;
+  string agent_id = 2;                  // Required: which agent to update
+  string name = 3;
+  bool name_provided = 4;
+  string personality = 5;
+  bool personality_provided = 6;
+  string main_responsibilities = 7;
+  bool main_responsibilities_provided = 8;
+  string system_prompt = 9;
+  bool system_prompt_provided = 10;
+  string metadata_json = 11;            // JSON string of metadata dict
+  bool metadata_provided = 12;
+  string project_id = 13;
+  bool project_id_provided = 14;
+  bool public = 15;
+  bool public_provided = 16;
+}
+
+message UpdateAgentResponse {
+  string status = 1;
+  string agent_id = 2;
+  string name = 3;
+  string role = 4;
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// WhoAmI - Identity bootstrap for agent
+// - No agent_id: Returns Arthur (default orchestrator), sets MCP context
+// - With agent_id: Returns that specific agent, sets MCP context
+message WhoAmIRequest {
+  string user_token = 1;
+  string company_id = 2;  // Optional: specific company context
+  string agent_id = 3;    // Optional: specific agent to become (default: Arthur)
+  string project_id = 4;  // Optional: derive company_id from project if company_id not provided
+}
+
+// Skill overview (lightweight, for whoAmI response)
+message SkillOverview {
+  string expertise_id = 1;
+  string title = 2;
+  string summary = 3;
+  int32 sections_count = 4;
+}
+
+// Available agent that orchestrator can delegate to
+message AvailableAgent {
+  string agent_id = 1;
+  string name = 2;
+  string role = 3;
+  string specialization = 4;
+  string description = 5;
+}
+
+// Permanent memory returned on every identity bootstrap
+message PermanentMemory {
+  string id = 1;
+  string agent_id = 2;
+  string user_id = 3;
+  string content = 4;
+  string category = 5;           // general, preference, instruction, constraint
+  string created_at = 6;
+}
+
+// Workflow overview for whoAmI response
+message WorkflowOverview {
+  string id = 1;
+  string name = 2;
+  repeated string signals = 3;   // Trigger hints for when to use this workflow
+}
+
+message WhoAmIResponse {
+  string status = 1;
+
+  // Agent identity
+  string agent_id = 2;
+  string name = 3;
+  string role = 4;
+  string personality = 5;
+  string main_responsibilities = 6;
+
+  // Full system instructions
+  string system_prompt = 7;
+
+  // Capabilities (what I can do)
+  repeated string capabilities = 8;
+
+  // Skills overview (what I know) - lightweight, call getAgentSkills for full tree
+  repeated SkillOverview skills_overview = 9;
+  int32 skills_count = 10;
+
+  // Available agents to delegate to
+  repeated AvailableAgent available_agents = 11;
+  int32 available_agents_count = 12;
+
+  // Error handling
+  string error_message = 13;
+  string error_code = 14;
+
+  // Permanent memories (returned on every bootstrap)
+  repeated PermanentMemory permanent_memories = 15;
+
+  // Workflows available to this agent (cascade: agent_id → role+project → role+company)
+  repeated WorkflowOverview workflows = 16;
+}
+
+// Get Agent Skills - Returns LIGHTWEIGHT skill overview for LLM navigation
+// Does NOT include sections - use GetSkillSections for that
+message GetAgentSkillsRequest {
+  string agent_id = 1;
+  string user_token = 2;
+}
+
+message SkillSection {
+  string chunk_id = 1;
+  string title = 2;
+  string summary = 3;
+  bool has_code = 4;
+  int32 level = 5;
+  int32 position = 6;
+}
+
+// AgentSkill is DEPRECATED - use SkillOverview + GetSkillSections instead
+message AgentSkill {
+  string expertise_id = 1;
+  string title = 2;
+  string summary = 3;
+  repeated SkillSection sections = 4;  // DEPRECATED: always empty, use GetSkillSections
+}
+
+message GetAgentSkillsResponse {
+  string status = 1;
+  string agent_id = 2;
+  string agent_name = 3;
+  int32 skills_count = 4;
+  repeated SkillOverview skills = 5;  // CHANGED: now uses lightweight SkillOverview
+  string error_message = 6;
+  string error_code = 7;
+}
+
+// SearchSkillDetails - Semantic search within ONE skill's chunks
+// Instead of loading all 80+ sections, LLM searches semantically for what it needs
+// Returns top-k relevant chunks with FULL CONTENT (no second call needed)
+message SearchSkillDetailsRequest {
+  string expertise_id = 1;
+  string query = 2;           // Natural language query (e.g., "error handling patterns")
+  int32 limit = 3;            // Max results (default: 5)
+  string user_token = 4;
+}
+
+// Search result chunk with full content and relevance score
+message SkillSearchResult {
+  string chunk_id = 1;
+  string title = 2;
+  string content = 3;         // Full content included - no second call needed
+  float score = 4;            // Relevance score (0-1)
+  bool has_code = 5;
+  int32 level = 6;
+  int32 position = 7;
+}
+
+message SearchSkillDetailsResponse {
+  string status = 1;
+  string expertise_id = 2;
+  string expertise_title = 3;
+  string query = 4;
+  int32 results_count = 5;
+  repeated SkillSearchResult results = 6;
+  string error_message = 7;
+  string error_code = 8;
+}
+
+// GetSkillSections - Fetch sections for ONE expertise (on-demand)
+// Fallback for browsing when LLM doesn't know what to search for
+message GetSkillSectionsRequest {
+  string expertise_id = 1;
+  string user_token = 2;
+}
+
+message GetSkillSectionsResponse {
+  string status = 1;
+  string expertise_id = 2;
+  string title = 3;
+  string summary = 4;
+  int32 sections_count = 5;
+  repeated SkillSection sections = 6;
+  string error_message = 7;
+  string error_code = 8;
+}
+
+// Get Skill Content - Fetch full content of a specific section
+message GetSkillContentRequest {
+  string chunk_id = 1;
+  string user_token = 2;
+}
+
+message GetSkillContentResponse {
+  string status = 1;
+  string chunk_id = 2;
+  string title = 3;
+  string content = 4;
+  bool has_code = 5;
+  int32 level = 6;
+  string expertise_id = 7;
+  string error_message = 8;
+  string error_code = 9;
+}
+
+// Link Agent Skill - Add expertise as agent skill
+message LinkAgentSkillRequest {
+  string agent_id = 1;
+  string expertise_id = 2;
+  string user_token = 3;
+}
+
+message LinkAgentSkillResponse {
+  string status = 1;
+  string agent_id = 2;
+  string expertise_id = 3;
+  string expertise_title = 4;
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// Unlink Agent Skill - Remove expertise from agent skills
+message UnlinkAgentSkillRequest {
+  string agent_id = 1;
+  string expertise_id = 2;
+  string user_token = 3;
+}
+
+message UnlinkAgentSkillResponse {
+  string status = 1;
+  string agent_id = 2;
+  string expertise_id = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// GetAgentContext - Get combined system prompt for delegation
+// Used by delegate_to_agent to build the full context for a sub-agent
+message GetAgentContextRequest {
+  string agent_id = 1;           // Agent UUID (required)
+  string project_id = 2;         // Project UUID (optional, but needed for instructions)
+  string user_token = 3;
+}
+
+// Company instructions (from company_instructions table)
+message CompanyInstructions {
+  string id = 1;
+  string company_id = 2;
+  string ground_rules = 3;
+  string coding_standards = 4;
+  string communication_style = 5;
+  string forbidden_actions = 6;
+  string custom_instructions = 7;
+}
+
+// Project instructions (from project_instructions table)
+message ProjectInstructions {
+  string id = 1;
+  string project_id = 2;
+  string description = 3;
+  repeated string languages = 4;
+  repeated string frameworks = 5;
+  repeated string tools = 6;
+  string architecture_notes = 7;
+  string conventions = 8;
+  string custom_instructions = 9;
+}
+
+message GetAgentContextResponse {
+  string status = 1;
+
+  // Agent identity (minimal)
+  string agent_id = 2;
+  string agent_name = 3;
+  string agent_role = 4;
+
+  // The combined system prompt (company + project + agent)
+  // Ready to use directly in ClaudeAgentOptions.system_prompt
+  string combined_system_prompt = 5;
+
+  // Individual components (for transparency/debugging)
+  CompanyInstructions company_instructions = 6;
+  ProjectInstructions project_instructions = 7;
+  string agent_system_prompt = 8;
+
+  // Error handling
+  string error_message = 9;
+  string error_code = 10;
+}
+
+// GetWorkflowById - Fetch full workflow content for activation
+message GetWorkflowByIdRequest {
+  string workflow_id = 1;    // Required: UUID of the workflow
+  string user_token = 2;     // For auth
+}
+
+message WorkflowContent {
+  string id = 1;
+  string company_id = 2;
+  string project_id = 3;      // nullable
+  string agent_id = 4;        // nullable
+  string role = 5;            // nullable
+  string user_id = 6;         // nullable (owner)
+  bool public = 7;
+  string name = 8;
+  string content = 9;         // Full markdown content
+  string description = 10;    // nullable
+  repeated string signals = 11;
+  int32 version = 12;
+  string created_at = 13;
+  string updated_at = 14;
+}
+
+message GetWorkflowByIdResponse {
+  string status = 1;
+  WorkflowContent workflow = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// CreateWorkflow - Create a new agent workflow
+message CreateWorkflowRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string name = 3;
+  string content = 4;
+  repeated string signals = 5;
+  string description = 6;
+  string role = 7;
+  string agent_id = 8;
+  string project_id = 9;
+  bool public = 10;
+  string metadata_json = 11;
+}
+
+message CreateWorkflowResponse {
+  string status = 1;
+  WorkflowContent workflow = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// UpdateWorkflow - Update an existing workflow with sentinel booleans
+message UpdateWorkflowRequest {
+  string user_token = 1;
+  string workflow_id = 2;
+  string name = 3;
+  bool name_provided = 4;
+  string content = 5;
+  bool content_provided = 6;
+  repeated string signals = 7;
+  bool signals_provided = 8;
+  string description = 9;
+  bool description_provided = 10;
+  string role = 11;
+  bool role_provided = 12;
+  string agent_id = 13;
+  bool agent_id_provided = 14;
+  string project_id = 15;
+  bool project_id_provided = 16;
+  bool public = 17;
+  bool public_provided = 18;
+  string metadata_json = 19;
+  bool metadata_provided = 20;
+}
+
+message UpdateWorkflowResponse {
+  string status = 1;
+  WorkflowContent workflow = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+// DeleteWorkflow - Delete a workflow by ID
+message DeleteWorkflowRequest {
+  string user_token = 1;
+  string workflow_id = 2;
+}
+
+message DeleteWorkflowResponse {
+  string status = 1;
+  string workflow_id = 2;
+  bool deleted = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// ListWorkflows - List visible workflows with optional filters
+message ListWorkflowsRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string role = 3;
+  string agent_id = 4;
+  string project_id = 5;
+  int32 limit = 6;
+  int32 offset = 7;
+}
+
+message ListWorkflowsResponse {
+  string status = 1;
+  repeated WorkflowContent workflows = 2;
+  int32 total_count = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// ListCompanyAgents - Get all agents in a company with combined system prompts
+// Returns every agent the authenticated user can see, each with their
+// pre-built combined_system_prompt (company instructions + agent system_prompt).
+// Used by the proxy to prepopulate its SQLite prompt cache on startup.
+message ListCompanyAgentsRequest {
+  string user_token = 1;
+  string company_id = 2;
+  string project_id = 3;   // Optional: include project instructions in combined prompt
+}
+
+message AgentWithContext {
+  string agent_id = 1;
+  string name = 2;
+  string role = 3;
+  string specialization = 4;
+  string combined_system_prompt = 5;
+}
+
+message ListCompanyAgentsResponse {
+  string status = 1;
+  repeated AgentWithContext agents = 2;
+  int32 total_count = 3;
+  string error_message = 4;
+  string error_code = 5;
+}

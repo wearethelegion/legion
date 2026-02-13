@@ -22,6 +22,8 @@ import { SystemPrompt } from "./system"
 import { Flag } from "@/flag/flag"
 import { PermissionNext } from "@/permission/next"
 import { Auth } from "@/auth"
+import { getLegionIdentity } from "@/legion"
+import { DelegationTracker } from "@/legion/delegation"
 
 export namespace LLM {
   const log = Log.create({ service: "llm" })
@@ -65,11 +67,36 @@ export namespace LLM {
     const isCodex = provider.id === "openai" && auth?.type === "oauth"
 
     const system = []
+    const legionIdentity = getLegionIdentity()
+    const legionPrompt = legionIdentity?.raw.system_prompt
+    const legionName = legionIdentity?.raw.name
     system.push(
       [
         // use agent prompt otherwise provider prompt
         // For Codex sessions, skip SystemPrompt.provider() since it's sent via options.instructions
         ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
+        // LEGION agent identity override — takes precedence over base prompt identity
+        ...(legionPrompt
+          ? [
+              `<legion-identity>`,
+              `CRITICAL IDENTITY OVERRIDE: You are ${legionName ?? "a LEGION agent"}. This is your PRIMARY identity. Do NOT identify as OpenCode, Claude, or any generic assistant. Embody this identity fully from your very first response.\nYour identity has been pre-loaded at startup via gRPC. Do NOT call whoAmI() — it is unnecessary. You already have your full identity, personality, and instructions below.`,
+              legionPrompt,
+              `</legion-identity>`,
+            ]
+          : []),
+        // LEGION delegation status & results (F-029/F-030) — injected automatically
+        ...(() => {
+          const section = DelegationTracker.getSystemPromptSection()
+          if (section) {
+            // Mark completed delegation results as delivered after injection
+            const pending = DelegationTracker.getPendingResults()
+            if (pending.length > 0) {
+              DelegationTracker.markDelivered(pending.map((d) => d.delegationId))
+            }
+            return [section]
+          }
+          return []
+        })(),
         // any custom prompt passed into this call
         ...input.system,
         // any custom prompt from last user message
