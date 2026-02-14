@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package legion.conversation_extraction;
+
+import "legion_common.proto";
+
+// Conversation Extraction Service - Structured extraction from conversation turns
+// for the Infinite Conversation memory system (graph-based context recall).
+service ConversationExtractionService {
+  rpc StoreExtraction(StoreExtractionRequest) returns (StoreExtractionResponse);
+  rpc RecallContext(RecallContextRequest) returns (RecallContextResponse);
+  rpc BuildSessionBridge(BuildSessionBridgeRequest) returns (BuildSessionBridgeResponse);
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+}
+
+// --- Sub-messages for structured extraction ---
+
+message ExtractedConcept {
+  string name = 1;
+  string type = 2;           // e.g., "technology", "pattern", "domain"
+  string sentiment = 3;      // e.g., "positive", "negative", "neutral"
+}
+
+message ExtractedDecision {
+  string summary = 1;
+  string chose = 2;
+  repeated string rejected = 3;
+  string reasoning = 4;
+  string confidence = 5;     // e.g., "high", "medium", "low"
+}
+
+message ExtractedPreference {
+  string category = 1;       // e.g., "coding_style", "tool", "workflow"
+  string key = 2;
+  string value = 3;
+  string strength = 4;       // e.g., "strong", "mild", "inferred"
+}
+
+message ExtractedTopic {
+  string name = 1;
+  string status = 2;         // e.g., "active", "resolved", "parked"
+}
+
+message ExtractedCodeRef {
+  string file = 1;
+  string entity = 2;         // function/class/module name
+  string action = 3;         // e.g., "created", "modified", "discussed", "debugged"
+}
+
+message TurnExtraction {
+  repeated ExtractedConcept concepts = 1;
+  repeated ExtractedDecision decisions = 2;
+  repeated ExtractedPreference preferences = 3;
+  repeated ExtractedTopic topics = 4;
+  repeated ExtractedCodeRef code_refs = 5;
+  string intent = 6;         // e.g., "debug", "implement", "discuss", "refactor"
+  string urgency = 7;        // e.g., "high", "normal", "low"
+  string active_engagement_id = 8;  // LEGION engagement UUID extracted from turn
+  string active_task_id = 9;        // LEGION task UUID extracted from turn
+  string active_delegation_id = 10; // LEGION delegation UUID extracted from turn
+}
+
+// --- StoreExtraction ---
+
+message StoreExtractionRequest {
+  string user_token = 1;
+  string engagement_id = 2;
+  string session_id = 3;
+  int32 turn_number = 4;
+  string agent_id = 5;
+  string user_message = 6;
+  string assistant_message = 7;
+  TurnExtraction extraction = 8;
+  string timestamp = 9;       // ISO 8601 timestamp
+  string task_id = 10;        // LEGION task UUID (request-level override)
+  string delegation_id = 11;  // LEGION delegation UUID (request-level override)
+}
+
+message StoreExtractionResponse {
+  bool success = 1;
+  repeated string created_node_ids = 2;
+  string error_message = 3;
+}
+
+// --- RecallContext ---
+
+message RecallContextRequest {
+  string user_token = 1;
+  repeated string entity_names = 2;
+  string engagement_id = 3;   // optional: scope to engagement
+  string project_id = 4;
+  int32 max_hops = 5;         // graph traversal depth
+  int32 limit = 6;
+}
+
+message ContextItem {
+  string type = 1;            // node label: "Concept", "Decision", "Preference", etc.
+  string summary = 2;
+  repeated string relationships = 3;  // human-readable relationship descriptions
+  string timestamp = 4;
+  string confidence = 5;
+}
+
+message RecallContextResponse {
+  repeated ContextItem context_items = 1;
+  string error_message = 2;
+  string error_code = 3;
+}
+
+// --- BuildSessionBridge ---
+
+message BuildSessionBridgeRequest {
+  string user_token = 1;
+  string engagement_id = 2;
+  string session_id = 3;
+}
+
+message BuildSessionBridgeResponse {
+  string bridge_id = 1;
+  repeated string active_threads = 2;
+  repeated string open_questions = 3;
+  repeated string next_steps = 4;
+  string error_message = 5;
+  string error_code = 6;
+}
+
+// --- GetUserProfile ---
+
+message GetUserProfileRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string user_id = 3;
+}
+
+message GetUserProfileResponse {
+  repeated ExtractedPreference preferences = 1;
+  repeated ExtractedDecision recent_decisions = 2;
+  repeated ExtractedTopic active_topics = 3;
+  string error_message = 4;
+  string error_code = 5;
+}

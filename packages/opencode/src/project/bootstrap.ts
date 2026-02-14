@@ -48,6 +48,13 @@ export async function InstanceBootstrap() {
       }
       // Start background delegation monitoring (F-029)
       DelegationTracker.start()
+
+      // Initialize extraction pipeline only when per-turn extraction is enabled
+      if (process.env.LEGION_EXTRACTION_ENABLED === "true") {
+        const { ExtractionBuffer, ExtractionDrain } = await import("../extraction")
+        ExtractionBuffer.init()
+        ExtractionDrain.start()
+      }
     }
   }
   Share.init()

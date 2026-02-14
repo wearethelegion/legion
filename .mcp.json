@@ -1,0 +1,62 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "morphllm-fast-apply": {
+      "command": "npx",
+      "args": ["@morph-llm/morph-fast-apply"],
+      "env": {
+        "MORPH_API_KEY": "sk-SX_dxLE71woa53Dctc5ymcZ2nOmPu07uUJdUxrKTcc9ZMYmB"
+      }
+    },
+    "legion": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/yubozhenko/legion-space/legion/legion-mcp",
+        "legion-mcp"
+      ],
+      "env": {
+        "LEGION_COMPANY_ID": "00bd2c75-ebe8-47bb-af1c-21b623dfbe28",
+        "LEGION_PROJECT_PATH": "/Users/yubozhenko/legion-space/legion",
+        "LEGION_PROXY_ENABLED": "true",
+        "ANTHROPIC_BASE_URL": "http://localhost:34763",
+        "MCP_USER_EMAIL": "yubozhenko@icloud.com",
+        "MCP_USER_PASSWORD": "8mbnDo42!",
+        "GRPC_SERVER_HOST": "localhost",
+        "GRPC_SERVER_PORT": "50051"
+      }
+    },
+    "legion-memory": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/yubozhenko/legion-space/legion/legion-memory-mcp",
+        "legion-memory-mcp"
+      ],
+      "env": {
+        "LEGION_COMPANY_ID": "00bd2c75-ebe8-47bb-af1c-21b623dfbe28",
+        "LEGION_PROJECT_PATH": "/Users/yubozhenko/legion-space/legion",
+        "ANTHROPIC_BASE_URL": "http://localhost:34763",
+        "MCP_USER_EMAIL": "yubozhenko@icloud.com",
+        "MCP_USER_PASSWORD": "8mbnDo42!",
+        "GRPC_SERVER_HOST": "localhost",
+        "GRPC_SERVER_PORT": "50051"
+      }
+    },
+    "pencil": {
+      "command": "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
+      "args": ["--app", "desktop"],
+      "env": {},
+      "type": "stdio"
+    }
+  }
+}

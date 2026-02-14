@@ -14,9 +14,86 @@ import { Agent } from "@/agent/agent"
 import { Plugin } from "@/plugin"
 import { Config } from "@/config/config"
 import { ProviderTransform } from "@/provider/transform"
+import { isLegionAvailable, getLegionClient } from "../legion/auth"
+import { ExtractionBuffer } from "../extraction/buffer"
+import { extractForCompaction } from "../extraction/extract"
 
 export namespace SessionCompaction {
   const log = Log.create({ service: "session.compaction" })
+
+  const SYSTEM_REMINDER = /<system-reminder>[\s\S]*?<\/system-reminder>/g
+  const LEGION_IDENTITY = /<legion-identity>[\s\S]*?<\/legion-identity>/g
+
+  /**
+   * Produce clean, deduplicated conversation text from raw session messages.
+   * Strips system prompts, tool I/O bodies, synthetic parts, and compaction summaries.
+   */
+  export function cleanForExtraction(messages: MessageV2.WithParts[]): string {
+    const seen = new Set<string>()
+    const tools = new Map<string, string>()
+    const lines: string[] = []
+
+    for (const msg of messages) {
+      if (msg.info.role === "assistant" && msg.info.summary) continue
+
+      const role = msg.info.role === "user" ? "User" : "Assistant"
+
+      for (const part of msg.parts) {
+        if (part.type === "text") {
+          if ("synthetic" in part && part.synthetic) continue
+          const cleaned = part.text.replace(SYSTEM_REMINDER, "").replace(LEGION_IDENTITY, "").trim()
+          if (!cleaned) continue
+          if (seen.has(cleaned)) continue
+          seen.add(cleaned)
+          lines.push(`${role}: ${cleaned}`)
+        }
+        if (part.type === "tool") {
+          const input = "input" in part.state ? part.state.input : {}
+          const vals = Object.values(input)
+          const arg = vals.length > 0 ? String(vals[0]) : ""
+          const brief = arg.length > 80 ? arg.slice(0, 80) : arg
+          const key = `${part.tool}:${brief}`
+          tools.set(key, `[${part.tool}: ${brief}]`)
+        }
+      }
+    }
+
+    const toolLines = Array.from(tools.values())
+    return [...lines, ...toolLines].join("\n")
+  }
+
+  function runCompactionExtraction(sessionID: string, messages: MessageV2.WithParts[]): void {
+    const clean = cleanForExtraction(messages)
+    if (!clean) return
+    extractForCompaction(clean, "")
+      .then((extraction) => {
+        ExtractionBuffer.insert({ sessionId: sessionID, turnNumber: -1, extraction })
+      })
+      .catch(() => {})
+  }
+
+  const env = globalThis.process?.env ?? {}
+
+  function saveToLegion(sessionID: string, text: string): void {
+    const legion = getLegionClient()
+    if (!legion) return
+    const projectId = env.LEGION_PROJECT_ID
+    const agentId = env.LEGION_AGENT_ID
+    const engagementId = env.LEGION_ENGAGEMENT_ID
+    if (!projectId || !agentId) return
+    legion
+      .remember({
+        projectId,
+        agentId,
+        memoryKey: `session-handoff-${sessionID}`,
+        content: text,
+        engagementId: engagementId || undefined,
+        promoteToPermanent: true,
+        memoryType: "instruction",
+        importance: 8,
+      })
+      .catch(() => {})
+  }
 
   export const Event = {
     Compacted: BusEvent.define(
@@ -105,6 +182,136 @@ export namespace SessionCompaction {
     abort: AbortSignal
     auto: boolean
   }) {
+    // Try graph-based compaction first (no LLM call needed)
+    if (isLegionAvailable()) {
+      try {
+        const result = await graphCompaction(input)
+        if (result) return result
+      } catch (err) {
+        log.warn("graph compaction failed, falling back to LLM", {
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+    }
+
+    // Fallback: original LLM-based compaction
+    return llmCompaction(input)
+  }
+
+  /**
+   * Graph-based compaction: query Neo4j for session knowledge,
+   * keep last N raw turns, inject graph summary as the compaction message.
+   * No LLM call — instant, structured, lossless.
+   */
+  async function graphCompaction(input: {
+    parentID: string
+    messages: MessageV2.WithParts[]
+    sessionID: string
+    abort: AbortSignal
+    auto: boolean
+  }): Promise<"continue" | "stop" | null> {
+    const { GraphCompaction } = await import("../extraction")
+
+    const summary = await GraphCompaction.buildSessionSummary({
+      sessionId: input.sessionID,
+    })
+
+    if (!summary) return null // No graph data — fall back to LLM
+
+    log.info("using graph-based compaction")
+
+    const userMessage = input.messages.findLast((m) => m.info.id === input.parentID)!.info as MessageV2.User
+    const agent = await Agent.get("compaction")
+    const model = agent.model
+      ? await Provider.getModel(agent.model.providerID, agent.model.modelID)
+      : await Provider.getModel(userMessage.model.providerID, userMessage.model.modelID)
+
+    // Create the compaction assistant message (summary: true marks the breakpoint)
+    const msg = (await Session.updateMessage({
+      id: Identifier.ascending("message"),
+      role: "assistant",
+      parentID: input.parentID,
+      sessionID: input.sessionID,
+      mode: "compaction",
+      agent: "compaction",
+      variant: userMessage.variant,
+      summary: true,
+      path: {
+        cwd: Instance.directory,
+        root: Instance.worktree,
+      },
+      cost: 0,
+      tokens: {
+        output: 0,
+        input: 0,
+        reasoning: 0,
+        cache: { read: 0, write: 0 },
+      },
+      modelID: model.id,
+      providerID: model.providerID,
+      time: {
+        created: Date.now(),
+      },
+    })) as MessageV2.Assistant
+
+    // Insert the graph summary as a text part — no LLM call needed
+    await Session.updatePart({
+      id: Identifier.ascending("part"),
+      messageID: msg.id,
+      sessionID: input.sessionID,
+      type: "text",
+      text: summary,
+      time: {
+        start: Date.now(),
+        end: Date.now(),
+      },
+    })
+
+    // Auto-continue: add synthetic "continue" user message
+    if (input.auto) {
+      const continueMsg = await Session.updateMessage({
+        id: Identifier.ascending("message"),
+        role: "user",
+        sessionID: input.sessionID,
+        time: {
+          created: Date.now(),
+        },
+        agent: userMessage.agent,
+        model: userMessage.model,
+      })
+      await Session.updatePart({
+        id: Identifier.ascending("part"),
+        messageID: continueMsg.id,
+        sessionID: input.sessionID,
+        type: "text",
+        synthetic: true,
+        text: "Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.",
+        time: {
+          start: Date.now(),
+          end: Date.now(),
+        },
+      })
+    }
+
+    // Fire-and-forget: extract structured data + save summary to LEGION
+    runCompactionExtraction(input.sessionID, input.messages)
+    saveToLegion(input.sessionID, summary)
+
+    Bus.publish(Event.Compacted, { sessionID: input.sessionID })
+    return "continue"
+  }
+
+  /**
+   * Original LLM-based compaction (fallback when graph is unavailable).
+   * Sends the full conversation to the compaction agent to produce a summary.
+   */
+  async function llmCompaction(input: {
+    parentID: string
+    messages: MessageV2.WithParts[]
+    sessionID: string
+    abort: AbortSignal
+    auto: boolean
+  }): Promise<"continue" | "stop"> {
     const userMessage = input.messages.findLast((m) => m.info.id === input.parentID)!.info as MessageV2.User
     const agent = await Agent.get("compaction")
     const model = agent.model
@@ -148,32 +355,44 @@ export namespace SessionCompaction {
       { sessionID: input.sessionID },
       { context: [], prompt: undefined },
     )
-    const defaultPrompt = `Provide a detailed prompt for continuing our conversation above.
-Focus on information that would be helpful for continuing the conversation, including what we did, what we're doing, which files we're working on, and what we're going to do next.
-The summary that you construct will be used so that another agent can read it and continue the work.
+    const defaultPrompt = `Produce a comprehensive session handoff prompt. This will be given to an agent in a NEW session with ZERO prior context — it must be fully self-contained.
 
-When constructing the summary, try to stick to this template:
+The prompt must enable the next agent to resume work immediately without asking questions.
+
+Use this exact template:
 ---
 ## Goal
 
-[What goal(s) is the user trying to accomplish?]
+[The user's overarching objective. Be specific — not "build a feature" but "build X that does Y for Z reason".]
 
 ## Instructions
 
-- [What important instructions did the user give you that are relevant]
-- [If there is a plan or spec, include information about it so next agent can continue using it]
+- [Every instruction the user gave that is still relevant — preferences, constraints, conventions, tool usage rules]
+- [If there is a plan, spec, or architecture doc, include its location and key points]
+- [Agent IDs, project IDs, company IDs, engagement IDs — any UUIDs the next session needs]
 
 ## Discoveries
 
-[What notable things were learned during this conversation that would be useful for the next agent to know when continuing the work]
+[Technical findings, architecture insights, edge cases found, decisions made and WHY. Include file paths and line numbers where relevant. This is institutional knowledge — don't lose it.]
 
 ## Accomplished
 
-[What work has been completed, what work is still in progress, and what work is left?]
+### Completed
+- [Each completed task with enough detail to not redo it]
+
+### In Progress
+- [Anything partially done — what's done, what remains, blockers]
+
+### Not Started
+- [Remaining work items]
 
 ## Relevant files / directories
 
-[Construct a structured list of relevant files that have been read, edited, or created that pertain to the task at hand. If all the files in a directory are relevant, include the path to the directory.]
+[Structured list of files read, edited, or created. Group by feature/component. Include line numbers for key locations. If all files in a directory are relevant, list the directory.]
+
+## Current Blocker / Next Step
+
+[The SINGLE most important thing the next agent should do first. Be actionable — not "continue work" but "fix the 3 typecheck errors in test/foo.ts lines 86, 127, 166 by removing the reason property".]
 ---`
 
     const promptText = compacting.prompt ?? [defaultPrompt, ...compacting.context].join("\n\n")
@@ -224,6 +443,21 @@ When constructing the summary, try to stick to this template:
       })
     }
     if (processor.message.error) return "stop"
+
+    // Fire-and-forget: extract structured data + save summary to LEGION
+    runCompactionExtraction(input.sessionID, input.messages)
+    Session.messages({ sessionID: input.sessionID, limit: 5 })
+      .then((recent) => {
+        const compacted = recent.find((m) => m.info.id === msg.id)
+        if (!compacted) return
+        const text = compacted.parts
+          .filter((p): p is MessageV2.TextPart => p.type === "text")
+          .map((p) => p.text)
+          .join("\n")
+        if (text) saveToLegion(input.sessionID, text)
+      })
+      .catch(() => {})
+
     Bus.publish(Event.Compacted, { sessionID: input.sessionID })
     return "continue"
   }

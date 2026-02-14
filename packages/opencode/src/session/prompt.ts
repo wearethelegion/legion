@@ -293,6 +293,9 @@ export namespace SessionPrompt {
     let structuredOutput: unknown | undefined
 
     let step = 0
+    // Extraction capture: hoist references so post-loop extraction can access them
+    let _lastUser: MessageV2.User | undefined
+    let _msgs: MessageV2.WithParts[] = []
     const session = await Session.get(sessionID)
     while (true) {
       SessionStatus.set(sessionID, { type: "busy" })
@@ -318,6 +321,9 @@ export namespace SessionPrompt {
       }
 
       if (!lastUser) throw new Error("No user message found in stream. This should never happen.")
+      // Capture for post-loop extraction hook
+      _lastUser = lastUser
+      _msgs = msgs
       if (
         lastAssistant?.finish &&
         !["tool-calls", "unknown"].includes(lastAssistant.finish) &&
@@ -653,6 +659,40 @@ export namespace SessionPrompt {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
       }
 
+      // Infinite Conversation read path — inject graph context from prior sessions
+      try {
+        if (step === 1) {
+          // First message: Haiku-synthesized bootstrap from full graph context
+          const { SessionBootstrap } = await import("../extraction")
+          const bootstrapContext = await SessionBootstrap.bootstrap({
+            sessionId: sessionID,
+          })
+          if (bootstrapContext) system.push(bootstrapContext)
+        }
+
+        // Every message: lightweight regex-based recall for message-specific context
+        const userText = sessionMessages
+          .filter((m) => m.info.role === "user" && m.info.id === lastUser.id)
+          .flatMap((m) => m.parts)
+          .filter((p) => p.type === "text" && !p.synthetic)
+          .map((p) => (p as MessageV2.TextPart).text)
+          .join("\n")
+        if (userText) {
+          const { ExtractionRecall } = await import("../extraction")
+          const graphContext = await ExtractionRecall.recallForMessage({
+            userMessage: userText,
+            sessionId: sessionID,
+          })
+          if (graphContext) system.push(graphContext)
+        }
+      } catch (err) {
+        log.warn("infinite conversation read path failed", {
+          error: err instanceof Error ? err.message : String(err),
+          sessionID,
+          step,
+        })
+      }
+
       const result = await processor.process({
         user: lastUser,
         agent,
@@ -710,6 +750,44 @@ export namespace SessionPrompt {
       }
       continue
     }
+
+    // Fire async extraction for Infinite Conversation graph persistence
+    // Runs via queueMicrotask — never blocks the response flow
+    if (_lastUser && step > 0) {
+      const userText = _msgs
+        .filter((m) => m.info.role === "user" && m.info.id === _lastUser.id)
+        .flatMap((m) => m.parts)
+        .filter((p) => p.type === "text" && !p.synthetic)
+        .map((p) => (p as MessageV2.TextPart).text)
+        .join("\n")
+
+      const assistantText = _msgs
+        .filter((m) => m.info.role === "assistant" && m.info.id > _lastUser.id)
+        .flatMap((m) => m.parts)
+        .filter((p) => p.type === "text")
+        .map((p) => (p as MessageV2.TextPart).text)
+        .join("\n")
+
+      if (userText && assistantText) {
+        import("../extraction")
+          .then(({ ExtractionHook }) => {
+            ExtractionHook.onTurnComplete({
+              sessionId: sessionID,
+              turnNumber: step,
+              userMessage: userText,
+              assistantResponse: assistantText,
+            })
+          })
+          .catch((err) => {
+            log.warn("infinite conversation write path failed", {
+              error: err instanceof Error ? err.message : String(err),
+              sessionID,
+              step,
+            })
+          })
+      }
+    }
+
     SessionCompaction.prune({ sessionID })
     for await (const item of MessageV2.stream(sessionID)) {
       if (item.info.role === "user") continue

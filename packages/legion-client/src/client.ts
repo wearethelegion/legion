@@ -87,6 +87,11 @@ import type {
   ClaimDelegationResponse,
   UpdateHeartbeatResponse,
   ProgressStep,
+  StoreExtractionResponse,
+  RecallContextResponse,
+  BuildSessionBridgeResponse,
+  GetUserProfileResponse,
+  TurnExtractionProto,
 } from "./types"
 
 import { LegionError, LegionAuthError, LegionConnectionError } from "./errors"
@@ -115,6 +120,7 @@ const PROTO_FILES = [
   "ingestion.proto",
   "proxy.proto",
   "session.proto",
+  "conversation_extraction.proto",
 ]
 
 const PROTO_LOADER_OPTIONS: protoLoader.Options = {
@@ -204,6 +210,7 @@ export class LegionClient {
   private _ingestionClient: any = null
   private _proxyClient: any = null
   private _sessionClient: any = null
+  private _conversationExtractionClient: any = null
 
   constructor(options: LegionClientOptions = {}) {
     this.host = options.host ?? process.env.GRPC_SERVER_HOST ?? "localhost"
@@ -273,20 +280,17 @@ export class LegionClient {
   }
 
   private get knowledgeClient() {
-    if (!this._knowledgeClient)
-      this._knowledgeClient = this.getServiceClient("legion.knowledge", "KnowledgeService")
+    if (!this._knowledgeClient) this._knowledgeClient = this.getServiceClient("legion.knowledge", "KnowledgeService")
     return this._knowledgeClient
   }
 
   private get expertiseClient() {
-    if (!this._expertiseClient)
-      this._expertiseClient = this.getServiceClient("legion.expertise", "ExpertiseService")
+    if (!this._expertiseClient) this._expertiseClient = this.getServiceClient("legion.expertise", "ExpertiseService")
     return this._expertiseClient
   }
 
   private get memoryClient() {
-    if (!this._memoryClient)
-      this._memoryClient = this.getServiceClient("legion.memory", "MemoryService")
+    if (!this._memoryClient) this._memoryClient = this.getServiceClient("legion.memory", "MemoryService")
     return this._memoryClient
   }
 
@@ -302,27 +306,32 @@ export class LegionClient {
   }
 
   private get lessonsClient() {
-    if (!this._lessonsClient)
-      this._lessonsClient = this.getServiceClient("legion.lessons", "LessonsLearnedService")
+    if (!this._lessonsClient) this._lessonsClient = this.getServiceClient("legion.lessons", "LessonsLearnedService")
     return this._lessonsClient
   }
 
   private get ingestionClient() {
-    if (!this._ingestionClient)
-      this._ingestionClient = this.getServiceClient("legion.ingestion", "IngestionService")
+    if (!this._ingestionClient) this._ingestionClient = this.getServiceClient("legion.ingestion", "IngestionService")
     return this._ingestionClient
   }
 
   private get proxyClient() {
-    if (!this._proxyClient)
-      this._proxyClient = this.getServiceClient("legion.proxy", "ProxyService")
+    if (!this._proxyClient) this._proxyClient = this.getServiceClient("legion.proxy", "ProxyService")
     return this._proxyClient
   }
 
   private get sessionClient() {
-    if (!this._sessionClient)
-      this._sessionClient = this.getServiceClient("legion.session", "SessionService")
+    if (!this._sessionClient) this._sessionClient = this.getServiceClient("legion.session", "SessionService")
     return this._sessionClient
+  }
+
+  private get conversationExtractionClient() {
+    if (!this._conversationExtractionClient)
+      this._conversationExtractionClient = this.getServiceClient(
+        "legion.conversation_extraction",
+        "ConversationExtractionService",
+      )
+    return this._conversationExtractionClient
   }
 
   // -------------------------------------------------------------------------
@@ -465,9 +474,7 @@ export class LegionClient {
       // Auto-retry on UNAUTHENTICATED (password mode only)
       if (err?.code === grpc.status.UNAUTHENTICATED) {
         if (this.usingApiKey) {
-          throw new LegionAuthError(
-            "LEGION_API_KEY rejected. Token may be revoked or expired.",
-          )
+          throw new LegionAuthError("LEGION_API_KEY rejected. Token may be revoked or expired.")
         }
 
         // Re-authenticate and retry
@@ -485,11 +492,7 @@ export class LegionClient {
   // -------------------------------------------------------------------------
 
   /** Identity bootstrap. Returns agent identity, skills, available agents. */
-  async whoAmI(opts?: {
-    agentId?: string
-    companyId?: string
-    projectId?: string
-  }): Promise<WhoAmIResponse> {
+  async whoAmI(opts?: { agentId?: string; companyId?: string; projectId?: string }): Promise<WhoAmIResponse> {
     return this.callWithAuth(this.agentSkillClient, "WhoAmI", {
       agent_id: opts?.agentId ?? "",
       company_id: opts?.companyId ?? "",
@@ -498,10 +501,7 @@ export class LegionClient {
   }
 
   /** Get combined system prompt for delegation. */
-  async getAgentContext(
-    agentId: string,
-    projectId?: string,
-  ): Promise<GetAgentContextResponse> {
+  async getAgentContext(agentId: string, projectId?: string): Promise<GetAgentContextResponse> {
     return this.callWithAuth(this.agentSkillClient, "GetAgentContext", {
       agent_id: agentId,
       project_id: projectId ?? "",
@@ -573,10 +573,7 @@ export class LegionClient {
   }
 
   /** Link an expertise document to an agent as a skill. */
-  async linkAgentSkill(
-    agentId: string,
-    expertiseId: string,
-  ): Promise<LinkAgentSkillResponse> {
+  async linkAgentSkill(agentId: string, expertiseId: string): Promise<LinkAgentSkillResponse> {
     return this.callWithAuth(this.agentSkillClient, "LinkAgentSkill", {
       agent_id: agentId,
       expertise_id: expertiseId,
@@ -584,10 +581,7 @@ export class LegionClient {
   }
 
   /** Remove an expertise link from an agent. */
-  async unlinkAgentSkill(
-    agentId: string,
-    expertiseId: string,
-  ): Promise<UnlinkAgentSkillResponse> {
+  async unlinkAgentSkill(agentId: string, expertiseId: string): Promise<UnlinkAgentSkillResponse> {
     return this.callWithAuth(this.agentSkillClient, "UnlinkAgentSkill", {
       agent_id: agentId,
       expertise_id: expertiseId,
@@ -602,11 +596,7 @@ export class LegionClient {
   }
 
   /** Semantic search within one skill's chunks. */
-  async searchSkillDetails(
-    expertiseId: string,
-    query: string,
-    limit = 5,
-  ): Promise<SearchSkillDetailsResponse> {
+  async searchSkillDetails(expertiseId: string, query: string, limit = 5): Promise<SearchSkillDetailsResponse> {
     return this.callWithAuth(this.agentSkillClient, "SearchSkillDetails", {
       expertise_id: expertiseId,
       query,
@@ -727,10 +717,7 @@ export class LegionClient {
   }
 
   /** List all agents in a company with combined system prompts. */
-  async listCompanyAgents(
-    companyId: string,
-    projectId?: string,
-  ): Promise<ListCompanyAgentsResponse> {
+  async listCompanyAgents(companyId: string, projectId?: string): Promise<ListCompanyAgentsResponse> {
     return this.callWithAuth(this.agentSkillClient, "ListCompanyAgents", {
       company_id: companyId,
       project_id: projectId ?? "",
@@ -742,11 +729,7 @@ export class LegionClient {
   // -------------------------------------------------------------------------
 
   /** Hybrid semantic search across knowledge. */
-  async queryKnowledge(
-    query: string,
-    projectId: string,
-    limit = 10,
-  ): Promise<QueryKnowledgeResponse> {
+  async queryKnowledge(query: string, projectId: string, limit = 10): Promise<QueryKnowledgeResponse> {
     return this.callWithAuth(this.knowledgeClient, "QueryKnowledge", {
       query,
       project_id: projectId,
@@ -915,10 +898,7 @@ export class LegionClient {
   }
 
   /** Get all entries for an engagement with full content. */
-  async getEntries(
-    engagementId: string,
-    entryType?: string,
-  ): Promise<GetEntriesResponse> {
+  async getEntries(engagementId: string, entryType?: string): Promise<GetEntriesResponse> {
     return this.callWithAuth(this.engagementClient, "GetEntries", {
       engagement_id: engagementId,
       entry_type: entryType ?? "",
@@ -1080,10 +1060,7 @@ export class LegionClient {
   }
 
   /** Get overview of memory state for project/agent(s). */
-  async getActiveWorkStatus(
-    projectId: string,
-    agentId?: string,
-  ): Promise<GetActiveWorkStatusResponse> {
+  async getActiveWorkStatus(projectId: string, agentId?: string): Promise<GetActiveWorkStatusResponse> {
     return this.callWithAuth(this.memoryClient, "GetActiveWorkStatus", {
       project_id: projectId,
       agent_id: agentId ?? "",
@@ -1180,11 +1157,7 @@ export class LegionClient {
   }
 
   /** Link an artifact to a task for traceability. */
-  async linkArtifact(
-    taskId: string,
-    artifactType: string,
-    artifactId: string,
-  ): Promise<LinkArtifactResponse> {
+  async linkArtifact(taskId: string, artifactType: string, artifactId: string): Promise<LinkArtifactResponse> {
     return this.callWithAuth(this.taskClient, "LinkArtifact", {
       task_id: taskId,
       artifact_type: artifactType,
@@ -1193,10 +1166,7 @@ export class LegionClient {
   }
 
   /** Get artifacts linked to a task. */
-  async getArtifacts(
-    taskId: string,
-    artifactType?: string,
-  ): Promise<GetArtifactsResponse> {
+  async getArtifacts(taskId: string, artifactType?: string): Promise<GetArtifactsResponse> {
     return this.callWithAuth(this.taskClient, "GetArtifacts", {
       task_id: taskId,
       artifact_type: artifactType ?? "",
@@ -1236,11 +1206,7 @@ export class LegionClient {
   }
 
   /** Trace execution flow from an entry point. */
-  async traceExecutionFlow(
-    entryPoint: string,
-    projectId: string,
-    maxDepth = 5,
-  ): Promise<TraceExecutionFlowResponse> {
+  async traceExecutionFlow(entryPoint: string, projectId: string, maxDepth = 5): Promise<TraceExecutionFlowResponse> {
     return this.callWithAuth(this.codeClient, "TraceExecutionFlow", {
       entry_point: entryPoint,
       project_id: projectId,
@@ -1481,10 +1447,7 @@ export class LegionClient {
   }
 
   /** Mark orphaned delegations as interrupted (internal server RPC, no user_token). */
-  async markInterrupted(opts?: {
-    companyId?: string
-    ownerId?: string
-  }): Promise<MarkInterruptedResponse> {
+  async markInterrupted(opts?: { companyId?: string; ownerId?: string }): Promise<MarkInterruptedResponse> {
     return callUnary(this.delegationClient, "MarkInterrupted", {
       company_id: opts?.companyId ?? "",
       owner_id: opts?.ownerId ?? "",
@@ -1492,10 +1455,7 @@ export class LegionClient {
   }
 
   /** Claim ownership of a delegation (internal server RPC, no user_token). */
-  async claimDelegation(
-    delegationId: string,
-    ownerId: string,
-  ): Promise<ClaimDelegationResponse> {
+  async claimDelegation(delegationId: string, ownerId: string): Promise<ClaimDelegationResponse> {
     return callUnary(this.delegationClient, "ClaimDelegation", {
       delegation_id: delegationId,
       owner_id: ownerId,
@@ -1503,13 +1463,76 @@ export class LegionClient {
   }
 
   /** Update heartbeat timestamp (internal server RPC, no user_token). */
-  async updateHeartbeat(
-    delegationId: string,
-    ownerId: string,
-  ): Promise<UpdateHeartbeatResponse> {
+  async updateHeartbeat(delegationId: string, ownerId: string): Promise<UpdateHeartbeatResponse> {
     return callUnary(this.delegationClient, "UpdateHeartbeat", {
       delegation_id: delegationId,
       owner_id: ownerId,
+    })
+  }
+
+  // -------------------------------------------------------------------------
+  // Conversation Extraction
+  // -------------------------------------------------------------------------
+
+  /** Store a structured extraction from a conversation turn. */
+  async storeExtraction(opts: {
+    engagementId?: string
+    sessionId: string
+    turnNumber: number
+    agentId?: string
+    userMessage?: string
+    assistantMessage?: string
+    extraction: TurnExtractionProto
+    timestamp?: string
+    taskId?: string
+    delegationId?: string
+  }): Promise<StoreExtractionResponse> {
+    return this.callWithAuth(this.conversationExtractionClient, "StoreExtraction", {
+      engagement_id: opts.engagementId ?? "",
+      session_id: opts.sessionId,
+      turn_number: opts.turnNumber,
+      agent_id: opts.agentId ?? "",
+      user_message: opts.userMessage ?? "",
+      assistant_message: opts.assistantMessage ?? "",
+      extraction: opts.extraction,
+      timestamp: opts.timestamp ?? new Date().toISOString(),
+      task_id: opts.taskId ?? "",
+      delegation_id: opts.delegationId ?? "",
+    })
+  }
+
+  /** Recall context from the graph for given entity names or session. */
+  async recallContext(opts: {
+    entityNames?: string[]
+    engagementId?: string
+    projectId?: string
+    sessionId?: string
+    maxHops?: number
+    limit?: number
+  }): Promise<RecallContextResponse> {
+    return this.callWithAuth(this.conversationExtractionClient, "RecallContext", {
+      entity_names: opts.entityNames ?? [],
+      engagement_id: opts.engagementId ?? "",
+      project_id: opts.projectId ?? "",
+      session_id: opts.sessionId ?? "",
+      max_hops: opts.maxHops ?? 2,
+      limit: opts.limit ?? 20,
+    })
+  }
+
+  /** Build a session bridge for cross-session continuity. */
+  async buildSessionBridge(opts: { engagementId?: string; sessionId: string }): Promise<BuildSessionBridgeResponse> {
+    return this.callWithAuth(this.conversationExtractionClient, "BuildSessionBridge", {
+      engagement_id: opts.engagementId ?? "",
+      session_id: opts.sessionId,
+    })
+  }
+
+  /** Get user profile (preferences, recent decisions, active topics). */
+  async getUserProfile(opts: { projectId?: string; userId?: string }): Promise<GetUserProfileResponse> {
+    return this.callWithAuth(this.conversationExtractionClient, "GetUserProfile", {
+      project_id: opts.projectId ?? "",
+      user_id: opts.userId ?? "",
     })
   }
 
@@ -1533,6 +1556,7 @@ export class LegionClient {
       this._ingestionClient,
       this._proxyClient,
       this._sessionClient,
+      this._conversationExtractionClient,
     ]
     for (const client of clients) {
       if (client) {

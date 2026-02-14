@@ -1,0 +1,20 @@
+Delegate a task to a LEGION specialist agent running in an isolated subprocess.
+
+Each delegation spawns a separate headless process with full tool access (Read, Write, Edit, Bash, Grep, Glob, MCP tools, etc.). The agent's personality, system prompt, and skills are loaded from LEGION automatically.
+
+This tool returns IMMEDIATELY with the delegation_id. You do NOT need to poll or wait — delegation results are automatically injected into your system prompt when they complete.
+
+Parameters:
+- agent_id: UUID of the LEGION agent to delegate to
+- task: Clear description of what the agent should accomplish
+- engagement_id: LEGION engagement UUID for traceability
+- target_path: (optional) Working directory for the agent. Defaults to current project directory.
+- task_id: (optional) LEGION task UUID to link this delegation to
+- model: (optional) Model override in provider/model format (e.g. "anthropic/claude-sonnet-4-20250514")
+- context: (optional) Additional context prepended to the task
+
+Tips:
+- Launch multiple delegations in parallel by calling this tool multiple times in the same message
+- Results appear in your system prompt automatically — no need to call get_delegation_status
+- Each delegation is crash-isolated — one failing agent cannot affect others
+- Use engagement_id and task_id for full audit trail in LEGION

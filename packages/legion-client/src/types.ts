@@ -1702,6 +1702,92 @@ export interface RecordLessonResponse {
 }
 
 // ============================================================================
+// Conversation Extraction Types (conversation_extraction.proto)
+// ============================================================================
+
+export interface ExtractedConceptProto {
+  name: string
+  type: string
+  sentiment: string
+}
+
+export interface ExtractedDecisionProto {
+  summary: string
+  chose: string
+  rejected: string[]
+  reasoning: string
+  confidence: string
+}
+
+export interface ExtractedPreferenceProto {
+  category: string
+  key: string
+  value: string
+  strength: string
+}
+
+export interface ExtractedTopicProto {
+  name: string
+  status: string
+}
+
+export interface ExtractedCodeRefProto {
+  file: string
+  entity: string
+  action: string
+}
+
+export interface TurnExtractionProto {
+  concepts: ExtractedConceptProto[]
+  decisions: ExtractedDecisionProto[]
+  preferences: ExtractedPreferenceProto[]
+  topics: ExtractedTopicProto[]
+  code_refs: ExtractedCodeRefProto[]
+  intent: string
+  urgency: string
+  active_engagement_id?: string
+  active_task_id?: string
+  active_delegation_id?: string
+}
+
+export interface StoreExtractionResponse {
+  success: boolean
+  created_node_ids: string[]
+  error_message: string
+}
+
+export interface RecallContextItem {
+  type: string
+  summary: string
+  relationships: string[]
+  timestamp: string
+  confidence: string
+}
+
+export interface RecallContextResponse {
+  context_items: RecallContextItem[]
+  error_message: string
+  error_code: string
+}
+
+export interface BuildSessionBridgeResponse {
+  bridge_id: string
+  active_threads: string[]
+  open_questions: string[]
+  next_steps: string[]
+  error_message: string
+  error_code: string
+}
+
+export interface GetUserProfileResponse {
+  preferences: ExtractedPreferenceProto[]
+  recent_decisions: ExtractedDecisionProto[]
+  active_topics: ExtractedTopicProto[]
+  error_message: string
+  error_code: string
+}
+
+// ============================================================================
 // Client Configuration
 // ============================================================================
 
