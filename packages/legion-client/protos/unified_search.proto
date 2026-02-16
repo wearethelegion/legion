@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package legion.unified_search;
+
+// Unified Search Service - fans out queries across all LEGION data types
+service UnifiedSearchService {
+  rpc UnifiedSearch(UnifiedSearchRequest) returns (UnifiedSearchResponse);
+}
+
+// Request
+message UnifiedSearchRequest {
+  string user_token = 1;
+  string query = 2;
+  string project_id = 3;      // optional — omit for company-wide search
+  int32 limit_per_type = 4;   // optional, default 10
+  repeated string types = 5;  // optional filter: knowledge, expertise, lessons, entries, memories
+}
+
+// Individual result item
+message UnifiedSearchResult {
+  string type = 1;             // knowledge|expertise|lessons|entries|memories
+  string id = 2;
+  string title = 3;
+  string snippet = 4;
+  float score = 5;
+  string project_id = 6;
+  string metadata_json = 7;   // extra metadata as JSON string
+}
+
+// Response
+message UnifiedSearchResponse {
+  string status = 1;
+  repeated UnifiedSearchResult results = 2;
+  int32 results_count = 3;
+  repeated string types_searched = 4;
+  string error_message = 5;
+  string error_code = 6;
+}

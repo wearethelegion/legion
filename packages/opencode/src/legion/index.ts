@@ -9,7 +9,17 @@
 import { Log } from "../util/log"
 
 // Re-export public APIs
-export { authenticateLegion, getLegionClient, isLegionAvailable, closeLegionClient } from "./auth"
+export {
+  authenticateLegion,
+  getLegionClient,
+  isLegionAvailable,
+  closeLegionClient,
+  hasLegionCredentials,
+  clearLegionCredentials,
+  setLegionSession,
+  getLegionCompanyId,
+  getLegionProjectId,
+} from "./auth"
 export { bootstrapLegion, getLegionIdentity, clearLegionIdentity } from "./bootstrap"
 export type { LegionIdentity } from "./bootstrap"
 export { getLegionAgent, buildAgentConfig, getAvailableAgents } from "./agent-identity"
@@ -25,6 +35,7 @@ const log = Log.create({ service: "legion" })
 export interface LegionConfig {
   serverUrl?: string
   companyId?: string
+  projectId?: string
   email?: string
   password?: string
 }
@@ -80,7 +91,10 @@ export async function initializeLegion(config?: LegionConfig): Promise<LegionIni
   log.info("initializing LEGION integration")
 
   // Step 1: Authenticate (credentials from env vars)
-  const client = await authenticateLegion(config)
+  const client = await authenticateLegion(config).catch((err) => {
+    log.warn("LEGION authentication error", { error: err instanceof Error ? err.message : String(err) })
+    return null
+  })
   if (!client) {
     log.info("LEGION not available — OpenCode will run without LEGION")
     return result

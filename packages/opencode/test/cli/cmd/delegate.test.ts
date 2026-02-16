@@ -26,18 +26,18 @@ describe("DelegateCommand", () => {
     expect(typeof mod.DelegateCommand.handler).toBe("function")
   })
 
-  test("defines required options: agent-id, task, delegation-id, engagement-id, project-id, target-path, company-id, ipc-sock", async () => {
+  test("defines required options: agent_id, task, delegation_id, engagement_id, project_id, target_path, company_id, ipc_sock", async () => {
     const content = await fs.readFile(delegatePath, "utf-8")
 
     const requiredOptions = [
-      "agent-id",
+      "agent_id",
       "task",
-      "delegation-id",
-      "engagement-id",
-      "project-id",
-      "target-path",
-      "company-id",
-      "ipc-sock",
+      "delegation_id",
+      "engagement_id",
+      "project_id",
+      "target_path",
+      "company_id",
+      "ipc_sock",
     ]
 
     for (const opt of requiredOptions) {
@@ -75,14 +75,14 @@ describe("DelegateCommand", () => {
   test("handler maps CLI args to HeadlessMode.run() params", async () => {
     const content = await fs.readFile(delegatePath, "utf-8")
 
-    // Verify the handler correctly maps kebab-case CLI args to camelCase params
-    expect(content).toContain('args["agent-id"]')
+    // Verify the handler correctly maps underscore CLI args to camelCase params
+    expect(content).toContain("args.agent_id")
     expect(content).toContain("args.task")
-    expect(content).toContain('args["delegation-id"]')
-    expect(content).toContain('args["engagement-id"]')
-    expect(content).toContain('args["project-id"]')
-    expect(content).toContain('args["target-path"]')
-    expect(content).toContain('args["ipc-sock"]')
+    expect(content).toContain("args.delegation_id")
+    expect(content).toContain("args.engagement_id")
+    expect(content).toContain("args.project_id")
+    expect(content).toContain("args.target_path")
+    expect(content).toContain("args.ipc_sock")
     expect(content).toContain("args.model")
     expect(content).toContain("args.context")
   })

@@ -28,10 +28,43 @@ import { Truncate } from "./truncation"
 import { PlanExitTool, PlanEnterTool } from "./plan"
 import { ApplyPatchTool } from "./apply_patch"
 import { DelegateTool } from "./delegate"
+import { AllLegionTools } from "./legion"
 import { isLegionAvailable } from "../legion/auth"
 
 export namespace ToolRegistry {
   const log = Log.create({ service: "tool.registry" })
+
+  /** Cached initialized tools keyed by "providerID:modelID:agentName" */
+  const cache = new Map<
+    string,
+    {
+      id: string
+      description: string
+      parameters: z.ZodType
+      execute: Awaited<ReturnType<Tool.Info["init"]>>["execute"]
+    }[]
+  >()
+
+  /** Tools excluded in delegation subprocesses — orchestration-only or require interactivity */
+  const DELEGATION_EXCLUDED = new Set([
+    "delegate", // no nested delegations
+    "question", // headless rejects these
+    "plan_enter", // plan mode N/A
+    "plan_exit", // plan mode N/A
+    "task", // no subagent spawning inside delegations
+    "createAgent", // agent management is orchestrator's job
+    "updateAgent",
+    "deleteAgent",
+    "linkAgentSkill",
+    "unlinkAgentSkill",
+    "createWorkflow", // workflow authoring is orchestrator's job
+    "updateWorkflow",
+    "deleteWorkflow",
+    "cancelDelegation", // can't cancel from inside
+    "getDelegationStatus", // delegation management is parent's job
+    "getDelegationResult",
+    "listDelegations",
+  ])
 
   export const state = Instance.state(async () => {
     const custom = [] as Tool.Info[]
@@ -88,9 +121,10 @@ export namespace ToolRegistry {
     const idx = custom.findIndex((t) => t.id === tool.id)
     if (idx >= 0) {
       custom.splice(idx, 1, tool)
-      return
+    } else {
+      custom.push(tool)
     }
-    custom.push(tool)
+    cache.clear()
   }
 
   async function all(): Promise<Tool.Info[]> {
@@ -117,7 +151,7 @@ export namespace ToolRegistry {
       ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
       ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool, PlanEnterTool] : []),
-      ...(isLegionAvailable() ? [DelegateTool] : []),
+      ...(isLegionAvailable() ? [DelegateTool, ...AllLegionTools] : []),
       ...custom,
     ]
   }
@@ -133,10 +167,18 @@ export namespace ToolRegistry {
     },
     agent?: Agent.Info,
   ) {
-    const tools = await all()
+    const key = `${model.providerID}:${model.modelID}:${agent?.name ?? "_"}`
+    const cached = cache.get(key)
+    if (cached) return cached
+
+    const isDelegation = !!process.env.LEGION_DELEGATION_ID
+    const items = await all()
     const result = await Promise.all(
-      tools
+      items
         .filter((t) => {
+          // Delegation subprocesses: exclude orchestration-only tools
+          if (isDelegation && DELEGATION_EXCLUDED.has(t.id)) return false
+
           // Enable websearch/codesearch for zen users OR via enable flag
           if (t.id === "codesearch" || t.id === "websearch") {
             return model.providerID === "opencode" || Flag.OPENCODE_ENABLE_EXA
@@ -158,6 +200,7 @@ export namespace ToolRegistry {
           }
         }),
     )
+    cache.set(key, result)
     return result
   }
 }

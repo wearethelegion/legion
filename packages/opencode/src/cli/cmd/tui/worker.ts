@@ -10,6 +10,7 @@ import { GlobalBus } from "@/bus/global"
 import { createOpencodeClient, type Event } from "@opencode-ai/sdk/v2"
 import type { BunWebSocketData } from "hono/bun"
 import { Flag } from "@/flag/flag"
+import { setLegionSession } from "@/legion/auth"
 
 await Log.init({
   print: process.argv.includes("--print-logs"),
@@ -133,6 +134,35 @@ export const rpc = {
   async reload() {
     Config.global.reset()
     await Instance.disposeAll()
+  },
+  async loginLegion(input: { email: string; password: string; serverUrl?: string }) {
+    Log.Default.info("worker.loginLegion: starting", { email: input.email, serverUrl: input.serverUrl ?? "default" })
+    try {
+      const { authenticateLegion } = await import("@/legion/auth")
+      Log.Default.info("worker.loginLegion: imported authenticateLegion, calling...")
+      const client = await authenticateLegion(input)
+      if (!client) {
+        Log.Default.warn("worker.loginLegion: authenticateLegion returned null")
+        return { success: false as const, error: "Authentication returned null" }
+      }
+      Log.Default.info("worker.loginLegion: success", {
+        email: client.userEmail,
+        projects: String(client.userProjects.length),
+      })
+      return {
+        success: true as const,
+        projects: client.userProjects,
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      Log.Default.error("worker.loginLegion: error", { error: msg })
+      return { success: false as const, error: msg }
+    }
+  },
+  async selectProject(input: { companyId: string; projectId: string }) {
+    setLegionSession(input.companyId, input.projectId)
+    process.env.LEGION_COMPANY_ID = input.companyId
+    process.env.LEGION_PROJECT_ID = input.projectId
   },
   async shutdown() {
     Log.Default.info("worker shutting down")

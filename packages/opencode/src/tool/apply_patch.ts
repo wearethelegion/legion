@@ -16,6 +16,7 @@ import { File } from "../file"
 
 const PatchParams = z.object({
   patchText: z.string().describe("The full patch text that describes all changes to be made"),
+  engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
 })
 
 export const ApplyPatchTool = Tool.define("apply_patch", {

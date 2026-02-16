@@ -8,6 +8,7 @@
 
 import type { TurnExtractionProto } from "@opencode-ai/legion-client"
 import { getLegionClient, isLegionAvailable } from "../legion/auth"
+import { Config } from "../config/config"
 import { Log } from "../util/log"
 import { ExtractionBuffer, type BufferRow } from "./buffer"
 import type { TurnExtraction } from "./schema"
@@ -95,6 +96,9 @@ export namespace ExtractionDrain {
    */
   export async function drainOnce(): Promise<void> {
     if (!isLegionAvailable()) return
+
+    const cfg = await Config.get()
+    if (cfg.legion?.extraction?.enabled === false) return
 
     try {
       // Process pending items

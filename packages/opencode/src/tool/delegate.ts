@@ -1,14 +1,22 @@
 import z from "zod"
+import path from "path"
 import { spawn } from "child_process"
+import { openSync } from "fs"
 import { randomUUID } from "crypto"
 import { Tool } from "./tool"
 import { Log } from "../util/log"
 import { Instance } from "../project/instance"
-import { Config } from "../config/config"
+import { Installation } from "../installation"
 import { getLegionIdentity } from "../legion"
+import { companyId as getCompanyId, projectId as getProjectId } from "./legion/index"
+import { IpcServer } from "../legion/ipc/server"
+import type { StatusEvent } from "../legion/ipc/protocol"
 import DESCRIPTION from "./delegate.txt"
 
 const log = Log.create({ service: "tool.delegate" })
+
+/** Active IPC servers keyed by delegation ID — cleaned up on child disconnect */
+const servers = new Map<string, IpcServer>()
 
 const parameters = z.object({
   agent_id: z.string().describe("LEGION agent UUID to delegate to"),
@@ -30,14 +38,31 @@ const parameters = z.object({
  * Build the CLI command array to spawn `opencode delegate`.
  *
  * Development: bun --conditions=browser ./src/index.ts delegate ...
- * Compiled:    /path/to/opencode delegate ...
+ * Compiled:    /path/to/legion delegate ...
+ *
+ * IMPORTANT: process.argv[1] may be worker.ts when running inside the TUI
+ * Worker of a compiled binary — its bunfs path matches /\.[tj]sx?$/ even
+ * though we're in compiled mode. We use Installation.isLocal() (a build-time
+ * constant) instead of inspecting argv for reliable dev/compiled detection.
  */
-function command(args: string[]): string[] {
-  const entry = process.argv[1]
-  if (entry?.match(/\.[tj]sx?$/)) {
-    return [process.execPath, "--conditions=browser", entry, "delegate", ...args]
+/**
+ * Resolve the opencode package root directory.
+ * In dev mode: directory containing src/index.ts (two levels up from src/tool/)
+ * In compiled mode: directory containing the binary
+ */
+function packageDir(): string {
+  if (Installation.isLocal()) {
+    return new URL("../..", import.meta.url).pathname
   }
-  return [process.execPath, "delegate", ...args]
+  return path.dirname(process.execPath)
+}
+
+function command(args: string[]): string[] {
+  if (Installation.isLocal()) {
+    const indexPath = new URL("../index.ts", import.meta.url).pathname
+    return [process.execPath, "--conditions=browser", indexPath, "--print-logs", "delegate", ...args]
+  }
+  return [process.execPath, "--print-logs", "delegate", ...args]
 }
 
 /**
@@ -56,40 +81,33 @@ export const DelegateTool = Tool.define("delegate", async () => {
     description: DESCRIPTION,
     parameters,
     async execute(params: z.infer<typeof parameters>) {
-      const config = await Config.get()
-      const projectId = process.env.LEGION_PROJECT_ID ?? ""
-      const companyId = process.env.LEGION_COMPANY_ID ?? config.legion?.companyId ?? ""
-
-      if (!companyId) {
-        throw new Error(
-          "LEGION company_id not available. Set LEGION_COMPANY_ID env var or configure legion.companyId in config.",
-        )
-      }
+      const delegationCompanyId = getCompanyId()
+      const delegationProjectId = getProjectId()
 
       const delegationId = randomUUID()
       const socketPath = `/tmp/legion-deleg-${delegationId}.sock`
       const targetPath = params.target_path ?? Instance.directory
 
       const args = [
-        "--agent-id",
+        "--agent_id",
         params.agent_id,
         "--task",
         params.task,
-        "--delegation-id",
+        "--delegation_id",
         delegationId,
-        "--engagement-id",
+        "--engagement_id",
         params.engagement_id,
-        "--project-id",
-        projectId,
-        "--company-id",
-        companyId,
-        "--target-path",
+        "--project_id",
+        delegationProjectId,
+        "--company_id",
+        delegationCompanyId,
+        "--target_path",
         targetPath,
-        "--ipc-sock",
+        "--ipc_sock",
         socketPath,
       ]
 
-      if (params.task_id) args.push("--task-id", params.task_id)
+      if (params.task_id) args.push("--task_id", params.task_id)
       if (params.model) args.push("--model", params.model)
       if (params.context) args.push("--context", params.context)
 
@@ -99,11 +117,50 @@ export const DelegateTool = Tool.define("delegate", async () => {
         delegationId,
         agentId: params.agent_id,
         targetPath,
+        projectId: delegationProjectId,
+        companyId: delegationCompanyId,
       })
 
+      // Start IPC server BEFORE spawning child so the socket is ready to accept
+      let ipc: IpcServer | null = null
+      try {
+        ipc = await IpcServer.listen(socketPath)
+        servers.set(delegationId, ipc)
+
+        ipc.onEvent((event) => {
+          log.info("delegation event", {
+            delegationId,
+            type: event.type,
+            agent: params.agent_id,
+          })
+
+          // Clean up server when delegation finishes
+          if (event.type === "status") {
+            const status = (event as StatusEvent).status
+            if (status === "completed" || status === "failed" || status === "cancelled") {
+              setTimeout(() => {
+                const srv = servers.get(delegationId)
+                if (srv) {
+                  srv.close()
+                  servers.delete(delegationId)
+                  log.info("IPC server cleaned up", { delegationId })
+                }
+              }, 5000) // 5s grace for final events
+            }
+          }
+        })
+      } catch (err) {
+        log.warn("failed to start IPC server — child will run in degraded mode", {
+          delegationId,
+          error: err instanceof Error ? err.message : String(err),
+        })
+      }
+
+      const stderrLogPath = `/tmp/legion-deleg-${delegationId}.stderr`
+      const stderrFd = openSync(stderrLogPath, "w")
       const proc = spawn(cmd[0], cmd.slice(1), {
-        cwd: targetPath,
-        stdio: ["ignore", "ignore", "ignore"],
+        cwd: packageDir(),
+        stdio: ["ignore", "ignore", stderrFd],
         detached: process.platform !== "win32",
         env: { ...process.env },
       })
@@ -111,7 +168,24 @@ export const DelegateTool = Tool.define("delegate", async () => {
       // Detach child so parent can exit independently
       proc.unref()
 
+      // Clean up IPC on process exit
+      proc.on("exit", (code) => {
+        log.info("delegation process exited", {
+          delegationId,
+          code: String(code ?? "unknown"),
+        })
+        const srv = servers.get(delegationId)
+        if (srv) {
+          srv.close()
+          servers.delete(delegationId)
+        }
+      })
+
       if (!proc.pid) {
+        if (ipc) {
+          ipc.close()
+          servers.delete(delegationId)
+        }
         throw new Error("Failed to spawn delegation subprocess")
       }
 
@@ -124,10 +198,43 @@ export const DelegateTool = Tool.define("delegate", async () => {
         pid: String(pid),
       })
 
+      // Wait for the first IPC event to get the server-assigned delegation ID.
+      // The subprocess calls gRPC CreateDelegation which returns a different UUID
+      // than our local randomUUID(). The child updates its delegationId before
+      // emitting any IPC events, so the first event's delegationId is the real one.
+      let realId: string = delegationId
+      if (ipc) {
+        const timeout = 30_000
+        try {
+          realId = await new Promise<string>((resolve, reject) => {
+            const timer = setTimeout(() => {
+              reject(new Error("timeout waiting for first IPC event"))
+            }, timeout)
+
+            ipc.onEvent((event) => {
+              clearTimeout(timer)
+              resolve(event.delegationId)
+            })
+
+            // If child exits before sending any event, don't hang
+            proc.on("exit", () => {
+              clearTimeout(timer)
+              reject(new Error("child exited before sending IPC event"))
+            })
+          })
+          log.info("resolved server delegation ID", { localId: delegationId, serverId: realId })
+        } catch (err) {
+          log.warn("could not resolve server delegation ID — using local UUID", {
+            delegationId,
+            error: err instanceof Error ? err.message : String(err),
+          })
+        }
+      }
+
       const output = [
         `Delegation spawned successfully.`,
         ``,
-        `delegation_id: ${delegationId}`,
+        `delegation_id: ${realId}`,
         `agent: ${label}`,
         `pid: ${pid}`,
         `socket: ${socketPath}`,
@@ -140,7 +247,7 @@ export const DelegateTool = Tool.define("delegate", async () => {
       return {
         title: `Delegated to ${label}`,
         metadata: {
-          delegationId,
+          delegationId: realId,
           agentId: params.agent_id,
           pid,
           socketPath,

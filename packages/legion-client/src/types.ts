@@ -1788,6 +1788,29 @@ export interface GetUserProfileResponse {
 }
 
 // ============================================================================
+// Unified Search Types (unified_search.proto)
+// ============================================================================
+
+export interface UnifiedSearchResult {
+  type: string
+  id: string
+  title: string
+  snippet: string
+  score: number
+  project_id: string
+  metadata_json: string
+}
+
+export interface UnifiedSearchResponse {
+  status: string
+  results: UnifiedSearchResult[]
+  results_count: number
+  types_searched: string[]
+  error_message: string
+  error_code: string
+}
+
+// ============================================================================
 // Client Configuration
 // ============================================================================
 
@@ -1802,6 +1825,12 @@ export interface LegionClientOptions {
   email?: string
   /** Password for password auth (overrides MCP_USER_PASSWORD env var) */
   password?: string
+  /**
+   * Pre-compiled proto JSON descriptor (from protobufjs Root.toJSON()).
+   * When provided, skips filesystem-based proto loading entirely — needed
+   * for compiled Bun binaries where proto files aren't on disk.
+   */
+  protoJSON?: Record<string, any>
 }
 
 export interface AuthResult {

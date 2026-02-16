@@ -5,7 +5,7 @@
  * name, role, personality, system_prompt, capabilities, skills, available agents,
  * permanent memories, workflows, and project instructions.
  *
- * Caches identity to `.opencode/cache/legion-identity.json` for offline fallback.
+ * Caches identity to `.legion/cache/legion-identity.json` for offline fallback.
  */
 
 import type { WhoAmIResponse } from "@opencode-ai/legion-client"
@@ -39,7 +39,7 @@ let cachedIdentity: LegionIdentity | null = null
 // Cache paths
 // ---------------------------------------------------------------------------
 
-const CACHE_DIR = path.join(".opencode", "cache")
+const CACHE_DIR = path.join(".legion", "cache")
 const CACHE_FILE = path.join(CACHE_DIR, "legion-identity.json")
 
 /**

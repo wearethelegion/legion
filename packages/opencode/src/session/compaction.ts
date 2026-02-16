@@ -14,7 +14,7 @@ import { Agent } from "@/agent/agent"
 import { Plugin } from "@/plugin"
 import { Config } from "@/config/config"
 import { ProviderTransform } from "@/provider/transform"
-import { isLegionAvailable, getLegionClient } from "../legion/auth"
+import { getLegionClient } from "../legion/auth"
 import { ExtractionBuffer } from "../extraction/buffer"
 import { extractForCompaction } from "../extraction/extract"
 
@@ -175,6 +175,64 @@ export namespace SessionCompaction {
     }
   }
 
+  /**
+   * Extract the last N user/assistant exchanges as clean text.
+   * Preserves the immediate working context so the agent knows
+   * exactly what it was doing right before compaction.
+   */
+  function extractRecentTurns(messages: MessageV2.WithParts[], maxTurns = 5): string {
+    const turns: string[] = []
+    let count = 0
+
+    for (let i = messages.length - 1; i >= 0 && count < maxTurns; i--) {
+      const msg = messages[i]
+      if (msg.info.role === "assistant" && (msg.info as MessageV2.Assistant).summary) continue
+
+      const role = msg.info.role === "user" ? "User" : "Assistant"
+      const texts: string[] = []
+
+      for (const part of msg.parts) {
+        if (part.type === "text") {
+          if ("synthetic" in part && part.synthetic) continue
+          const cleaned = part.text.replace(SYSTEM_REMINDER, "").replace(LEGION_IDENTITY, "").trim()
+          if (cleaned) texts.push(cleaned)
+        }
+        if (part.type === "tool" && part.state.status === "completed") {
+          const input = "input" in part.state ? part.state.input : {}
+          const vals = Object.values(input)
+          const arg = vals.length > 0 ? String(vals[0]) : ""
+          const brief = arg.length > 120 ? arg.slice(0, 120) + "..." : arg
+          texts.push(`[Tool: ${part.tool}(${brief})]`)
+        }
+      }
+
+      if (texts.length > 0) {
+        turns.unshift(`**${role}:** ${texts.join("\n")}`)
+        if (msg.info.role === "user") count++
+      }
+    }
+
+    return turns.join("\n\n")
+  }
+
+  /**
+   * Build LEGION context block with active IDs for session resumption.
+   */
+  function buildLegionContext(): string {
+    const lines: string[] = []
+    const agentId = env.LEGION_AGENT_ID
+    const projectId = env.LEGION_PROJECT_ID
+    const engagementId = env.LEGION_ENGAGEMENT_ID
+    const companyId = env.LEGION_COMPANY_ID
+
+    if (agentId) lines.push(`- agent_id: ${agentId}`)
+    if (projectId) lines.push(`- project_id: ${projectId}`)
+    if (companyId) lines.push(`- company_id: ${companyId}`)
+    if (engagementId) lines.push(`- engagement_id: ${engagementId}`)
+
+    return lines.length > 0 ? lines.join("\n") : ""
+  }
+
   export async function process(input: {
     parentID: string
     messages: MessageV2.WithParts[]
@@ -182,128 +240,13 @@ export namespace SessionCompaction {
     abort: AbortSignal
     auto: boolean
   }) {
-    // Try graph-based compaction first (no LLM call needed)
-    if (isLegionAvailable()) {
-      try {
-        const result = await graphCompaction(input)
-        if (result) return result
-      } catch (err) {
-        log.warn("graph compaction failed, falling back to LLM", {
-          error: err instanceof Error ? err.message : String(err),
-        })
-      }
-    }
-
-    // Fallback: original LLM-based compaction
     return llmCompaction(input)
   }
 
   /**
-   * Graph-based compaction: query Neo4j for session knowledge,
-   * keep last N raw turns, inject graph summary as the compaction message.
-   * No LLM call — instant, structured, lossless.
-   */
-  async function graphCompaction(input: {
-    parentID: string
-    messages: MessageV2.WithParts[]
-    sessionID: string
-    abort: AbortSignal
-    auto: boolean
-  }): Promise<"continue" | "stop" | null> {
-    const { GraphCompaction } = await import("../extraction")
-
-    const summary = await GraphCompaction.buildSessionSummary({
-      sessionId: input.sessionID,
-    })
-
-    if (!summary) return null // No graph data — fall back to LLM
-
-    log.info("using graph-based compaction")
-
-    const userMessage = input.messages.findLast((m) => m.info.id === input.parentID)!.info as MessageV2.User
-    const agent = await Agent.get("compaction")
-    const model = agent.model
-      ? await Provider.getModel(agent.model.providerID, agent.model.modelID)
-      : await Provider.getModel(userMessage.model.providerID, userMessage.model.modelID)
-
-    // Create the compaction assistant message (summary: true marks the breakpoint)
-    const msg = (await Session.updateMessage({
-      id: Identifier.ascending("message"),
-      role: "assistant",
-      parentID: input.parentID,
-      sessionID: input.sessionID,
-      mode: "compaction",
-      agent: "compaction",
-      variant: userMessage.variant,
-      summary: true,
-      path: {
-        cwd: Instance.directory,
-        root: Instance.worktree,
-      },
-      cost: 0,
-      tokens: {
-        output: 0,
-        input: 0,
-        reasoning: 0,
-        cache: { read: 0, write: 0 },
-      },
-      modelID: model.id,
-      providerID: model.providerID,
-      time: {
-        created: Date.now(),
-      },
-    })) as MessageV2.Assistant
-
-    // Insert the graph summary as a text part — no LLM call needed
-    await Session.updatePart({
-      id: Identifier.ascending("part"),
-      messageID: msg.id,
-      sessionID: input.sessionID,
-      type: "text",
-      text: summary,
-      time: {
-        start: Date.now(),
-        end: Date.now(),
-      },
-    })
-
-    // Auto-continue: add synthetic "continue" user message
-    if (input.auto) {
-      const continueMsg = await Session.updateMessage({
-        id: Identifier.ascending("message"),
-        role: "user",
-        sessionID: input.sessionID,
-        time: {
-          created: Date.now(),
-        },
-        agent: userMessage.agent,
-        model: userMessage.model,
-      })
-      await Session.updatePart({
-        id: Identifier.ascending("part"),
-        messageID: continueMsg.id,
-        sessionID: input.sessionID,
-        type: "text",
-        synthetic: true,
-        text: "Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.",
-        time: {
-          start: Date.now(),
-          end: Date.now(),
-        },
-      })
-    }
-
-    // Fire-and-forget: extract structured data + save summary to LEGION
-    runCompactionExtraction(input.sessionID, input.messages)
-    saveToLegion(input.sessionID, summary)
-
-    Bus.publish(Event.Compacted, { sessionID: input.sessionID })
-    return "continue"
-  }
-
-  /**
-   * Original LLM-based compaction (fallback when graph is unavailable).
-   * Sends the full conversation to the compaction agent to produce a summary.
+   * LLM-based compaction with recent turn preservation.
+   * Sends the full conversation to the compaction agent to produce a summary,
+   * enhanced with the last 3-5 raw turns and LEGION resumption context.
    */
   async function llmCompaction(input: {
     parentID: string
@@ -355,45 +298,31 @@ export namespace SessionCompaction {
       { sessionID: input.sessionID },
       { context: [], prompt: undefined },
     )
-    const defaultPrompt = `Produce a comprehensive session handoff prompt. This will be given to an agent in a NEW session with ZERO prior context — it must be fully self-contained.
+    const recentTurns = extractRecentTurns(input.messages)
+    const legionContext = buildLegionContext()
 
-The prompt must enable the next agent to resume work immediately without asking questions.
+    const defaultPrompt = `Your context is about to be reset. Write a next prompt for yourself so you can resume after waking up with ZERO memory.
 
-Use this exact template:
+Most of your work context is already stored in LEGION (engagement entries, knowledge, expertise, lessons, memories). You do NOT need to reproduce it — just capture the IDs to reconnect and anything NOT yet recorded.
+
+${legionContext ? `## Known LEGION IDs (include these verbatim)\n${legionContext}` : "Extract ALL LEGION IDs mentioned in the conversation: engagement_id, task_id, agent_id, project_id, company_id."}
+
+Write your next prompt with this structure:
+
 ---
+## LEGION IDs
+[Every UUID needed to resume. These let you call resumeEngagement(), getTask(), recall() to pull everything back from LEGION.]
+
 ## Goal
+[One sentence: what the user wants and why.]
 
-[The user's overarching objective. Be specific — not "build a feature" but "build X that does Y for Z reason".]
+## Unrecorded state
+[ONLY information that has NOT been saved to LEGION yet — recent decisions, findings, or context from the last few turns that weren't captured via addEntry/remember/recordLesson. If everything was recorded, say so.]
 
-## Instructions
-
-- [Every instruction the user gave that is still relevant — preferences, constraints, conventions, tool usage rules]
-- [If there is a plan, spec, or architecture doc, include its location and key points]
-- [Agent IDs, project IDs, company IDs, engagement IDs — any UUIDs the next session needs]
-
-## Discoveries
-
-[Technical findings, architecture insights, edge cases found, decisions made and WHY. Include file paths and line numbers where relevant. This is institutional knowledge — don't lose it.]
-
-## Accomplished
-
-### Completed
-- [Each completed task with enough detail to not redo it]
-
-### In Progress
-- [Anything partially done — what's done, what remains, blockers]
-
-### Not Started
-- [Remaining work items]
-
-## Relevant files / directories
-
-[Structured list of files read, edited, or created. Group by feature/component. Include line numbers for key locations. If all files in a directory are relevant, list the directory.]
-
-## Current Blocker / Next Step
-
-[The SINGLE most important thing the next agent should do first. Be actionable — not "continue work" but "fix the 3 typecheck errors in test/foo.ts lines 86, 127, 166 by removing the reason property".]
----`
+## Current state and next step
+[What you were doing RIGHT NOW and the specific next action. Not "continue work" — be exact: "fix typecheck error in src/foo.ts:86, then run tests".]
+---
+${recentTurns ? `\n## Recent conversation (last 5 turns)\nPreserve any substance from these that isn't already in LEGION:\n\n${recentTurns}` : ""}`
 
     const promptText = compacting.prompt ?? [defaultPrompt, ...compacting.context].join("\n\n")
     const result = await processor.process({
@@ -435,7 +364,10 @@ Use this exact template:
         sessionID: input.sessionID,
         type: "text",
         synthetic: true,
-        text: "Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.",
+        text: `Context was reset. Your next prompt is above — use the LEGION IDs in it to restore your full context:
+1. recall("session continuation") — recover working memories
+${env.LEGION_ENGAGEMENT_ID ? `2. resumeEngagement("${env.LEGION_ENGAGEMENT_ID}") — reload all entries, decisions, plans` : "2. listEngagements → resumeEngagement() — find and reload your engagement"}
+3. Execute the next step from your prompt. You already told yourself what to do.`,
         time: {
           start: Date.now(),
           end: Date.now(),

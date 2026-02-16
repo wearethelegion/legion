@@ -7,6 +7,7 @@
  */
 
 import { isLegionAvailable } from "../legion/auth"
+import { Config } from "../config/config"
 import { Log } from "../util/log"
 import { extractTurn, shouldSkipExtraction } from "./extract"
 import { ExtractionBuffer } from "./buffer"
@@ -35,6 +36,12 @@ export namespace ExtractionHook {
 
     queueMicrotask(async () => {
       try {
+        const cfg = await Config.get()
+        if (cfg.legion?.extraction?.enabled === false) {
+          log.debug("extraction disabled via config", { sessionId: params.sessionId })
+          return
+        }
+
         const previousRows = ExtractionBuffer.getSessionExtractions(params.sessionId, 5)
         const previousState = previousRows.map((r) => JSON.parse(r.extraction_json) as TurnExtraction)
 

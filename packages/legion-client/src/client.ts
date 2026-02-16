@@ -92,6 +92,7 @@ import type {
   BuildSessionBridgeResponse,
   GetUserProfileResponse,
   TurnExtractionProto,
+  UnifiedSearchResponse,
 } from "./types"
 
 import { LegionError, LegionAuthError, LegionConnectionError } from "./errors"
@@ -121,6 +122,7 @@ const PROTO_FILES = [
   "proxy.proto",
   "session.proto",
   "conversation_extraction.proto",
+  "unified_search.proto",
 ]
 
 const PROTO_LOADER_OPTIONS: protoLoader.Options = {
@@ -191,10 +193,17 @@ export class LegionClient {
   public userEmail: string | null = null
   public userProjects: ProjectItem[] = []
 
+  /**
+   * Active session ID. When set, included as `x-session-id` gRPC metadata
+   * on every call so the server can correlate tool invocations to a session.
+   */
+  public sessionId: string | null = null
+
   // gRPC primitives
   private credentials: grpc.ChannelCredentials
   private packageDefinition: protoLoader.PackageDefinition | null = null
   private grpcObject: any = null
+  private protoJSON: Record<string, any> | null = null
 
   // Lazy service stubs (created on first use)
   private _authClient: any = null
@@ -211,6 +220,7 @@ export class LegionClient {
   private _proxyClient: any = null
   private _sessionClient: any = null
   private _conversationExtractionClient: any = null
+  private _unifiedSearchClient: any = null
 
   constructor(options: LegionClientOptions = {}) {
     this.host = options.host ?? process.env.GRPC_SERVER_HOST ?? "localhost"
@@ -220,6 +230,7 @@ export class LegionClient {
     this.apiKey = options.apiKey ?? process.env.LEGION_API_KEY ?? null
     this.email = options.email ?? process.env.MCP_USER_EMAIL ?? null
     this.password = options.password ?? process.env.MCP_USER_PASSWORD ?? null
+    this.protoJSON = options.protoJSON ?? null
 
     // Use insecure for local dev; will add TLS option later
     this.credentials = grpc.credentials.createInsecure()
@@ -233,8 +244,15 @@ export class LegionClient {
   private ensureProtos(): void {
     if (this.packageDefinition) return
 
-    const protoFiles = PROTO_FILES.map((f) => path.join(PROTOS_DIR, f))
-    this.packageDefinition = protoLoader.loadSync(protoFiles, PROTO_LOADER_OPTIONS)
+    if (this.protoJSON) {
+      // Use pre-compiled JSON descriptor (for compiled binaries where .proto
+      // files aren't on disk). Uses protoLoader.fromJSON which reconstructs
+      // a PackageDefinition from a protobufjs Root JSON without filesystem access.
+      this.packageDefinition = protoLoader.fromJSON(this.protoJSON, PROTO_LOADER_OPTIONS)
+    } else {
+      const protoFiles = PROTO_FILES.map((f) => path.join(PROTOS_DIR, f))
+      this.packageDefinition = protoLoader.loadSync(protoFiles, PROTO_LOADER_OPTIONS)
+    }
     this.grpcObject = grpc.loadPackageDefinition(this.packageDefinition)
   }
 
@@ -334,6 +352,12 @@ export class LegionClient {
     return this._conversationExtractionClient
   }
 
+  private get unifiedSearchClient() {
+    if (!this._unifiedSearchClient)
+      this._unifiedSearchClient = this.getServiceClient("legion.unified_search", "UnifiedSearchService")
+    return this._unifiedSearchClient
+  }
+
   // -------------------------------------------------------------------------
   // Auth helpers
   // -------------------------------------------------------------------------
@@ -343,6 +367,9 @@ export class LegionClient {
     const meta = new grpc.Metadata()
     if (this.token) {
       meta.set("authorization", `Bearer ${this.token}`)
+    }
+    if (this.sessionId) {
+      meta.set("x-session-id", this.sessionId)
     }
     return meta
   }
@@ -811,6 +838,7 @@ export class LegionClient {
     companyId?: string
     agentId?: string
     summary?: string
+    engagementId?: string
   }): Promise<CreateEngagementResponse> {
     return this.callWithAuth(this.engagementClient, "CreateEngagement", {
       project_id: opts.projectId,
@@ -819,6 +847,7 @@ export class LegionClient {
       company_id: opts.companyId ?? "",
       agent_id: opts.agentId ?? "",
       summary: opts.summary ?? "",
+      engagement_id: opts.engagementId ?? "",
     })
   }
 
@@ -832,20 +861,21 @@ export class LegionClient {
   /** List engagements for a project. */
   async listEngagements(
     projectId: string,
-    opts?: { status?: string; limit?: number; offset?: number },
+    opts?: { status?: string; limit?: number; offset?: number; engagementId?: string },
   ): Promise<ListEngagementsResponse> {
     return this.callWithAuth(this.engagementClient, "ListEngagements", {
       project_id: projectId,
       status: opts?.status ?? "",
       limit: opts?.limit ?? 50,
       offset: opts?.offset ?? 0,
+      engagement_id: opts?.engagementId ?? "",
     })
   }
 
   /** Update engagement details. */
   async updateEngagement(
     engagementId: string,
-    opts?: { name?: string; status?: string; summary?: string; ultimateGoal?: string },
+    opts?: { name?: string; status?: string; summary?: string; ultimateGoal?: string; parentEngagementId?: string },
   ): Promise<UpdateEngagementResponse> {
     return this.callWithAuth(this.engagementClient, "UpdateEngagement", {
       engagement_id: engagementId,
@@ -853,6 +883,7 @@ export class LegionClient {
       status: opts?.status ?? "",
       summary: opts?.summary ?? "",
       ultimate_goal: opts?.ultimateGoal ?? "",
+      parent_engagement_id: opts?.parentEngagementId ?? "",
     })
   }
 
@@ -1471,6 +1502,24 @@ export class LegionClient {
   }
 
   // -------------------------------------------------------------------------
+  // Public API Methods — Unified Search Service
+  // -------------------------------------------------------------------------
+
+  /** Unified search across all LEGION data types. */
+  async unifiedSearch(
+    query: string,
+    projectId?: string,
+    opts?: { types?: string[]; limitPerType?: number },
+  ): Promise<UnifiedSearchResponse> {
+    return this.callWithAuth(this.unifiedSearchClient, "UnifiedSearch", {
+      query,
+      project_id: projectId ?? "",
+      types: opts?.types ?? [],
+      limit_per_type: opts?.limitPerType ?? 10,
+    })
+  }
+
+  // -------------------------------------------------------------------------
   // Conversation Extraction
   // -------------------------------------------------------------------------
 
@@ -1557,6 +1606,7 @@ export class LegionClient {
       this._proxyClient,
       this._sessionClient,
       this._conversationExtractionClient,
+      this._unifiedSearchClient,
     ]
     for (const client of clients) {
       if (client) {

@@ -23,6 +23,8 @@ import { DialogSessionList } from "@tui/component/dialog-session-list"
 import { KeybindProvider } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
 import { Home } from "@tui/routes/home"
+import { Login } from "@tui/routes/login"
+import { ProjectSelect } from "@tui/routes/project-select"
 import { Session } from "@tui/routes/session"
 import { PromptHistoryProvider } from "./component/prompt/history"
 import { FrecencyProvider } from "./component/prompt/frecency"
@@ -38,6 +40,8 @@ import { ArgsProvider, useArgs, type Args } from "./context/args"
 import open from "open"
 import { writeHeapSnapshot } from "v8"
 import { PromptRefProvider, usePromptRef } from "./context/prompt"
+import { hasLegionCredentials, authenticateLegion } from "@/legion/auth"
+import { LegionProvider } from "./context/legion"
 
 async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
   // can't set raw mode if not a TTY
@@ -137,37 +141,39 @@ export function tui(input: {
               <ExitProvider onExit={onExit}>
                 <KVProvider>
                   <ToastProvider>
-                    <RouteProvider>
-                      <SDKProvider
-                        url={input.url}
-                        directory={input.directory}
-                        fetch={input.fetch}
-                        headers={input.headers}
-                        events={input.events}
-                      >
-                        <SyncProvider>
-                          <ThemeProvider mode={mode}>
-                            <LocalProvider>
-                              <KeybindProvider>
-                                <PromptStashProvider>
-                                  <DialogProvider>
-                                    <CommandProvider>
-                                      <FrecencyProvider>
-                                        <PromptHistoryProvider>
-                                          <PromptRefProvider>
-                                            <App />
-                                          </PromptRefProvider>
-                                        </PromptHistoryProvider>
-                                      </FrecencyProvider>
-                                    </CommandProvider>
-                                  </DialogProvider>
-                                </PromptStashProvider>
-                              </KeybindProvider>
-                            </LocalProvider>
-                          </ThemeProvider>
-                        </SyncProvider>
-                      </SDKProvider>
-                    </RouteProvider>
+                    <LegionProvider>
+                      <RouteProvider>
+                        <SDKProvider
+                          url={input.url}
+                          directory={input.directory}
+                          fetch={input.fetch}
+                          headers={input.headers}
+                          events={input.events}
+                        >
+                          <SyncProvider>
+                            <ThemeProvider mode={mode}>
+                              <LocalProvider>
+                                <KeybindProvider>
+                                  <PromptStashProvider>
+                                    <DialogProvider>
+                                      <CommandProvider>
+                                        <FrecencyProvider>
+                                          <PromptHistoryProvider>
+                                            <PromptRefProvider>
+                                              <App />
+                                            </PromptRefProvider>
+                                          </PromptHistoryProvider>
+                                        </FrecencyProvider>
+                                      </CommandProvider>
+                                    </DialogProvider>
+                                  </PromptStashProvider>
+                                </KeybindProvider>
+                              </LocalProvider>
+                            </ThemeProvider>
+                          </SyncProvider>
+                        </SDKProvider>
+                      </RouteProvider>
+                    </LegionProvider>
                   </ToastProvider>
                 </KVProvider>
               </ExitProvider>
@@ -260,7 +266,7 @@ function App() {
   createEffect(() => {
     if (!terminalTitleEnabled() || Flag.OPENCODE_DISABLE_TERMINAL_TITLE) return
 
-    if (route.data.type === "home") {
+    if (route.data.type === "login" || route.data.type === "home" || route.data.type === "project-select") {
       renderer.setTerminalTitle("LEGION")
       return
     }
@@ -280,6 +286,28 @@ function App() {
 
   const args = useArgs()
   onMount(() => {
+    // LEGION startup: no creds → login, has creds → project select
+    if (!args.sessionID && !args.continue) {
+      hasLegionCredentials()
+        .then(async (has) => {
+          if (!has) {
+            route.navigate({ type: "login" })
+            return
+          }
+          // Authenticate in parent to get the projects list
+          const client = await authenticateLegion().catch(() => null)
+          if (!client) {
+            route.navigate({ type: "login" })
+            return
+          }
+          route.navigate({ type: "project-select", projects: client.userProjects })
+        })
+        .catch(() => {
+          // Credential check failed — navigate to login
+          route.navigate({ type: "login" })
+        })
+    }
+
     batch(() => {
       if (args.agent) local.agent.set(args.agent)
       if (args.model) {
@@ -552,6 +580,18 @@ function App() {
       category: "System",
     },
     {
+      title: "LEGION login",
+      value: "legion.login",
+      slash: {
+        name: "login",
+      },
+      onSelect: (dialog) => {
+        route.navigate({ type: "login" })
+        dialog.clear()
+      },
+      category: "System",
+    },
+    {
       title: "Open docs",
       value: "docs.open",
       onSelect: () => {
@@ -745,6 +785,12 @@ function App() {
       onMouseUp={Flag.OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT ? undefined : () => Selection.copy(renderer, toast)}
     >
       <Switch>
+        <Match when={route.data.type === "login"}>
+          <Login />
+        </Match>
+        <Match when={route.data.type === "project-select"}>
+          <ProjectSelect />
+        </Match>
         <Match when={route.data.type === "home"}>
           <Home />
         </Match>

@@ -19,6 +19,7 @@ export const MultiEditTool = Tool.define("multiedit", {
         }),
       )
       .describe("Array of edit operations to perform sequentially on the file"),
+    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
   }),
   async execute(params, ctx) {
     const tool = await EditTool.init()

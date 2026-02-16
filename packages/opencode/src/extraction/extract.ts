@@ -85,8 +85,6 @@ export async function extractTurn(
   assistantResponse: string,
   sessionContext?: { recentTopics?: string[]; sessionId?: string; previousState?: TurnExtraction[] },
 ): Promise<TurnExtraction> {
-  if (process.env.LEGION_EXTRACTION_ENABLED !== "true") return EMPTY_EXTRACTION
-
   if (shouldSkipExtraction(userMessage, assistantResponse)) {
     log.debug("skipping extraction", { reason: "skip_check" })
     return EMPTY_EXTRACTION

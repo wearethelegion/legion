@@ -7,28 +7,28 @@ export const DelegateCommand = cmd({
   describe: "run a headless LEGION delegation",
   builder: (yargs: Argv) =>
     yargs
-      .option("agent-id", { type: "string", demandOption: true, describe: "LEGION agent UUID" })
+      .option("agent_id", { type: "string", demandOption: true, describe: "LEGION agent UUID" })
       .option("task", { type: "string", demandOption: true, describe: "task description" })
-      .option("delegation-id", { type: "string", demandOption: true, describe: "delegation UUID" })
-      .option("engagement-id", { type: "string", demandOption: true, describe: "engagement UUID" })
-      .option("project-id", { type: "string", demandOption: true, describe: "project UUID" })
-      .option("target-path", { type: "string", demandOption: true, describe: "working directory" })
-      .option("company-id", { type: "string", demandOption: true, describe: "LEGION company UUID" })
-      .option("task-id", { type: "string", describe: "LEGION task UUID" })
-      .option("ipc-sock", { type: "string", demandOption: true, describe: "Unix socket for IPC" })
+      .option("delegation_id", { type: "string", demandOption: true, describe: "delegation UUID" })
+      .option("engagement_id", { type: "string", demandOption: true, describe: "engagement UUID" })
+      .option("project_id", { type: "string", demandOption: true, describe: "project UUID" })
+      .option("target_path", { type: "string", demandOption: true, describe: "working directory" })
+      .option("company_id", { type: "string", demandOption: true, describe: "LEGION company UUID" })
+      .option("task_id", { type: "string", describe: "LEGION task UUID" })
+      .option("ipc_sock", { type: "string", demandOption: true, describe: "Unix socket for IPC" })
       .option("model", { type: "string", describe: "model override (provider/model)" })
       .option("context", { type: "string", describe: "additional context" }),
   handler: async (args) => {
     await HeadlessMode.run({
-      agentId: args["agent-id"] as string,
+      agentId: args.agent_id as string,
       task: args.task as string,
-      delegationId: args["delegation-id"] as string,
-      engagementId: args["engagement-id"] as string,
-      projectId: args["project-id"] as string,
-      targetPath: args["target-path"] as string,
-      companyId: args["company-id"] as string,
-      taskId: args["task-id"] as string | undefined,
-      ipcSock: args["ipc-sock"] as string,
+      delegationId: args.delegation_id as string,
+      engagementId: args.engagement_id as string,
+      projectId: args.project_id as string,
+      targetPath: args.target_path as string,
+      companyId: args.company_id as string,
+      taskId: args.task_id as string | undefined,
+      ipcSock: args.ipc_sock as string,
       model: args.model as string | undefined,
       context: args.context as string | undefined,
     })

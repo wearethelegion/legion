@@ -1,6 +1,7 @@
 import { createStore } from "solid-js/store"
 import { createSimpleContext } from "./helper"
 import type { PromptInfo } from "../component/prompt/history"
+import type { ProjectItem } from "@opencode-ai/legion-client"
 
 export type HomeRoute = {
   type: "home"
@@ -13,7 +14,16 @@ export type SessionRoute = {
   initialPrompt?: PromptInfo
 }
 
-export type Route = HomeRoute | SessionRoute
+export type LoginRoute = {
+  type: "login"
+}
+
+export type ProjectSelectRoute = {
+  type: "project-select"
+  projects: ProjectItem[]
+}
+
+export type Route = HomeRoute | SessionRoute | LoginRoute | ProjectSelectRoute
 
 export const { use: useRoute, provider: RouteProvider } = createSimpleContext({
   name: "Route",

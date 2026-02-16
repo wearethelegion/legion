@@ -12,6 +12,10 @@
  *   3. On completion → fetches full result via getDelegationResult
  *   4. Result queued for injection into next LLM turn (llm.ts reads it)
  *   5. After LLM processes the result, it's marked as delivered
+ *
+ * Polling is demand-driven: starts on bootstrap (single discovery poll),
+ * continues only while active delegations exist, and stops when idle.
+ * Calling notify() after spawning a delegation restarts polling if stopped.
  */
 
 import { Log } from "../util/log"
@@ -70,15 +74,20 @@ const CLEANUP_AFTER_MS = 5 * 60_000 // 5 minutes
 
 export namespace DelegationTracker {
   /**
-   * Start background polling for delegation status.
-   * Call once during bootstrap after LEGION is initialized.
+   * Bootstrap: run a single discovery poll to pick up any pre-existing
+   * active delegations. Continuous polling only starts if actives are found.
    */
   export function start() {
-    if (pollTimer) return // already running
-    log.info("delegation tracker started", { intervalMs: String(POLL_INTERVAL_MS) })
-    pollTimer = setInterval(poll, POLL_INTERVAL_MS)
-    // Do an immediate poll
+    log.info("delegation tracker: initial discovery poll")
     poll()
+  }
+
+  /**
+   * Notify the tracker that a new delegation was spawned.
+   * Ensures continuous polling is running so we catch status changes.
+   */
+  export function notify() {
+    ensurePolling()
   }
 
   /**
@@ -182,6 +191,33 @@ export namespace DelegationTracker {
 }
 
 // ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/** Start continuous polling if not already running. */
+function ensurePolling() {
+  if (pollTimer) return
+  log.info("delegation tracker: polling started", { intervalMs: String(POLL_INTERVAL_MS) })
+  pollTimer = setInterval(poll, POLL_INTERVAL_MS)
+}
+
+/** Stop continuous polling. */
+function stopPolling() {
+  if (!pollTimer) return
+  clearInterval(pollTimer)
+  pollTimer = null
+  log.info("delegation tracker: polling stopped (no active delegations)")
+}
+
+/** True when at least one tracked delegation is pending or running. */
+function hasActive(): boolean {
+  for (const d of tracked.values()) {
+    if (d.status === "pending" || d.status === "running") return true
+  }
+  return false
+}
+
+// ---------------------------------------------------------------------------
 // Internal polling
 // ---------------------------------------------------------------------------
 
@@ -198,10 +234,7 @@ async function poll() {
       client.listDelegations({ statusFilter: "pending", limit: 50 }).catch(() => null),
     ])
 
-    const activeDelegations = [
-      ...(runningResp?.delegations ?? []),
-      ...(pendingResp?.delegations ?? []),
-    ]
+    const activeDelegations = [...(runningResp?.delegations ?? []), ...(pendingResp?.delegations ?? [])]
 
     // Track new delegations we haven't seen
     for (const d of activeDelegations) {
@@ -250,6 +283,13 @@ async function poll() {
       if (d.delivered && now - d.updatedAt > CLEANUP_AFTER_MS) {
         tracked.delete(id)
       }
+    }
+
+    // Auto-manage polling: keep running only while there are active delegations
+    if (hasActive()) {
+      ensurePolling()
+    } else {
+      stopPolling()
     }
   } catch (err) {
     log.warn("delegation poll failed", {

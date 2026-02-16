@@ -74,6 +74,7 @@ export const BashTool = Tool.define("bash", async () => {
         .describe(
           "Clear, concise description of what this command does in 5-10 words. Examples:\nInput: ls\nOutput: Lists files in current directory\n\nInput: git status\nOutput: Shows working tree status\n\nInput: npm install\nOutput: Installs package dependencies\n\nInput: mkdir foo\nOutput: Creates directory 'foo'",
         ),
+      engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
     }),
     async execute(params, ctx) {
       const cwd = params.workdir || Instance.directory

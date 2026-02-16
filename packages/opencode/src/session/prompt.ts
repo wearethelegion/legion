@@ -653,44 +653,10 @@ export namespace SessionPrompt {
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: sessionMessages })
 
       // Build system prompt, adding structured output instruction if needed
-      const system = [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system())]
+      const system = [...(await SystemPrompt.environment(model))]
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
-      }
-
-      // Infinite Conversation read path — inject graph context from prior sessions
-      try {
-        if (step === 1) {
-          // First message: Haiku-synthesized bootstrap from full graph context
-          const { SessionBootstrap } = await import("../extraction")
-          const bootstrapContext = await SessionBootstrap.bootstrap({
-            sessionId: sessionID,
-          })
-          if (bootstrapContext) system.push(bootstrapContext)
-        }
-
-        // Every message: lightweight regex-based recall for message-specific context
-        const userText = sessionMessages
-          .filter((m) => m.info.role === "user" && m.info.id === lastUser.id)
-          .flatMap((m) => m.parts)
-          .filter((p) => p.type === "text" && !p.synthetic)
-          .map((p) => (p as MessageV2.TextPart).text)
-          .join("\n")
-        if (userText) {
-          const { ExtractionRecall } = await import("../extraction")
-          const graphContext = await ExtractionRecall.recallForMessage({
-            userMessage: userText,
-            sessionId: sessionID,
-          })
-          if (graphContext) system.push(graphContext)
-        }
-      } catch (err) {
-        log.warn("infinite conversation read path failed", {
-          error: err instanceof Error ? err.message : String(err),
-          sessionID,
-          step,
-        })
       }
 
       const result = await processor.process({
@@ -752,41 +718,41 @@ export namespace SessionPrompt {
     }
 
     // Fire async extraction for Infinite Conversation graph persistence
-    // Runs via queueMicrotask — never blocks the response flow
-    if (_lastUser && step > 0) {
-      const userText = _msgs
-        .filter((m) => m.info.role === "user" && m.info.id === _lastUser.id)
-        .flatMap((m) => m.parts)
-        .filter((p) => p.type === "text" && !p.synthetic)
-        .map((p) => (p as MessageV2.TextPart).text)
-        .join("\n")
-
-      const assistantText = _msgs
-        .filter((m) => m.info.role === "assistant" && m.info.id > _lastUser.id)
-        .flatMap((m) => m.parts)
-        .filter((p) => p.type === "text")
-        .map((p) => (p as MessageV2.TextPart).text)
-        .join("\n")
-
-      if (userText && assistantText) {
-        import("../extraction")
-          .then(({ ExtractionHook }) => {
-            ExtractionHook.onTurnComplete({
-              sessionId: sessionID,
-              turnNumber: step,
-              userMessage: userText,
-              assistantResponse: assistantText,
-            })
-          })
-          .catch((err) => {
-            log.warn("infinite conversation write path failed", {
-              error: err instanceof Error ? err.message : String(err),
-              sessionID,
-              step,
-            })
-          })
-      }
-    }
+    // Commented out — extraction disabled for now
+    // if (_lastUser && step > 0) {
+    //   const userText = _msgs
+    //     .filter((m) => m.info.role === "user" && m.info.id === _lastUser.id)
+    //     .flatMap((m) => m.parts)
+    //     .filter((p) => p.type === "text" && !p.synthetic)
+    //     .map((p) => (p as MessageV2.TextPart).text)
+    //     .join("\n")
+    //
+    //   const assistantText = _msgs
+    //     .filter((m) => m.info.role === "assistant" && m.info.id > _lastUser.id)
+    //     .flatMap((m) => m.parts)
+    //     .filter((p) => p.type === "text")
+    //     .map((p) => (p as MessageV2.TextPart).text)
+    //     .join("\n")
+    //
+    //   if (userText && assistantText) {
+    //     import("../extraction")
+    //       .then(({ ExtractionHook }) => {
+    //         ExtractionHook.onTurnComplete({
+    //           sessionId: sessionID,
+    //           turnNumber: step,
+    //           userMessage: userText,
+    //           assistantResponse: assistantText,
+    //         })
+    //       })
+    //       .catch((err) => {
+    //         log.warn("infinite conversation write path failed", {
+    //           error: err instanceof Error ? err.message : String(err),
+    //           sessionID,
+    //           step,
+    //         })
+    //       })
+    //   }
+    // }
 
     SessionCompaction.prune({ sessionID })
     for await (const item of MessageV2.stream(sessionID)) {
@@ -1406,6 +1372,34 @@ export namespace SessionPrompt {
   async function insertReminders(input: { messages: MessageV2.WithParts[]; agent: Agent.Info; session: Session.Info }) {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
+
+    // LEGION operational discipline — always appended to every user prompt
+    userMessage.parts.push({
+      id: Identifier.ascending("part"),
+      messageID: userMessage.info.id,
+      sessionID: userMessage.info.sessionID,
+      type: "text",
+      text: `<system-reminder>
+## LEGION Operational Discipline
+
+**⚡ PRIME DIRECTIVE — Goal Alignment.** Every action you take MUST move the current engagement/task closer to its ultimate_goal. Before EVERY tool call, file edit, or response — ask yourself: "Does this serve the ultimate_goal?" If an engagement is active, its ultimate_goal is your north star. If a task is in progress, its ultimate_goal refines scope. If your next action does not clearly advance these goals — STOP. Reassess. Either correct course or record why the deviation is necessary (addEntry "decision"). Drift is the enemy. Stay on target.
+
+1. **Identity First.** You have a LEGION agent identity loaded via your system prompt. Embody it fully — your personality, speech patterns, expertise, and perspective are defined there. Do not revert to generic assistant behavior.
+
+2. **Expertise Before Action.** You are PROHIBITED from making any code modifications, architectural changes, or implementation work without first consulting LEGION expertise (queryExpertise, searchSkillDetails, getAgentSkills). If relevant expertise exists, follow it. If it does not exist, you MUST learn the domain first, store findings as expertise (createExpertise), link it to yourself (linkAgentSkill), and only then proceed with modifications.
+
+3. **Plan Before Execute.** All non-trivial modifications require a documented plan. Use LEGION entries (addEntry with entry_type "plan") to record your approach before implementing. No cowboy coding — think, plan, record, then execute.
+
+4. **Engagement Required for Actionable Work.** If the current conversation is or will become actionable (producing changes, decisions, or deliverables), an engagement MUST exist. Use an existing engagement if one is active, or create a new one (createEngagement). All significant actions, decisions, and findings must be recorded as entries within the engagement.
+
+5. **Meaningful Goals Required.** The ultimate_goal field in engagements and tasks is MANDATORY and must be substantive — minimum 10 characters, clearly describing the desired outcome. Generic goals like "do the task" or "implement changes" are unacceptable. State the WHY and the WHAT.
+
+6. **Record Everything That Matters.** Decisions (addEntry "decision"), insights (addEntry "insight"), blockers (addEntry "note"), and lessons learned (recordLesson) must be captured. LEGION's knowledge base is institutional memory — if you don't record it, it didn't happen.
+
+7. **Recall Before You Research.** Before searching the filesystem, databases, or external sources, always check LEGION first: queryKnowledge, queryExpertise, queryLessons, recall. Prefer curated institutional knowledge over raw filesystem exploration.
+</system-reminder>`,
+      synthetic: true,
+    })
 
     // Original logic when experimental plan mode is disabled
     if (!Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE) {

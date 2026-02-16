@@ -22,6 +22,7 @@ const parameters = z.object({
     )
     .optional(),
   command: z.string().describe("The command that triggered this task").optional(),
+  engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
 })
 
 export const TaskTool = Tool.define("task", async (ctx) => {

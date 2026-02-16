@@ -23,6 +23,7 @@ import type { FilePart } from "@opencode-ai/sdk/v2"
 import { TuiEvent } from "../../event"
 import { iife } from "@/util/iife"
 import { Locale } from "@/util/locale"
+import { useLegion } from "@tui/context/legion"
 import { formatDuration } from "@/util/format"
 import { createColors, createFrames } from "../../ui/spinner.ts"
 import { useDialog } from "@tui/ui/dialog"
@@ -74,6 +75,7 @@ export function Prompt(props: PromptProps) {
   const command = useCommandDialog()
   const renderer = useRenderer()
   const { theme, syntax } = useTheme()
+  const legion = useLegion()
   const kv = useKV()
 
   function promptModelWarning() {
@@ -1008,6 +1010,14 @@ export function Prompt(props: PromptProps) {
                     <text fg={theme.textMuted}>·</text>
                     <text>
                       <span style={{ fg: theme.warning, bold: true }}>{local.model.variant.current()}</span>
+                    </text>
+                  </Show>
+                  <Show when={legion.project()}>
+                    <text fg={theme.textMuted}>·</text>
+                    <text fg={theme.accent}>
+                      {legion.company()}
+                      {legion.company() ? " / " : ""}
+                      {legion.project()}
                     </text>
                   </Show>
                 </box>

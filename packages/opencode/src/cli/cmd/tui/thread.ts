@@ -170,6 +170,12 @@ export const TuiThreadCommand = cmd({
           model: args.model,
           prompt,
           fork: args.fork,
+          onLogin: async (email, password, serverUrl) => {
+            return client.call("loginLegion", { email, password, serverUrl })
+          },
+          onProjectSelected: (companyId, projectId) => {
+            client.call("selectProject", { companyId, projectId }).catch(() => {})
+          },
         },
         onExit: async () => {
           await client.call("shutdown", undefined)

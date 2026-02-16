@@ -21,6 +21,7 @@ export const WriteTool = Tool.define("write", {
   parameters: z.object({
     content: z.string().describe("The content to write to the file"),
     filePath: z.string().describe("The absolute path to the file to write (must be absolute, not relative)"),
+    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
   }),
   async execute(params, ctx) {
     const filepath = path.isAbsolute(params.filePath) ? params.filePath : path.join(Instance.directory, params.filePath)

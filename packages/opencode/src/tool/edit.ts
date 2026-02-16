@@ -31,6 +31,7 @@ export const EditTool = Tool.define("edit", {
     oldString: z.string().describe("The text to replace"),
     newString: z.string().describe("The text to replace it with (must be different from oldString)"),
     replaceAll: z.boolean().optional().describe("Replace all occurrences of oldString (default false)"),
+    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
   }),
   async execute(params, ctx) {
     if (!params.filePath) {

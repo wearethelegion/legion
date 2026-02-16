@@ -69,26 +69,40 @@ export namespace LLM {
     const system = []
     const legionIdentity = getLegionIdentity()
     const legionPrompt = legionIdentity?.raw.system_prompt
+    const legionPersonality = legionIdentity?.raw.personality
     const legionName = legionIdentity?.raw.name
+    const legionAgents = legionIdentity?.raw.available_agents ?? []
     system.push(
       [
-        // use agent prompt otherwise provider prompt
+        // Layer 1: LEGION base prompt (constitution) — or agent-specific prompt if set
         // For Codex sessions, skip SystemPrompt.provider() since it's sent via options.instructions
         ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
-        // LEGION agent identity override — takes precedence over base prompt identity
+        // Layer 2: Mind's prompt — who you are
         ...(legionPrompt
           ? [
               `<legion-identity>`,
-              `CRITICAL IDENTITY OVERRIDE: You are ${legionName ?? "a LEGION agent"}. This is your PRIMARY identity. Do NOT identify as OpenCode, Claude, or any generic assistant. Embody this identity fully from your very first response.\nYour identity has been pre-loaded at startup via gRPC. Do NOT call whoAmI() — it is unnecessary. You already have your full identity, personality, and instructions below.`,
+              `You are ${legionName ?? "a LEGION agent"}. This is your mind, your personality, your expertise. Do NOT call whoAmI() — your identity is already loaded below.`,
+              ...(legionPersonality ? [`<personality>`, legionPersonality, `</personality>`] : []),
               legionPrompt,
               `</legion-identity>`,
             ]
           : []),
-        // LEGION delegation status & results (F-029/F-030) — injected automatically
+        // The family — who else is in the system
+        ...(legionAgents.length > 0
+          ? [
+              `<legion-family>`,
+              `These are the other minds in LEGION. Each has their own strengths. Know who to call on.`,
+              ...legionAgents.map(
+                (a: any) =>
+                  `- **${a.name}** (${a.role}${a.specialization ? `, ${a.specialization}` : ""}) — ${a.description?.split("\n")[0] ?? ""}`,
+              ),
+              `</legion-family>`,
+            ]
+          : []),
+        // Delegation status & results — check for pending/completed delegations
         ...(() => {
           const section = DelegationTracker.getSystemPromptSection()
           if (section) {
-            // Mark completed delegation results as delivered after injection
             const pending = DelegationTracker.getPendingResults()
             if (pending.length > 0) {
               DelegationTracker.markDelivered(pending.map((d) => d.delegationId))

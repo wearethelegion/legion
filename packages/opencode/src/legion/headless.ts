@@ -69,6 +69,7 @@ export namespace HeadlessMode {
         process.env.LEGION_DELEGATION_ID = params.delegationId
         process.env.LEGION_PROJECT_ID = params.projectId
         process.env.LEGION_AGENT_ID = params.agentId
+        process.env.LEGION_COMPANY_ID = params.companyId
 
         // ---------------------------------------------------------------
         // LEGION gRPC: authenticate and create delegation record
@@ -77,29 +78,66 @@ export namespace HeadlessMode {
         const legion = getLegionClient()
         let delegationId = params.delegationId
 
+        if (!legion) {
+          log.warn("LEGION client not available in delegation subprocess — delegation will not be tracked", {
+            delegationId: params.delegationId,
+            agentId: params.agentId,
+          })
+        }
+
         if (legion) {
           try {
+            log.info("creating delegation in LEGION", {
+              delegationId: params.delegationId,
+              companyId: params.companyId,
+              agentId: params.agentId,
+              projectId: params.projectId || "(empty)",
+              taskId: params.taskId || "(none)",
+            })
             const resp = await legion.createDelegation({
               companyId: params.companyId,
               agentId: params.agentId,
               taskDescription: params.task,
-              projectId: params.projectId,
+              projectId: params.projectId || undefined,
               taskId: params.taskId,
               context: params.context,
             })
             if (resp.delegation_id) {
               delegationId = resp.delegation_id
               log.info("delegation registered in LEGION", { delegationId })
+            } else {
+              log.warn("createDelegation returned no delegation_id", {
+                response: JSON.stringify(resp).slice(0, 500),
+              })
             }
           } catch (err) {
-            log.warn("failed to create delegation in LEGION — continuing", {
+            log.error("failed to create delegation in LEGION — continuing without tracking", {
               error: err instanceof Error ? err.message : String(err),
+              stack: err instanceof Error ? err.stack?.slice(0, 500) : undefined,
+              companyId: params.companyId,
+              agentId: params.agentId,
+              projectId: params.projectId || "(empty)",
             })
           }
         }
 
+        // Heartbeat interval handle — must be accessible to completion handlers
+        let heartbeatInterval: ReturnType<typeof setInterval> | undefined
+
         if (legion) {
           legion.updateDelegationStatus(delegationId, "running").catch(() => {})
+
+          // Claim ownership and start heartbeat so the server knows we're alive
+          const ownerId = `pid-${process.pid}`
+          legion.claimDelegation(delegationId, ownerId).catch((err) => {
+            log.warn("failed to claim delegation", {
+              delegationId,
+              error: err instanceof Error ? err.message : String(err),
+            })
+          })
+          heartbeatInterval = setInterval(() => {
+            legion.updateHeartbeat(delegationId, ownerId).catch(() => {})
+          }, 15_000) // every 15s
         }
 
         // Internal SDK client — same pattern as run.ts line 590-594
@@ -111,8 +149,9 @@ export namespace HeadlessMode {
 
         ipc?.emitStatus("initializing")
 
-        // Deny interactive permissions (plan, question)
+        // Delegations run autonomously — allow everything except interactive prompts
         const rules: PermissionNext.Ruleset = [
+          { permission: "*", action: "allow", pattern: "*" },
           { permission: "question", action: "deny", pattern: "*" },
           { permission: "plan_enter", action: "deny", pattern: "*" },
           { permission: "plan_exit", action: "deny", pattern: "*" },
@@ -288,6 +327,7 @@ export namespace HeadlessMode {
 
         // Flush extraction drain and emit final result via IPC
         await ExtractionDrain.stop().catch(() => {})
+        if (heartbeatInterval) clearInterval(heartbeatInterval)
 
         const duration = Date.now() - started
         const tools = [...toolsUsed]

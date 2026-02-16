@@ -28,6 +28,7 @@ message CreateEngagementRequest {
   string user_id = 6;          // Optional
   string summary = 7;          // Optional
   string ultimate_goal = 8;    // REQUIRED - The overarching objective
+  string engagement_id = 9;    // Optional - parent engagement UUID for hierarchical relationships
 }
 
 message CreateEngagementResponse {
@@ -40,6 +41,7 @@ message CreateEngagementResponse {
   string error_message = 7;
   string error_code = 8;
   string ultimate_goal = 9;
+  string parent_engagement_id = 10;  // Parent engagement UUID if set
 }
 
 // Get Engagement
@@ -95,6 +97,7 @@ message GetEngagementResponse {
   string error_message = 13;
   string error_code = 14;
   string ultimate_goal = 15;
+  string parent_engagement_id = 16;  // Parent engagement UUID if set
 }
 
 // List Engagements
@@ -104,6 +107,7 @@ message ListEngagementsRequest {
   string status = 3;           // Optional filter
   int32 limit = 4;
   int32 offset = 5;            // Pagination offset
+  string engagement_id = 6;    // Optional - filter by parent engagement UUID (list children)
 }
 
 message EngagementInfo {
@@ -118,6 +122,7 @@ message EngagementInfo {
   string created_at = 9;
   string updated_at = 10;
   string ultimate_goal = 11;
+  string engagement_id = 12;  // Parent engagement UUID if set
 }
 
 message ListEngagementsResponse {
@@ -137,6 +142,7 @@ message UpdateEngagementRequest {
   string status = 4;           // Optional
   string summary = 5;          // Optional
   string ultimate_goal = 6;    // Optional - only if re-aligning
+  string parent_engagement_id = 7;  // Optional - parent engagement UUID for hierarchical relationships
 }
 
 message UpdateEngagementResponse {
@@ -149,6 +155,7 @@ message UpdateEngagementResponse {
   string error_message = 7;
   string error_code = 8;
   string ultimate_goal = 9;
+  string parent_engagement_id = 10;  // Parent engagement UUID if set
 }
 
 // Add Entry

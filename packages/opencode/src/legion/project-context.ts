@@ -29,16 +29,13 @@ let formattedContext: string | null = null
 // Cache
 // ---------------------------------------------------------------------------
 
-const CACHE_FILE = path.join(".opencode", "cache", "legion-project-context.json")
+const CACHE_FILE = path.join(".legion", "cache", "legion-project-context.json")
 
 function cachePath(baseDir?: string): string {
   return path.resolve(baseDir ?? process.cwd(), CACHE_FILE)
 }
 
-async function writeContextCache(
-  context: ProjectInstructions,
-  baseDir?: string,
-): Promise<void> {
+async function writeContextCache(context: ProjectInstructions, baseDir?: string): Promise<void> {
   const filePath = cachePath(baseDir)
   try {
     await fs.mkdir(path.dirname(filePath), { recursive: true })
@@ -139,9 +136,7 @@ export interface ProjectContextOptions {
  * 2. Fall back to cached context if the call fails
  * 3. Returns null if no context available
  */
-export async function loadProjectContext(
-  opts: ProjectContextOptions = {},
-): Promise<ProjectInstructions | null> {
+export async function loadProjectContext(opts: ProjectContextOptions = {}): Promise<ProjectInstructions | null> {
   const client = getLegionClient()
 
   if (client && opts.agentId) {

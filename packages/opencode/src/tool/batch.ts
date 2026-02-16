@@ -18,6 +18,7 @@ export const BatchTool = Tool.define("batch", async () => {
         )
         .min(1, "Provide at least one tool call")
         .describe("Array of tool calls to execute in parallel"),
+      engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
     }),
     formatValidationError(error) {
       const formattedErrors = error.issues
