@@ -103,6 +103,15 @@ const singleFlag = process.argv.includes("--single")
 const baselineFlag = process.argv.includes("--baseline")
 const skipInstall = process.argv.includes("--skip-install")
 
+// --legion-default-host=<host> sets the compile-time default for gRPC connections.
+// Production builds (via build-pkg.ts) pass api.wearethelegion.com.
+// Local dev builds default to localhost.
+const legionDefaultHost = (() => {
+  const prefix = "--legion-default-host="
+  const match = process.argv.find((a) => a.startsWith(prefix))
+  return match ? match.slice(prefix.length) : "api.wearethelegion.com"
+})()
+
 const allTargets: {
   os: string
   arch: "arm64" | "x64"
@@ -234,6 +243,7 @@ for (const item of targets) {
       OPENCODE_WORKER_PATH: workerPath,
       OPENCODE_CHANNEL: `'${Script.channel}'`,
       OPENCODE_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
+      LEGION_DEFAULT_HOST: `'${legionDefaultHost}'`,
     },
   })
 

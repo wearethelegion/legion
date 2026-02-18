@@ -72,6 +72,8 @@ export namespace LLM {
     const legionPersonality = legionIdentity?.raw.personality
     const legionName = legionIdentity?.raw.name
     const legionAgents = legionIdentity?.raw.available_agents ?? []
+    const legionSkills = legionIdentity?.raw.skills_overview ?? []
+    const legionWorkflows = legionIdentity?.raw.workflows ?? []
     system.push(
       [
         // Layer 1: LEGION base prompt (constitution) — or agent-specific prompt if set
@@ -92,11 +94,39 @@ export namespace LLM {
           ? [
               `<legion-family>`,
               `These are the other minds in LEGION. Each has their own strengths. Know who to call on.`,
-              ...legionAgents.map(
-                (a: any) =>
-                  `- **${a.name}** (${a.role}${a.specialization ? `, ${a.specialization}` : ""}) — ${a.description?.split("\n")[0] ?? ""}`,
-              ),
+              ...legionAgents.flatMap((a: any) => [
+                `- **${a.name}** [id: ${a.agent_id}]`,
+                `  Role: ${a.role}${a.specialization ? ` | Specialization: ${a.specialization}` : ""}`,
+                `  ${a.description?.split("\n")[0] ?? ""}`,
+                ...(a.when_to_use ? [`  **When to delegate:** ${a.when_to_use}`] : []),
+              ]),
               `</legion-family>`,
+            ]
+          : []),
+        // Skills — your linked expertise
+        ...(legionSkills.length > 0
+          ? [
+              `<legion-skills>`,
+              `Your linked expertise. Consult these before making changes in their domains.`,
+              ...legionSkills.flatMap((s: any) => [
+                `- **${s.title}** [id: ${s.expertise_id}]`,
+                `  ${s.summary?.split("\n")[0] ?? ""}`,
+                ...(s.when_to_use ? [`  **When to consult:** ${s.when_to_use}`] : []),
+              ]),
+              `</legion-skills>`,
+            ]
+          : []),
+        // Workflows — available protocols
+        ...(legionWorkflows.length > 0
+          ? [
+              `<legion-workflows>`,
+              `Available workflows. Activate when signals match.`,
+              ...legionWorkflows.flatMap((w: any) => [
+                `- **${w.name}** [id: ${w.id}]`,
+                `  Signals: ${w.signals?.join(", ") || "none"}`,
+                ...(w.when_to_use ? [`  **When to activate:** ${w.when_to_use}`] : []),
+              ]),
+              `</legion-workflows>`,
             ]
           : []),
         // Delegation status & results — check for pending/completed delegations

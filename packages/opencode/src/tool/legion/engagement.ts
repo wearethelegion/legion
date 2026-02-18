@@ -94,7 +94,7 @@ const ResumeEngagementTool = Tool.define("resumeEngagement", {
 const AddEntryTool = Tool.define("addEntry", {
   description: "Add an entry to an engagement (requirement, insight, decision, plan, note, question).",
   parameters: z.object({
-    engagement_id: z.string().describe("Engagement UUID"),
+    engagement_id: z.string().optional().describe("Engagement UUID (falls back to LEGION_ENGAGEMENT_ID env var)"),
     entry_type: z.string().describe("requirement, insight, decision, plan, note, question"),
     title: z.string().describe("Short descriptive title"),
     content: z.string().describe("Full entry content (markdown)"),
@@ -103,8 +103,12 @@ const AddEntryTool = Tool.define("addEntry", {
     tags: z.array(z.string()).optional(),
   }),
   async execute(params) {
+    const engagementId = params.engagement_id || process.env.LEGION_ENGAGEMENT_ID
+    if (!engagementId) {
+      throw new Error("engagement_id is required — provide it explicitly or set LEGION_ENGAGEMENT_ID env var")
+    }
     const result = await client().addEntry({
-      engagementId: params.engagement_id,
+      engagementId,
       entryType: params.entry_type,
       title: params.title,
       content: params.content,

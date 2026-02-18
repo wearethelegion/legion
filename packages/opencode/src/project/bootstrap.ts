@@ -24,11 +24,17 @@ export async function InstanceBootstrap() {
   // LEGION: bootstrap agent identity via gRPC so it's available before the first prompt.
   // Also injects agent context into process.env so the MCP server inherits it
   // and doesn't need a whoAmI() tool call to establish session context.
+  //
+  // SKIP re-initialization inside delegation subprocesses: headless.ts already
+  // authenticated and configured the LEGION client. A second initializeLegion()
+  // call with config from a different directory would close the active client
+  // and replace it with one pointing at a potentially different server.
+  const isDelegationSubprocess = !!process.env.LEGION_DELEGATION_ID
   const cfg = await Config.get()
-  if (cfg.legion) {
+  if (cfg.legion && !isDelegationSubprocess) {
     const legionResult = await initializeLegion({
       serverUrl: cfg.legion.url,
-      companyId: cfg.legion.companyId,
+      companyId: process.env.LEGION_COMPANY_ID || cfg.legion.companyId,
       email: cfg.legion.email,
       password: cfg.legion.password,
     }).catch((err) => {

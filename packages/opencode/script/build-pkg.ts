@@ -36,8 +36,11 @@ console.log(`  API URL: ${apiUrl}`)
 console.log(`  Output:  ${outputDir}`)
 
 // Step 1: Run single-platform build to get the binary
+// Extract host from apiUrl (strip port if present) for the compile-time default
+const defaultHost = apiUrl.split(":")[0]
+console.log(`  Default host (compile-time): ${defaultHost}`)
 console.log("\n[1/5] Building legion binary...")
-await $`bun run script/build.ts --single --skip-install`
+await $`bun run script/build.ts --single --skip-install --legion-default-host=${defaultHost}`
 
 // Find the built binary
 const platform = process.platform

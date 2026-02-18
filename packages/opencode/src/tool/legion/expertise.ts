@@ -6,12 +6,13 @@ const CreateExpertiseTool = Tool.define("createExpertise", {
   description: "Store structured knowledge with hierarchical sections (guides, tutorials, best practices).",
   parameters: z.object({
     text: z.string().describe("Markdown text with headings"),
+    when_to_use: z.string().describe("When this expertise should be used"),
     metadata: z.record(z.string(), z.string()).optional().describe("Optional tags"),
     request_id: z.string().optional(),
     engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
   }),
   async execute(params) {
-    const result = await client().createExpertise(params.text, {
+    const result = await client().createExpertise(params.text, params.when_to_use, {
       projectId: projectId(),
       companyId: companyId(),
       metadata: params.metadata,
@@ -82,10 +83,26 @@ const GetExpertiseTool = Tool.define("getExpertise", {
   },
 })
 
+const UpdateExpertiseTool = Tool.define("updateExpertise", {
+  description: "Update an existing expertise document. Only provided fields are changed.",
+  parameters: z.object({
+    expertise_id: z.string().describe("Expertise UUID"),
+    when_to_use: z.string().optional().describe("When this expertise should be used"),
+    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+  }),
+  async execute(params) {
+    const result = await client().updateExpertise(params.expertise_id, {
+      whenToUse: params.when_to_use,
+    })
+    return output(result)
+  },
+})
+
 export const ExpertiseTools = [
   CreateExpertiseTool,
   AddExpertiseChunkTool,
   QueryExpertiseTool,
   ListExpertiseTool,
   GetExpertiseTool,
+  UpdateExpertiseTool,
 ]

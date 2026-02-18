@@ -122,10 +122,8 @@ const formatters: Record<
 
 /**
  * Should this tool execution be audited?
- * Skips delegation subprocesses — they track progress via IPC.
  */
 export function shouldAudit(toolId: string, engagementId: string | null): boolean {
-  if (process.env.LEGION_DELEGATION_ID) return false
   return AUDITED_TOOLS.has(toolId) && !!engagementId
 }
 

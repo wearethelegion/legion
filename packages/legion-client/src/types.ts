@@ -81,6 +81,7 @@ export interface SkillOverview {
   title: string
   summary: string
   sections_count: number
+  when_to_use: string
 }
 
 export interface AvailableAgent {
@@ -89,6 +90,7 @@ export interface AvailableAgent {
   role: string
   specialization: string
   description: string
+  when_to_use: string
 }
 
 export interface PermanentMemoryRef {
@@ -104,6 +106,7 @@ export interface WorkflowOverview {
   id: string
   name: string
   signals: string[]
+  when_to_use: string
 }
 
 export interface WhoAmIResponse {
@@ -282,6 +285,7 @@ export interface CreateKnowledgeRequest {
   metadata?: Record<string, string>
   request_id?: string
   project_id: string
+  when_to_use: string
 }
 
 export interface CreateKnowledgeResponse {
@@ -1086,6 +1090,7 @@ export interface CreateAgentRequest {
   capabilities?: string[]
   specialization?: string
   project_id?: string
+  when_to_use: string
 }
 
 export interface CreateAgentResponse {
@@ -1186,6 +1191,7 @@ export interface CreateWorkflowRequest {
   project_id?: string
   public?: boolean
   metadata_json?: string
+  when_to_use: string
 }
 
 export interface CreateWorkflowResponse {
@@ -1426,6 +1432,7 @@ export interface CreateExpertiseRequest {
   metadata?: Record<string, string>
   request_id?: string
   company_id?: string
+  when_to_use: string
 }
 
 export interface CreateExpertiseResponse {
@@ -1479,6 +1486,15 @@ export interface GetExpertiseResponse {
   company_id: string
   created_at: string
   updated_at: string
+  error_message: string
+  error_code: string
+}
+
+export interface UpdateExpertiseResponse {
+  status: string
+  expertise_id: string
+  title: string
+  when_to_use: string
   error_message: string
   error_code: string
 }
@@ -1815,7 +1831,7 @@ export interface UnifiedSearchResponse {
 // ============================================================================
 
 export interface LegionClientOptions {
-  /** gRPC server host (default: localhost) */
+  /** gRPC server host (default: api.wearethelegion.com) */
   host?: string
   /** gRPC server port (default: 50051) */
   port?: number
@@ -1831,6 +1847,13 @@ export interface LegionClientOptions {
    * for compiled Bun binaries where proto files aren't on disk.
    */
   protoJSON?: Record<string, any>
+  /**
+   * Control TLS for the gRPC channel.
+   * - true: always use TLS (createSsl)
+   * - false: always use plaintext (createInsecure)
+   * - undefined (default): auto-detect — TLS for remote hosts, plaintext for localhost
+   */
+  tls?: boolean
 }
 
 export interface AuthResult {

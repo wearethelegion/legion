@@ -46,6 +46,7 @@ message CreateDelegationRequest {
   string task_id = 5;           // Optional link to task
   string task_description = 6;  // The actual task to perform
   string context = 7;           // Optional context
+  string engagement_id = 8;     // Optional link to engagement
 }
 
 message CreateDelegationResponse {

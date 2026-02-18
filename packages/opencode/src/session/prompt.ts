@@ -564,6 +564,8 @@ export namespace SessionPrompt {
         messages: msgs,
         agent,
         session,
+        lastFinished,
+        model,
       })
 
       const processor = SessionProcessor.create({
@@ -1369,9 +1371,26 @@ export namespace SessionPrompt {
     }
   }
 
-  async function insertReminders(input: { messages: MessageV2.WithParts[]; agent: Agent.Info; session: Session.Info }) {
+  async function insertReminders(input: {
+    messages: MessageV2.WithParts[]
+    agent: Agent.Info
+    session: Session.Info
+    lastFinished?: MessageV2.Assistant
+    model: Provider.Model
+  }) {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
+
+    // Calculate context usage for awareness
+    let contextInfo = ""
+    if (input.lastFinished?.tokens && input.model.limit.context > 0) {
+      const tokens = input.lastFinished.tokens
+      const totalUsed =
+        tokens.total || tokens.input + tokens.output + tokens.cache.read + tokens.cache.write + tokens.reasoning
+      const contextLimit = input.model.limit.context
+      const percentage = Math.round((totalUsed / contextLimit) * 100)
+      contextInfo = `\n\n## Context Usage\n~${totalUsed.toLocaleString()} tokens / ${percentage}% of ${contextLimit.toLocaleString()} context window`
+    }
 
     // LEGION operational discipline — always appended to every user prompt
     userMessage.parts.push({
@@ -1396,7 +1415,7 @@ export namespace SessionPrompt {
 
 6. **Record Everything That Matters.** Decisions (addEntry "decision"), insights (addEntry "insight"), blockers (addEntry "note"), and lessons learned (recordLesson) must be captured. LEGION's knowledge base is institutional memory — if you don't record it, it didn't happen.
 
-7. **Recall Before You Research.** Before searching the filesystem, databases, or external sources, always check LEGION first: queryKnowledge, queryExpertise, queryLessons, recall. Prefer curated institutional knowledge over raw filesystem exploration.
+7. **Knowledge Before SDLC Work (HARD GATE).** When working toward an engagement's or task's ultimate_goal: BEFORE planning, implementation, or any other SDLC activity → STOP → Ensure you have all required knowledge by calling queryKnowledge(), queryExpertise(), queryLessons() → Only proceed once you have consulted LEGION's institutional memory. Skipping this step is a FAILURE.${contextInfo}
 </system-reminder>`,
       synthetic: true,
     })

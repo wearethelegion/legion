@@ -50,7 +50,12 @@ export namespace HeadlessMode {
           .updateDelegationStatus(params.delegationId, "cancelled", {
             errorMessage: "Process terminated by signal",
           })
-          .catch(() => {})
+          .catch((err) => {
+            log.warn("failed to set delegation cancelled on signal", {
+              delegationId: params.delegationId,
+              error: err instanceof Error ? err.message : String(err),
+            })
+          })
       }
       ExtractionDrain.stop()
         .catch(() => {})
@@ -75,77 +80,63 @@ export namespace HeadlessMode {
         // LEGION gRPC: authenticate and create delegation record
         // ---------------------------------------------------------------
         await authenticateLegion()
-        const legion = getLegionClient()
-        let delegationId = params.delegationId
 
-        if (!legion) {
-          log.warn("LEGION client not available in delegation subprocess — delegation will not be tracked", {
-            delegationId: params.delegationId,
-            agentId: params.agentId,
-          })
-        }
-
-        if (legion) {
-          try {
-            log.info("creating delegation in LEGION", {
+        if (!getLegionClient()) {
+          log.warn(
+            "LEGION client not available in delegation subprocess — status updates and progress tracking will be unavailable",
+            {
               delegationId: params.delegationId,
-              companyId: params.companyId,
               agentId: params.agentId,
-              projectId: params.projectId || "(empty)",
-              taskId: params.taskId || "(none)",
-            })
-            const resp = await legion.createDelegation({
-              companyId: params.companyId,
-              agentId: params.agentId,
-              taskDescription: params.task,
-              projectId: params.projectId || undefined,
-              taskId: params.taskId,
-              context: params.context,
-            })
-            if (resp.delegation_id) {
-              delegationId = resp.delegation_id
-              log.info("delegation registered in LEGION", { delegationId })
-            } else {
-              log.warn("createDelegation returned no delegation_id", {
-                response: JSON.stringify(resp).slice(0, 500),
-              })
-            }
-          } catch (err) {
-            log.error("failed to create delegation in LEGION — continuing without tracking", {
-              error: err instanceof Error ? err.message : String(err),
-              stack: err instanceof Error ? err.stack?.slice(0, 500) : undefined,
-              companyId: params.companyId,
-              agentId: params.agentId,
-              projectId: params.projectId || "(empty)",
-            })
-          }
+            },
+          )
         }
 
         // Heartbeat interval handle — must be accessible to completion handlers
         let heartbeatInterval: ReturnType<typeof setInterval> | undefined
 
-        if (legion) {
-          legion.updateDelegationStatus(delegationId, "running").catch(() => {})
+        if (getLegionClient()) {
+          log.info("setting delegation to running", { delegationId: params.delegationId })
+          getLegionClient()!.updateDelegationStatus(params.delegationId, "running").then(() => {
+            log.info("delegation set to running OK", { delegationId: params.delegationId })
+          }).catch((err) => {
+            log.warn("failed to set delegation running", {
+              delegationId: params.delegationId,
+              error: err instanceof Error ? err.message : String(err),
+            })
+          })
 
           // Claim ownership and start heartbeat so the server knows we're alive
           const ownerId = `pid-${process.pid}`
-          legion.claimDelegation(delegationId, ownerId).catch((err) => {
+          getLegionClient()!.claimDelegation(params.delegationId, ownerId).catch((err) => {
             log.warn("failed to claim delegation", {
-              delegationId,
+              delegationId: params.delegationId,
               error: err instanceof Error ? err.message : String(err),
             })
           })
           heartbeatInterval = setInterval(() => {
-            legion.updateHeartbeat(delegationId, ownerId).catch(() => {})
+            getLegionClient()?.updateHeartbeat(params.delegationId, ownerId).catch((err) => {
+              log.warn("heartbeat failed", {
+                delegationId: params.delegationId,
+                error: err instanceof Error ? err.message : String(err),
+              })
+            })
           }, 15_000) // every 15s
         }
 
         // Internal SDK client — same pattern as run.ts line 590-594
+        // CRITICAL: pass directory so the server middleware uses the same Instance
+        // as our bootstrap() call. Without this, Server.App middleware falls back to
+        // process.cwd() which creates a NEW Instance + InstanceBootstrap, re-running
+        // initializeLegion() with possibly different config — closing our LEGION client.
         const fetchFn = (async (input: RequestInfo | URL, init?: RequestInit) => {
           const request = new Request(input, init)
           return Server.App().fetch(request)
         }) as typeof globalThis.fetch
-        const sdk = createOpencodeClient({ baseUrl: "http://opencode.internal", fetch: fetchFn })
+        const sdk = createOpencodeClient({
+          baseUrl: "http://opencode.internal",
+          fetch: fetchFn,
+          directory: params.targetPath,
+        })
 
         ipc?.emitStatus("initializing")
 
@@ -164,8 +155,15 @@ export namespace HeadlessMode {
         const sessionID = session.data?.id
         if (!sessionID) throw new Error("Failed to create session")
 
-        // Build message: optional context + task
-        const message = params.context ? `${params.context}\n\n${params.task}` : params.task
+        // Build message: inject LEGION context so the delegated agent knows its engagement
+        const legionContext = [
+          `Your LEGION engagement_id is: ${params.engagementId}`,
+          `Use this engagement_id in all addEntry, remember, and LEGION tool calls that require it.`,
+        ].join(". ")
+
+        const message = params.context
+          ? `${legionContext}\n\n${params.context}\n\n${params.task}`
+          : `${legionContext}\n\n${params.task}`
 
         // Resolve model override
         const model = params.model ? Provider.parseModel(params.model) : undefined
@@ -225,15 +223,22 @@ export namespace HeadlessMode {
                 ipc?.emitToolEnd(part.tool, duration, true, preview)
                 toolTimers.delete(part.callID)
                 stepCount++
-                if (legion) {
-                  legion
-                    .updateDelegationProgress(delegationId, `Tool: ${part.tool}`, {
+                if (getLegionClient()) {
+                  getLegionClient()!
+                    .updateDelegationProgress(params.delegationId, `Tool: ${part.tool}`, {
                       step: stepCount,
                       tool: part.tool,
                       input_summary: JSON.stringify(part.state.input).slice(0, 200),
                       timestamp: new Date().toISOString(),
                     })
-                    .catch(() => {})
+                    .catch((err) => {
+                      log.warn("failed to update delegation progress", {
+                        delegationId: params.delegationId,
+                        step: String(stepCount),
+                        tool: part.tool,
+                        error: err instanceof Error ? err.message : String(err),
+                      })
+                    })
                 }
               }
 
@@ -331,34 +336,62 @@ export namespace HeadlessMode {
 
         const duration = Date.now() - started
         const tools = [...toolsUsed]
+        log.info("delegation execution finished", {
+          delegationId: params.delegationId,
+          hasError: String(!!error),
+          turns: String(turns),
+          tools: String(tools.length),
+          durationMs: String(duration),
+        })
+
         if (error) {
           ipc?.emitStatus("failed", error)
           ipc?.emitResult({ summary: error, toolsUsed: tools, turns, costUsd: totalCost, durationMs: duration })
-          if (legion) {
-            await legion
-              .updateDelegationStatus(delegationId, "failed", {
+          if (getLegionClient()) {
+            log.info("updating delegation status to failed", { delegationId: params.delegationId })
+            try {
+              const resp = await getLegionClient()!.updateDelegationStatus(params.delegationId, "failed", {
                 resultSummary: error,
                 toolsUsed: tools,
                 turns,
                 costUsd: totalCost,
                 errorMessage: error,
               })
-              .catch(() => {})
+              log.info("delegation status updated to failed", {
+                delegationId: params.delegationId,
+                resp: JSON.stringify(resp),
+              })
+            } catch (err) {
+              log.error("failed to set delegation status to failed", {
+                delegationId: params.delegationId,
+                error: err instanceof Error ? err.message : String(err),
+              })
+            }
           }
           process.exitCode = 1
         } else {
           const summary = `Completed in ${turns} turn(s), ${tools.length} tool(s) used, ${(duration / 1000).toFixed(1)}s`
           ipc?.emitStatus("completed")
           ipc?.emitResult({ summary, toolsUsed: tools, turns, costUsd: totalCost, durationMs: duration })
-          if (legion) {
-            await legion
-              .updateDelegationStatus(delegationId, "completed", {
+          if (getLegionClient()) {
+            log.info("updating delegation status to completed", { delegationId: params.delegationId })
+            try {
+              const resp = await getLegionClient()!.updateDelegationStatus(params.delegationId, "completed", {
                 resultSummary: summary,
                 toolsUsed: tools,
                 turns,
                 costUsd: totalCost,
               })
-              .catch(() => {})
+              log.info("delegation status updated to completed", {
+                delegationId: params.delegationId,
+                resp: JSON.stringify(resp),
+              })
+            } catch (err) {
+              log.error("failed to set delegation status to completed", {
+                delegationId: params.delegationId,
+                error: err instanceof Error ? err.message : String(err),
+              })
+            }
           }
         }
       })
@@ -372,7 +405,12 @@ export namespace HeadlessMode {
           .updateDelegationStatus(params.delegationId, "failed", {
             errorMessage: msg,
           })
-          .catch(() => {})
+          .catch((statusErr) => {
+            log.error("failed to set delegation status to failed (outer catch)", {
+              delegationId: params.delegationId,
+              error: statusErr instanceof Error ? statusErr.message : String(statusErr),
+            })
+          })
       }
       process.exitCode = 1
     } finally {

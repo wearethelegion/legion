@@ -6,12 +6,13 @@ const CreateKnowledgeTool = Tool.define("createKnowledge", {
   description: "Store text for semantic search. Use for docs, notes, unstructured text. No LLM calls.",
   parameters: z.object({
     text: z.string().describe("Text content to store"),
+    when_to_use: z.string().describe("When this knowledge should be consulted"),
     metadata: z.record(z.string(), z.string()).optional().describe("Optional tags"),
     request_id: z.string().optional().describe("Idempotency key"),
     engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
   }),
   async execute(params) {
-    const result = await client().createKnowledge(params.text, projectId(), {
+    const result = await client().createKnowledge(params.text, projectId(), params.when_to_use, {
       metadata: params.metadata,
       requestId: params.request_id,
     })

@@ -14,6 +14,11 @@ import * as protoLoader from "@grpc/proto-loader"
 import * as path from "path"
 import { fileURLToPath } from "url"
 
+/** Compile-time default host — set via `--legion-default-host` build flag.
+ *  In compiled binaries: api.wearethelegion.com. In local dev: falls back to "localhost". */
+declare const LEGION_DEFAULT_HOST: string | undefined
+const DEFAULT_HOST = typeof LEGION_DEFAULT_HOST === "string" ? LEGION_DEFAULT_HOST : "localhost"
+
 import type {
   LegionClientOptions,
   AuthResult,
@@ -72,6 +77,7 @@ import type {
   CreateExpertiseResponse,
   AddExpertiseChunkResponse,
   GetExpertiseResponse,
+  UpdateExpertiseResponse,
   QueryExpertiseResponse,
   ListExpertiseResponse,
   QueryLessonsResponse,
@@ -142,11 +148,15 @@ const PROTO_LOADER_OPTIONS: protoLoader.Options = {
  * Wraps a gRPC unary call in a Promise.
  * Handles the callback-style API that proto-loader generates.
  */
+/** Default deadline for unary gRPC calls (15 seconds). */
+const DEFAULT_DEADLINE_MS = 15_000
+
 function callUnary<TReq, TRes>(
   client: any,
   methodName: string,
   request: TReq,
   metadata?: grpc.Metadata,
+  deadlineMs: number = DEFAULT_DEADLINE_MS,
 ): Promise<TRes> {
   return new Promise((resolve, reject) => {
     const method = client[methodName]
@@ -154,11 +164,15 @@ function callUnary<TReq, TRes>(
       reject(new LegionError(`Unknown method: ${methodName}`, "UNKNOWN_METHOD"))
       return
     }
-    const args: any[] = [request]
-    if (metadata) args.push(metadata)
-    args.push((err: grpc.ServiceError | null, response: TRes) => {
+    const meta = metadata ?? new grpc.Metadata()
+    const options: grpc.CallOptions = {
+      deadline: new Date(Date.now() + deadlineMs),
+    }
+    method.call(client, request, meta, options, (err: grpc.ServiceError | null, response: TRes) => {
       if (err) {
-        if (err.code === grpc.status.UNAVAILABLE) {
+        if (err.code === grpc.status.DEADLINE_EXCEEDED) {
+          reject(new LegionConnectionError(`Request timed out after ${deadlineMs}ms`, err.details))
+        } else if (err.code === grpc.status.UNAVAILABLE) {
           reject(new LegionConnectionError(err.message, err.details))
         } else if (err.code === grpc.status.UNAUTHENTICATED) {
           reject(err) // Let callWithAuth handle retry logic
@@ -169,7 +183,6 @@ function callUnary<TReq, TRes>(
         resolve(response)
       }
     })
-    method.apply(client, args)
   })
 }
 
@@ -223,7 +236,7 @@ export class LegionClient {
   private _unifiedSearchClient: any = null
 
   constructor(options: LegionClientOptions = {}) {
-    this.host = options.host ?? process.env.GRPC_SERVER_HOST ?? "localhost"
+    this.host = options.host ?? process.env.GRPC_SERVER_HOST ?? DEFAULT_HOST
     this.port = options.port ?? parseInt(process.env.GRPC_SERVER_PORT ?? "50051", 10)
     this.address = `${this.host}:${this.port}`
 
@@ -232,8 +245,9 @@ export class LegionClient {
     this.password = options.password ?? process.env.MCP_USER_PASSWORD ?? null
     this.protoJSON = options.protoJSON ?? null
 
-    // Use insecure for local dev; will add TLS option later
-    this.credentials = grpc.credentials.createInsecure()
+    // TLS mode: explicit option overrides; default is insecure (server uses plaintext gRPC)
+    const useTls = options.tls === true
+    this.credentials = useTls ? grpc.credentials.createSsl() : grpc.credentials.createInsecure()
   }
 
   // -------------------------------------------------------------------------
@@ -543,6 +557,7 @@ export class LegionClient {
     personality: string
     mainResponsibilities: string
     systemPrompt: string
+    whenToUse: string
     capabilities?: string[]
     specialization?: string
     projectId?: string
@@ -554,6 +569,7 @@ export class LegionClient {
       personality: opts.personality,
       main_responsibilities: opts.mainResponsibilities,
       system_prompt: opts.systemPrompt,
+      when_to_use: opts.whenToUse,
       capabilities: opts.capabilities ?? [],
       specialization: opts.specialization ?? "",
       project_id: opts.projectId ?? "",
@@ -575,6 +591,7 @@ export class LegionClient {
       personality?: string
       mainResponsibilities?: string
       systemPrompt?: string
+      whenToUse?: string
       metadataJson?: string
       projectId?: string
       public?: boolean
@@ -590,6 +607,8 @@ export class LegionClient {
       main_responsibilities_provided: opts?.mainResponsibilities !== undefined,
       system_prompt: opts?.systemPrompt ?? "",
       system_prompt_provided: opts?.systemPrompt !== undefined,
+      when_to_use: opts?.whenToUse ?? "",
+      when_to_use_provided: opts?.whenToUse !== undefined,
       metadata_json: opts?.metadataJson ?? "",
       metadata_provided: opts?.metadataJson !== undefined,
       project_id: opts?.projectId ?? "",
@@ -658,6 +677,7 @@ export class LegionClient {
     name: string
     content: string
     signals: string[]
+    whenToUse: string
     description?: string
     role?: string
     agentId?: string
@@ -670,6 +690,7 @@ export class LegionClient {
       name: opts.name,
       content: opts.content,
       signals: opts.signals,
+      when_to_use: opts.whenToUse,
       description: opts.description ?? "",
       role: opts.role ?? "",
       agent_id: opts.agentId ?? "",
@@ -686,6 +707,7 @@ export class LegionClient {
       name?: string
       content?: string
       signals?: string[]
+      whenToUse?: string
       description?: string
       role?: string
       agentId?: string
@@ -702,6 +724,8 @@ export class LegionClient {
       content_provided: opts?.content !== undefined,
       signals: opts?.signals ?? [],
       signals_provided: opts?.signals !== undefined,
+      when_to_use: opts?.whenToUse ?? "",
+      when_to_use_provided: opts?.whenToUse !== undefined,
       description: opts?.description ?? "",
       description_provided: opts?.description !== undefined,
       role: opts?.role ?? "",
@@ -777,11 +801,13 @@ export class LegionClient {
   async createKnowledge(
     text: string,
     projectId: string,
+    whenToUse: string,
     opts?: { metadata?: Record<string, string>; requestId?: string },
   ): Promise<CreateKnowledgeResponse> {
     return this.callWithAuth(this.knowledgeClient, "CreateKnowledge", {
       text,
       project_id: projectId,
+      when_to_use: whenToUse,
       metadata: opts?.metadata ?? {},
       request_id: opts?.requestId ?? "",
     })
@@ -1266,6 +1292,7 @@ export class LegionClient {
   /** Store structured knowledge with hierarchical sections. */
   async createExpertise(
     text: string,
+    whenToUse: string,
     opts?: {
       projectId?: string
       companyId?: string
@@ -1275,6 +1302,7 @@ export class LegionClient {
   ): Promise<CreateExpertiseResponse> {
     return this.callWithAuth(this.expertiseClient, "CreateExpertise", {
       text,
+      when_to_use: whenToUse,
       project_id: opts?.projectId ?? "",
       company_id: opts?.companyId ?? "",
       metadata: opts?.metadata ?? {},
@@ -1328,6 +1356,15 @@ export class LegionClient {
       company_id: opts?.companyId ?? "",
       limit: opts?.limit ?? 100,
       offset: opts?.offset ?? 0,
+    })
+  }
+
+  /** Update an existing expertise. Only provided fields are changed. */
+  async updateExpertise(expertiseId: string, opts?: { whenToUse?: string }): Promise<UpdateExpertiseResponse> {
+    return this.callWithAuth(this.expertiseClient, "UpdateExpertise", {
+      expertise_id: expertiseId,
+      when_to_use: opts?.whenToUse ?? "",
+      when_to_use_provided: opts?.whenToUse !== undefined,
     })
   }
 
@@ -1388,6 +1425,7 @@ export class LegionClient {
     projectId?: string
     taskId?: string
     context?: string
+    engagementId?: string
   }): Promise<CreateDelegationResponse> {
     return this.callWithAuth(this.delegationClient, "CreateDelegation", {
       company_id: opts.companyId,
@@ -1396,6 +1434,7 @@ export class LegionClient {
       project_id: opts.projectId ?? "",
       task_id: opts.taskId ?? "",
       context: opts.context ?? "",
+      engagement_id: opts.engagementId ?? "",
     })
   }
 
