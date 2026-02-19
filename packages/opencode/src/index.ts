@@ -19,8 +19,8 @@ import { McpCommand } from "./cli/cmd/mcp"
 import { GithubCommand } from "./cli/cmd/github"
 import { ExportCommand } from "./cli/cmd/export"
 import { ImportCommand } from "./cli/cmd/import"
-import { AttachCommand } from "./cli/cmd/tui/attach"
-import { TuiThreadCommand } from "./cli/cmd/tui/thread"
+import { AttachCommand } from "@tui/attach.ts"
+import { TuiThreadCommand } from "@tui/thread.ts"
 import { AcpCommand } from "./cli/cmd/acp"
 import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
@@ -32,6 +32,7 @@ import { Global } from "./global"
 import { JsonMigration } from "./storage/json-migration"
 import { Database } from "./storage/db"
 import { DelegateCommand } from "./cli/cmd/delegate"
+import { Filesystem } from "@/util/filesystem.ts"
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {

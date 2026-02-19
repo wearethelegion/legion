@@ -364,10 +364,8 @@ ${recentTurns ? `\n## Recent conversation (last 5 turns)\nPreserve any substance
         sessionID: input.sessionID,
         type: "text",
         synthetic: true,
-        text: `Context was reset. Your next prompt is above — use the LEGION IDs in it to restore your full context:
-1. recall("session continuation") — recover working memories
-${env.LEGION_ENGAGEMENT_ID ? `2. resumeEngagement("${env.LEGION_ENGAGEMENT_ID}") — reload all entries, decisions, plans` : "2. listEngagements → resumeEngagement() — find and reload your engagement"}
-3. Execute the next step from your prompt. You already told yourself what to do.`,
+        text: `Context was reset. Your next prompt is above — use the LEGION IDs in it to restore your full context if needed, if you have enough information to act, then do so. 
+        2. Execute the next step from your prompt. You already told yourself what to do.`,
         time: {
           start: Date.now(),
           end: Date.now(),

@@ -1382,7 +1382,21 @@ export namespace SessionPrompt {
         tokens.total || tokens.input + tokens.output + tokens.cache.read + tokens.cache.write + tokens.reasoning
       const contextLimit = input.model.limit.context
       const percentage = Math.round((totalUsed / contextLimit) * 100)
-      contextInfo = `\n\n## Context Usage\n~${totalUsed.toLocaleString()} tokens / ${percentage}% of ${contextLimit.toLocaleString()} context window`
+
+      // Build cache stats string
+      const cacheStats = []
+      if (tokens.cache.read > 0) cacheStats.push(`cache reads: ${tokens.cache.read.toLocaleString()}`)
+      if (tokens.cache.write > 0) cacheStats.push(`cache writes: ${tokens.cache.write.toLocaleString()}`)
+      const cacheInfo = cacheStats.length > 0 ? `\n│ ├─ ${cacheStats.join(" | ")}` : ""
+
+      contextInfo = `
+
+!# CONTEXT STATUS
+│ Total: ~${totalUsed.toLocaleString()} / ${contextLimit.toLocaleString()} (${percentage}%)
+│ ├─ input: ${tokens.input.toLocaleString()}
+│ ├─ output: ${tokens.output.toLocaleString()}
+│ ├─ reasoning: ${tokens.reasoning.toLocaleString()}${cacheInfo}
+!# END CONTEXT`
     }
 
     // LEGION operational discipline — always appended to every user prompt

@@ -89,12 +89,13 @@ export namespace Config {
         const remoteConfig = wellknown.config ?? {}
         // Add $schema to prevent load() from trying to write back to a non-existent file
         if (!remoteConfig.$schema) remoteConfig.$schema = "https://opencode.ai/config.json"
-        result = merge(
-          result,
-          await load(JSON.stringify(remoteConfig), `${key}/.well-known/opencode`),
-        )
+        result = merge(result, await load(JSON.stringify(remoteConfig), `${key}/.well-known/opencode`))
         log.debug("loaded remote config from well-known", { url: key })
       }
+    }
+
+    const token = await Control.token()
+    if (token) {
     }
 
     // Global user config overrides remote config.
@@ -358,7 +359,14 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opencode/command/", "/.opencode/commands/", "/command/", "/commands/"]
+      const patterns = [
+        "/.legion/command/",
+        "/.legion/commands/",
+        "/.opencode/command/",
+        "/.opencode/commands/",
+        "/command/",
+        "/commands/",
+      ]
       const file = rel(item, patterns) ?? path.basename(item)
       const name = trim(file)
 
@@ -398,7 +406,14 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opencode/agent/", "/.opencode/agents/", "/agent/", "/agents/"]
+      const patterns = [
+        "/.legion/agent/",
+        "/.legion/agents/",
+        "/.opencode/agent/",
+        "/.opencode/agents/",
+        "/agent/",
+        "/agents/",
+      ]
       const file = rel(item, patterns) ?? path.basename(item)
       const agentName = trim(file)
 
@@ -494,9 +509,9 @@ export namespace Config {
    * Deduplicates plugins by name, with later entries (higher priority) winning.
    * Priority order (highest to lowest):
    * 1. Local plugin/ directory
-   * 2. Local opencode.json
+   * 2. Local legion.json
    * 3. Global plugin/ directory
-   * 4. Global opencode.json
+   * 4. Global legion.json
    *
    * Since plugins are added in low-to-high priority order,
    * we reverse, deduplicate (keeping first occurrence), then restore order.
@@ -1002,6 +1017,25 @@ export namespace Config {
     })
   export type Provider = z.infer<typeof Provider>
 
+  export const Legion = z
+    .object({
+      url: z.string().optional().describe("LEGION gRPC server URL, e.g. localhost:50051"),
+      companyId: z.string().uuid().optional().describe("LEGION company UUID"),
+      projectId: z.string().uuid().optional().describe("LEGION project UUID"),
+      email: z.string().optional().describe("LEGION auth email"),
+      password: z.string().optional().describe("LEGION auth password"),
+      extraction: z
+        .object({
+          enabled: z.boolean().optional().default(true).describe("Enable or disable Haiku conversation extraction"),
+        })
+        .optional(),
+    })
+    .strict()
+    .meta({
+      ref: "LegionConfig",
+    })
+  export type Legion = z.infer<typeof Legion>
+
   export const Info = z
     .object({
       $schema: z.string().optional().describe("JSON schema reference for configuration validation"),
@@ -1191,6 +1225,7 @@ export namespace Config {
             .describe("Timeout in milliseconds for model context protocol (MCP) requests"),
         })
         .optional(),
+      legion: Legion.optional().describe("LEGION integration configuration"),
     })
     .strict()
     .meta({
@@ -1203,8 +1238,8 @@ export namespace Config {
     let result: Info = pipe(
       {},
       mergeDeep(await loadFile(path.join(Global.Path.config, "config.json"))),
-      mergeDeep(await loadFile(path.join(Global.Path.config, "opencode.json"))),
-      mergeDeep(await loadFile(path.join(Global.Path.config, "opencode.jsonc"))),
+      mergeDeep(await loadFile(path.join(Global.Path.config, "legion.json"))),
+      mergeDeep(await loadFile(path.join(Global.Path.config, "legion.jsonc"))),
     )
 
     const legacy = path.join(Global.Path.config, "config")
