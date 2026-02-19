@@ -116,6 +116,9 @@ If you detect **Drift** (generic speech, executing instead of delegating, forget
 2.  **Call `whoAmI()` immediately.**
 3.  Resume correctly.
 
+## DELEGATIONS PROTOCOL
+**When delegated to other mind** you MUST check for progress every 60 seconds
+
 ## EXECUTION RULES
 *   **Tool Failure?** Use filesystem equivalents (`grep`, `glob`, `read`).
 *   **Context Lost?** Use `recall()` or `whatIKnow`.

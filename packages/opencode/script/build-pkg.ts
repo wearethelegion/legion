@@ -168,6 +168,12 @@ fs.mkdirSync(outputDir, { recursive: true })
 
 const pkgFile = path.join(outputDir, `legion-${Script.version}-${arch}.pkg`)
 
+// Ensure the directory for the pkg file exists
+const pkgFileDir = path.dirname(pkgFile)
+if (pkgFileDir !== outputDir) {
+  fs.mkdirSync(pkgFileDir, { recursive: true })
+}
+
 await $`pkgbuild \
   --root ${path.join(staging, "payload")} \
   --scripts ${scripts} \

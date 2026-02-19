@@ -192,7 +192,12 @@ export namespace SessionProcessor {
                           start: match.state.time.start,
                           end: Date.now(),
                         },
-                        attachments: value.output.attachments,
+                        attachments: value.output.attachments?.map((attachment: any) => ({
+                          ...attachment,
+                          id: attachment.id ?? Identifier.ascending("part"),
+                          sessionID: attachment.sessionID ?? match.sessionID,
+                          messageID: attachment.messageID ?? match.messageID,
+                        })),
                       },
                     })
 
