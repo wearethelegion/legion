@@ -13,6 +13,7 @@ import { Installation } from "../../installation"
 import path from "path"
 import { Global } from "../../global"
 import { modify, applyEdits } from "jsonc-parser"
+import { Filesystem } from "../../util/filesystem"
 import { Bus } from "../../bus"
 
 function getAuthStatusIcon(status: MCP.AuthStatus): string {
@@ -398,7 +399,7 @@ async function resolveConfigPath(baseDir: string, global = false) {
   }
 
   for (const candidate of candidates) {
-    if (await Bun.file(candidate).exists()) {
+    if (await Filesystem.exists(candidate)) {
       return candidate
     }
   }
@@ -408,11 +409,9 @@ async function resolveConfigPath(baseDir: string, global = false) {
 }
 
 async function addMcpToConfig(name: string, mcpConfig: Config.Mcp, configPath: string) {
-  const file = Bun.file(configPath)
-
   let text = "{}"
-  if (await file.exists()) {
-    text = await file.text()
+  if (await Filesystem.exists(configPath)) {
+    text = await Filesystem.readText(configPath)
   }
 
   // Use jsonc-parser to modify while preserving comments
@@ -421,7 +420,7 @@ async function addMcpToConfig(name: string, mcpConfig: Config.Mcp, configPath: s
   })
   const result = applyEdits(text, edits)
 
-  await Bun.write(configPath, result)
+  await Filesystem.write(configPath, result)
 
   return configPath
 }

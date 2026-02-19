@@ -227,12 +227,23 @@ export function Session() {
 
   createEffect(() => {
     const title = Locale.truncate(session()?.title ?? "", 50)
+    const pad = (text: string) => text.padEnd(10, " ")
+    const weak = (text: string) => UI.Style.TEXT_DIM + pad(text) + UI.Style.TEXT_NORMAL
+    const logo = UI.logo("  ").split(/\r?\n/)
     return exit.message.set(
       [
         ``,
         `  █     ${UI.Style.TEXT_DIM}${title}${UI.Style.TEXT_NORMAL}`,
         `  █     ${UI.Style.TEXT_DIM}legion -s ${session()?.id}${UI.Style.TEXT_NORMAL}`,
         `  ▀▀▀▀  `,
+        `${logo[0] ?? ""}`,
+        `${logo[1] ?? ""}`,
+        `${logo[2] ?? ""}`,
+        `${logo[3] ?? ""}`,
+        ``,
+        `  ${weak("Session")}${UI.Style.TEXT_NORMAL_BOLD}${title}${UI.Style.TEXT_NORMAL}`,
+        `  ${weak("Continue")}${UI.Style.TEXT_NORMAL_BOLD}opencode -s ${session()?.id}${UI.Style.TEXT_NORMAL}`,
+        ``,
       ].join("\n"),
     )
   })
@@ -2042,8 +2053,8 @@ function ApplyPatch(props: ToolProps<typeof ApplyPatchTool>) {
         </For>
       </Match>
       <Match when={true}>
-        <InlineTool icon="%" pending="Preparing apply_patch..." complete={false} part={props.part}>
-          apply_patch
+        <InlineTool icon="%" pending="Preparing patch..." complete={false} part={props.part}>
+          Patch
         </InlineTool>
       </Match>
     </Switch>

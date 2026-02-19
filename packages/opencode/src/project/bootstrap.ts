@@ -1,5 +1,4 @@
 import { Plugin } from "../plugin"
-import { Share } from "../share/share"
 import { Format } from "../format"
 import { LSP } from "../lsp"
 import { FileWatcher } from "../file/watcher"

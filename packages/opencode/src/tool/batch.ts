@@ -78,6 +78,12 @@ export const BatchTool = Tool.define("batch", async () => {
           })
 
           const result = await tool.execute(validatedParams, { ...ctx, callID: partID })
+          const attachments = result.attachments?.map((attachment) => ({
+            ...attachment,
+            id: Identifier.ascending("part"),
+            sessionID: ctx.sessionID,
+            messageID: ctx.messageID,
+          }))
 
           await Session.updatePart({
             id: partID,
@@ -92,7 +98,7 @@ export const BatchTool = Tool.define("batch", async () => {
               output: result.output,
               title: result.title,
               metadata: result.metadata,
-              attachments: result.attachments,
+              attachments,
               time: {
                 start: callStartTime,
                 end: Date.now(),
