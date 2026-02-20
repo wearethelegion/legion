@@ -163,6 +163,13 @@ export const rpc = {
     setLegionSession(input.companyId, input.projectId)
     process.env.LEGION_COMPANY_ID = input.companyId
     process.env.LEGION_PROJECT_ID = input.projectId
+
+    // Bootstrap identity now that we have a valid project/company scope
+    const { bootstrapLegion } = await import("@/legion/bootstrap")
+    await bootstrapLegion({
+      companyId: input.companyId,
+      projectId: input.projectId,
+    })
   },
   async shutdown() {
     Log.Default.info("worker shutting down")

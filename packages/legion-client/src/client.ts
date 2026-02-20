@@ -1116,13 +1116,13 @@ export class LegionClient {
     })
   }
 
-  /** Get overview of memory state for project/agent(s). */
-  async getActiveWorkStatus(projectId: string, agentId?: string): Promise<GetActiveWorkStatusResponse> {
-    return this.callWithAuth(this.memoryClient, "GetActiveWorkStatus", {
-      project_id: projectId,
-      agent_id: agentId ?? "",
-    })
-  }
+  // /** Get overview of memory state for project/agent(s). */
+  // async getActiveWorkStatus(projectId: string, agentId?: string): Promise<GetActiveWorkStatusResponse> {
+  //   return this.callWithAuth(this.memoryClient, "GetActiveWorkStatus", {
+  //     project_id: projectId,
+  //     agent_id: agentId ?? "",
+  //   })
+  // }
 
   // -------------------------------------------------------------------------
   // Public API Methods — Task Service
@@ -1133,6 +1133,7 @@ export class LegionClient {
     title: string
     ultimateGoal: string
     projectId?: string
+    companyId?: string
     engagementId?: string
     description?: string
     priority?: string
@@ -1143,6 +1144,7 @@ export class LegionClient {
       title: opts.title,
       ultimate_goal: opts.ultimateGoal,
       project_id: opts.projectId ?? "",
+      company_id: opts.companyId ?? "",
       engagement_id: opts.engagementId ?? "",
       description: opts.description ?? "",
       priority: opts.priority ?? "medium",

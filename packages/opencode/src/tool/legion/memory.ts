@@ -113,16 +113,16 @@ const DeletePermanentMemoryTool = Tool.define("deletePermanentMemory", {
   },
 })
 
-const GetActiveWorkStatusTool = Tool.define("getActiveWorkStatus", {
-  description: "Get agent's current work context (active engagement, memory counts, last activity).",
-  parameters: z.object({
-    agent_id: z.string().optional(),
-  }),
-  async execute(params) {
-    const result = await client().getActiveWorkStatus(projectId(), params.agent_id)
-    return output(result)
-  },
-})
+// const GetActiveWorkStatusTool = Tool.define("getActiveWorkStatus", {
+//   description: "Get agent's current work context (active engagement, memory counts, last activity).",
+//   parameters: z.object({
+//     agent_id: z.string().optional(),
+//   }),
+//   async execute(params) {
+//     const result = await client().getActiveWorkStatus(projectId(), params.agent_id)
+//     return output(result)
+//   },
+// })
 
 export const MemoryTools = [
   RememberTool,
@@ -130,5 +130,5 @@ export const MemoryTools = [
   RememberPermanentTool,
   EditPermanentMemoryTool,
   DeletePermanentMemoryTool,
-  GetActiveWorkStatusTool,
+  // GetActiveWorkStatusTool,
 ]

@@ -7,7 +7,7 @@
     </picture>
   </a>
 </p>
-<p align="center">The open source AI coding agent.</p>
+<p align="center">Your knowledge. Your agents. Your rules. CLI native or MCP from any tool. One config file.</p>
 <p align="center">
   <a href="https://opencode.ai/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/opencode-ai"><img alt="npm" src="https://img.shields.io/npm/v/opencode-ai?style=flat-square" /></a>
@@ -40,7 +40,11 @@
 
 ---
 
-### Installation
+### Quick Start: Dual Delivery Modes
+
+Legion provides two primary installation paths: the high-performance native gRPC OpenCode CLI, and the MCP server for integrations with any IDE (Cursor, Windsurf, etc.).
+
+#### 1. CLI Native (Recommended)
 
 ```bash
 # YOLO
@@ -60,6 +64,10 @@ nix run nixpkgs#opencode           # or github:anomalyco/opencode for latest dev
 
 > [!TIP]
 > Remove versions older than 0.1.x before installing.
+
+#### 2. Bring Your Own IDE (Legion MCP)
+
+If you prefer using Cursor, Windsurf, or another MCP-compatible editor, you can connect the Legion MCP server directly to your workspace using your `opencode.json` config.
 
 ### Desktop App (BETA)
 

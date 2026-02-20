@@ -1,6 +1,6 @@
 import z from "zod"
 import { Tool } from "../tool"
-import { client, output, projectId } from "./index"
+import { client, output, projectId, companyId } from "./index"
 
 const CreateTaskTool = Tool.define("createTask", {
   description: "Create a new task with optional assignment, priority, and engagement link.",
@@ -18,6 +18,7 @@ const CreateTaskTool = Tool.define("createTask", {
       title: params.title,
       ultimateGoal: params.ultimate_goal,
       projectId: projectId(),
+      companyId: companyId(),
       engagementId: params.engagement_id,
       description: params.description,
       priority: params.priority,

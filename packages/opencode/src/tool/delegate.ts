@@ -69,11 +69,15 @@ function command(args: string[]): string[] {
 /**
  * Resolve agent display label from LEGION identity cache.
  * Falls back to raw agent_id if identity is unavailable.
+ * Format: "Name (Role | Specialization: specialization)" for consistency with llm.ts
  */
 function agentLabel(agentId: string): string {
   const identity = getLegionIdentity()
   const agent = identity?.raw.available_agents?.find((a) => a.agent_id === agentId)
-  if (agent) return `${agent.name} (${agent.role})`
+  if (agent) {
+    const specialization = agent.specialization ? ` | Specialization: ${agent.specialization}` : ""
+    return `${agent.name} (${agent.role}${specialization})`
+  }
   return agentId
 }
 

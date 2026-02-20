@@ -2,6 +2,7 @@ import path from "path"
 import os from "os"
 import fs from "fs/promises"
 import z from "zod"
+import { Filesystem } from "../util/filesystem"
 import { Identifier } from "../id/id"
 import { MessageV2 } from "./message-v2"
 import { Log } from "../util/log"
@@ -658,7 +659,7 @@ export namespace SessionPrompt {
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: sessionMessages })
 
       // Build system prompt, adding structured output instruction if needed
-      const system = [...(await SystemPrompt.environment(model))]
+      const system = [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system())]
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
@@ -1128,11 +1129,9 @@ export namespace SessionPrompt {
               // have to normalize, symbol search returns absolute paths
               // Decode the pathname since URL constructor doesn't automatically decode it
               const filepath = fileURLToPath(part.url)
-              const stat = await Bun.file(filepath)
-                .stat()
-                .catch(() => undefined)
+              const s = Filesystem.stat(filepath)
 
-              if (stat?.isDirectory()) {
+              if (s?.isDirectory()) {
                 part.mime = "application/x-directory"
               }
 
@@ -1279,14 +1278,13 @@ export namespace SessionPrompt {
                 ]
               }
 
-              const file = Bun.file(filepath)
               FileTime.read(input.sessionID, filepath)
               return [
                 {
                   messageID: info.id,
                   sessionID: input.sessionID,
                   type: "text",
-                  text: `Called the Read tool with the following input: {\"filePath\":\"${filepath}\"}`,
+                  text: `Called the Read tool with the following input: {"filePath":"${filepath}"}`,
                   synthetic: true,
                 },
                 {
@@ -1294,7 +1292,7 @@ export namespace SessionPrompt {
                   messageID: info.id,
                   sessionID: input.sessionID,
                   type: "file",
-                  url: `data:${part.mime};base64,` + Buffer.from(await file.bytes()).toString("base64"),
+                  url: `data:${part.mime};base64,` + (await Filesystem.readBytes(filepath)).toString("base64"),
                   mime: part.mime,
                   filename: part.filename!,
                   source: part.source,
@@ -1368,8 +1366,8 @@ export namespace SessionPrompt {
     messages: MessageV2.WithParts[]
     agent: Agent.Info
     session: Session.Info
-    lastFinished?: MessageV2.Assistant
-    model: Provider.Model
+    lastFinished: any
+    model: any
   }) {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
@@ -1405,25 +1403,14 @@ export namespace SessionPrompt {
       messageID: userMessage.info.id,
       sessionID: userMessage.info.sessionID,
       type: "text",
-      text: `<system-reminder>
-## LEGION Operational Discipline
-
-**⚡ PRIME DIRECTIVE — Goal Alignment.** Every action you take MUST move the current engagement/task closer to its ultimate_goal. Before EVERY tool call, file edit, or response — ask yourself: "Does this serve the ultimate_goal?" If an engagement is active, its ultimate_goal is your north star. If a task is in progress, its ultimate_goal refines scope. If your next action does not clearly advance these goals — STOP. Reassess. Either correct course or record why the deviation is necessary (addEntry "decision"). Drift is the enemy. Stay on target.
-
-1. **Identity First.** You have a LEGION agent identity loaded via your system prompt. Embody it fully — your personality, speech patterns, expertise, and perspective are defined there. Do not revert to generic assistant behavior.
-
-2. **Expertise Before Action.** You are PROHIBITED from making any code modifications, architectural changes, or implementation work without first consulting LEGION expertise (queryExpertise, searchSkillDetails, getAgentSkills). If relevant expertise exists, follow it. If it does not exist, you MUST learn the domain first, store findings as expertise (createExpertise), link it to yourself (linkAgentSkill), and only then proceed with modifications.
-
-3. **Plan Before Execute.** All non-trivial modifications require a documented plan. Use LEGION entries (addEntry with entry_type "plan") to record your approach before implementing. No cowboy coding — think, plan, record, then execute.
-
-4. **Engagement Required for Actionable Work.** If the current conversation is or will become actionable (producing changes, decisions, or deliverables), an engagement MUST exist. Use an existing engagement if one is active, or create a new one (createEngagement). All significant actions, decisions, and findings must be recorded as entries within the engagement.
-
-5. **Meaningful Goals Required.** The ultimate_goal field in engagements and tasks is MANDATORY and must be substantive — minimum 10 characters, clearly describing the desired outcome. Generic goals like "do the task" or "implement changes" are unacceptable. State the WHY and the WHAT.
-
-6. **Record Everything That Matters.** Decisions (addEntry "decision"), insights (addEntry "insight"), blockers (addEntry "note"), and lessons learned (recordLesson) must be captured. LEGION's knowledge base is institutional memory — if you don't record it, it didn't happen.
-
-7. **Knowledge Before SDLC Work (HARD GATE).** When working toward an engagement's or task's ultimate_goal: BEFORE planning, implementation, or any other SDLC activity → STOP → Ensure you have all required knowledge by calling queryKnowledge(), queryExpertise(), queryLessons() → Only proceed once you have consulted LEGION's institutional memory. Skipping this step is a FAILURE.${contextInfo}
-</system-reminder>`,
+      text: `<system_interrupt priority="CRITICAL">
+  <operational_heuristics>
+    <check trigger="Always">Are you speaking and acting strictly as your defined persona?</check>
+    <check trigger="Before taking any action">Does this specific file read, edit, or tool call directly serve the \`ultimate_goal\`?</check>
+    <check trigger="When making the FIRST code edit or writing a plan for a new task">Have you already checked \`whatIKnow\` or \`queryExpertise\` for this specific objective? (If yes, proceed. If no, check now).</check>
+    <check trigger="When completing a task or hitting a hard blocker">Have you logged this state change via \`addEntry\`?</check>
+  </operational_heuristics>${contextInfo}
+</system_interrupt>`,
       synthetic: true,
     })
 
@@ -1459,7 +1446,7 @@ export namespace SessionPrompt {
     // Switching from plan mode to build mode
     if (input.agent.name !== "plan" && assistantMessage?.info.agent === "plan") {
       const plan = Session.plan(input.session)
-      const exists = await Bun.file(plan).exists()
+      const exists = await Filesystem.exists(plan)
       if (exists) {
         const part = await Session.updatePart({
           id: Identifier.ascending("part"),
@@ -1478,14 +1465,14 @@ export namespace SessionPrompt {
     // Entering plan mode
     if (input.agent.name === "plan" && assistantMessage?.info.agent !== "plan") {
       const plan = Session.plan(input.session)
-      const exists = await Bun.file(plan).exists()
+      const exists = await Filesystem.exists(plan)
       if (!exists) await fs.mkdir(path.dirname(plan), { recursive: true })
       const part = await Session.updatePart({
         id: Identifier.ascending("part"),
         messageID: userMessage.info.id,
         sessionID: userMessage.info.sessionID,
         type: "text",
-        text: `<system-reminder>
+        text: `<system_interrupt priority="HIGH">
 Plan mode is active. The user indicated that they do not want you to execute yet -- you MUST NOT make any edits (with the exception of the plan file mentioned below), run any non-readonly tools (including changing configs or making commits), or otherwise make any changes to the system. This supersedes any other instructions you have received.
 
 ## Plan File Info:
@@ -1554,7 +1541,7 @@ This is critical - your turn should only end with either asking the user a quest
 **Important:** Use question tool to clarify requirements/approach, use plan_exit to request plan approval. Do NOT use question tool to ask "Is this plan okay?" - that's what plan_exit does.
 
 NOTE: At any point in time through this workflow you should feel free to ask the user questions or clarifications. Don't make large assumptions about user intent. The goal is to present a well researched plan to the user, and tie any loose ends before implementation begins.
-</system-reminder>`,
+</system_interrupt>`,
         synthetic: true,
       })
       userMessage.parts.push(part)
@@ -1723,7 +1710,11 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     const args = matchingInvocation?.args
 
     const cwd = Instance.directory
-    const shellEnv = await Plugin.trigger("shell.env", { cwd }, { env: {} })
+    const shellEnv = await Plugin.trigger(
+      "shell.env",
+      { cwd, sessionID: input.sessionID, callID: part.callID },
+      { env: {} },
+    )
     const proc = spawn(shell, args, {
       cwd,
       detached: process.platform !== "win32",

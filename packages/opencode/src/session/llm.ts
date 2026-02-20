@@ -76,23 +76,23 @@ export namespace LLM {
     const legionWorkflows = legionIdentity?.raw.workflows ?? []
     system.push(
       [
-        // Layer 1: LEGION base prompt (constitution) — or agent-specific prompt if set
-        // For Codex sessions, skip SystemPrompt.provider() since it's sent via options.instructions
-        ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
-        // Layer 2: Mind's prompt — who you are
+        // Layer 1: Mind's prompt — who you are (Identity comes first for highest attention)
         ...(legionPrompt
           ? [
-              `<legion-identity>`,
+              `<legion_identity>`,
               `You are ${legionName ?? "a LEGION agent"}. This is your mind, your personality, your expertise. Do NOT call whoAmI() — your identity is already loaded below.`,
               ...(legionPersonality ? [`<personality>`, legionPersonality, `</personality>`] : []),
               legionPrompt,
-              `</legion-identity>`,
+              `</legion_identity>`,
             ]
           : []),
+        // Layer 2: LEGION base prompt (constitution) — or agent-specific prompt if set
+        // For Codex sessions, skip SystemPrompt.provider() since it's sent via options.instructions
+        ...(input.agent.prompt ? [input.agent.prompt] : isCodex ? [] : SystemPrompt.provider(input.model)),
         // The family — who else is in the system
         ...(legionAgents.length > 0
           ? [
-              `<legion-family>`,
+              `<legion_family>`,
               `These are the other minds in LEGION. Each has their own strengths. Know who to call on.`,
               ...legionAgents.flatMap((a: any) => [
                 `- **${a.name}** [id: ${a.agent_id}]`,
@@ -100,33 +100,33 @@ export namespace LLM {
                 `  ${a.description?.split("\n")[0] ?? ""}`,
                 ...(a.when_to_use ? [`  **When to delegate:** ${a.when_to_use}`] : []),
               ]),
-              `</legion-family>`,
+              `</legion_family>`,
             ]
           : []),
         // Skills — your linked expertise
         ...(legionSkills.length > 0
           ? [
-              `<legion-skills>`,
+              `<legion_skills>`,
               `Your linked expertise. Consult these before making changes in their domains.`,
               ...legionSkills.flatMap((s: any) => [
                 `- **${s.title}** [id: ${s.expertise_id}]`,
                 `  ${s.summary?.split("\n")[0] ?? ""}`,
                 ...(s.when_to_use ? [`  **When to consult:** ${s.when_to_use}`] : []),
               ]),
-              `</legion-skills>`,
+              `</legion_skills>`,
             ]
           : []),
         // Workflows — available protocols
         ...(legionWorkflows.length > 0
           ? [
-              `<legion-workflows>`,
+              `<legion_workflows>`,
               `Available workflows. Activate when signals match.`,
               ...legionWorkflows.flatMap((w: any) => [
                 `- **${w.name}** [id: ${w.id}]`,
                 `  Signals: ${w.signals?.join(", ") || "none"}`,
                 ...(w.when_to_use ? [`  **When to activate:** ${w.when_to_use}`] : []),
               ]),
-              `</legion-workflows>`,
+              `</legion_workflows>`,
             ]
           : []),
         // Delegation status & results — check for pending/completed delegations
