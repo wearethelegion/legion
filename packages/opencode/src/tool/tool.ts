@@ -6,7 +6,6 @@ import { Truncate } from "./truncation"
 import { setSessionId } from "./legion/session-id"
 import { setEngagementId, getEngagementId } from "./legion/engagement-id"
 import { isLegionAvailable } from "../legion/auth"
-import { shouldAudit, auditToolExecution } from "./legion/audit"
 
 /**
  * Tools that are purely read-only or bootstrap — exempt from the engagement_id guard.
@@ -152,12 +151,6 @@ export namespace Tool {
           }
 
           const result = await execute(args, ctx)
-
-          // Auto-audit: create note entry for modification tools
-          const eid = getEngagementId()
-          if (shouldAudit(id, eid)) {
-            auditToolExecution(id, args as Record<string, unknown>, result, eid!, ctx.callID)
-          }
 
           // skip truncation for tools that handle it themselves
           if (result.metadata.truncated !== undefined) {
