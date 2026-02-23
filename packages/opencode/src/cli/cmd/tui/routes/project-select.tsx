@@ -36,11 +36,6 @@ export function ProjectSelect() {
   }
 
   useKeyboard((evt) => {
-    if (evt.name === "escape") {
-      route.navigate({ type: "home" })
-      evt.stopPropagation()
-      return
-    }
     const list = projects()
     if (evt.name === "up" || (evt.name === "k" && !evt.ctrl)) {
       evt.preventDefault()
@@ -111,7 +106,6 @@ export function ProjectSelect() {
           <text fg={theme.textMuted}>
             up/down <span style={{ fg: theme.text }}>navigate</span>
             {"  "}enter <span style={{ fg: theme.text }}>select</span>
-            {"  "}esc <span style={{ fg: theme.text }}>skip</span>
           </text>
         </box>
       </box>
