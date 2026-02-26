@@ -12,6 +12,8 @@ import { getLegionClient } from "../legion/auth"
 import { companyId as getCompanyId, projectId as getProjectId } from "./legion/index"
 import { IpcServer } from "../legion/ipc/server"
 import type { StatusEvent } from "../legion/ipc/protocol"
+// import { DelegationTracker } from "../legion/delegation"
+// import { Config } from "../config/config"
 import DESCRIPTION from "./delegate.txt"
 
 const log = Log.create({ service: "tool.delegate" })
@@ -92,6 +94,22 @@ export const DelegateTool = Tool.define("delegate", async () => {
       const delegationId = randomUUID()
       const targetPath = params.target_path ?? Instance.directory
 
+      // Capture parent MCP config snapshot for propagation to subprocess.
+      // Wrapped in try/catch — MCP config inheritance is best-effort; delegation
+      // must not fail if Config.get() throws (e.g. during early startup).
+      // let mcpConfigJson: string | undefined
+      // try {
+      //   const cfg = await Config.get()
+      //   if (cfg.mcp && Object.keys(cfg.mcp).length > 0) {
+      //     mcpConfigJson = JSON.stringify(cfg.mcp)
+      //     log.info("captured MCP config for subprocess", { servers: Object.keys(cfg.mcp).join(", ") })
+      //   }
+      // } catch (err) {
+      //   log.warn("failed to capture MCP config for subprocess — sub-agent will have no MCP servers", {
+      //     error: err instanceof Error ? err.message : String(err),
+      //   })
+      // }
+
       // Create delegation record in LEGION BEFORE spawning child
       let serverDelegationId: string = delegationId
       const legionClient = getLegionClient()
@@ -141,6 +159,7 @@ export const DelegateTool = Tool.define("delegate", async () => {
       if (params.task_id) args.push("--task_id", params.task_id)
       if (params.model) args.push("--model", params.model)
       if (params.context) args.push("--context", params.context)
+      // if (mcpConfigJson) args.push("--mcp_config", mcpConfigJson)
 
       const cmd = command(args)
 
@@ -228,6 +247,11 @@ export const DelegateTool = Tool.define("delegate", async () => {
         agent: label,
         pid: String(pid),
       })
+
+      // Ensure polling starts now so results are collected without waiting for
+      // the next user message. Without this, pollTimer stays null until the
+      // next manual trigger and delegation results are never delivered.
+      // DelegationTracker.notify()
 
       const output = [
         `Delegation spawned successfully.`,

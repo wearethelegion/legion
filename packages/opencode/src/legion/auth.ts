@@ -184,25 +184,64 @@ async function resolveConnectionConfig(legionConfig?: {
   }
 }
 
+/**
+ * Strip protocol prefix and return bare "host" or "host:port" string.
+ * Handles both "host:port" (gRPC style) and "https://host[:port]" formats.
+ */
+function normalizeServerUrl(serverUrl: string): string {
+  // Strip http:// or https:// prefix if present
+  return serverUrl.replace(/^https?:\/\//, "")
+}
+
+// function extractHost(serverUrl?: string): string | undefined {
+//   if (!serverUrl) return undefined
+//   try {
+//     // Handle "host:port" format (no protocol)
+//     const parts = serverUrl.split(":")
+//     return parts[0] || undefined
+//   } catch {
+//     return undefined
+//   }
+// }
+
 function extractHost(serverUrl?: string): string | undefined {
   if (!serverUrl) return undefined
   try {
-    // Handle "host:port" format (no protocol)
-    const parts = serverUrl.split(":")
-    return parts[0] || undefined
+    const bare = normalizeServerUrl(serverUrl)
+    // bare is now "host:port" or "host"
+    const colonIdx = bare.lastIndexOf(":")
+    if (colonIdx === -1) return bare || undefined
+    // Ensure what follows the colon is a port number, not an IPv6 address segment
+    const afterColon = bare.slice(colonIdx + 1)
+    const host = bare.slice(0, colonIdx)
+    return isNaN(parseInt(afterColon, 10)) ? bare : host || undefined
   } catch {
     return undefined
   }
 }
 
+// function extractPort(serverUrl?: string): number | undefined {
+//   if (!serverUrl) return undefined
+//   try {
+//     const parts = serverUrl.split(":")
+//     if (parts.length >= 2) {
+//       const port = parseInt(parts[parts.length - 1], 10)
+//       return isNaN(port) ? undefined : port
+//     }
+//   } catch {
+//     // ignore
+//   }
+//   return undefined
+// }
+
 function extractPort(serverUrl?: string): number | undefined {
   if (!serverUrl) return undefined
   try {
-    const parts = serverUrl.split(":")
-    if (parts.length >= 2) {
-      const port = parseInt(parts[parts.length - 1], 10)
-      return isNaN(port) ? undefined : port
-    }
+    const bare = normalizeServerUrl(serverUrl)
+    const colonIdx = bare.lastIndexOf(":")
+    if (colonIdx === -1) return undefined
+    const port = parseInt(bare.slice(colonIdx + 1), 10)
+    return isNaN(port) ? undefined : port
   } catch {
     // ignore
   }

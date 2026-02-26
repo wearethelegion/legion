@@ -56,6 +56,7 @@ const READ_ONLY_TOOLS = new Set([
   "getDelegationStatus",
   "getDelegationResult",
   "listDelegations",
+  "cancelDelegation", // exempt: cancellation is a control operation, not a knowledge-mutation
   "listWorkflows",
   "activateWorkflow",
   "getAgentSkills",
@@ -63,6 +64,9 @@ const READ_ONLY_TOOLS = new Set([
   "getSkillSections",
   "getSkillContent",
   "whatIKnow",
+  // MCP meta-tools — no engagement_id in schema; underlying tools handle their own guards
+  // "mcp_tool_search",
+  // "mcp_call_tool",
 ])
 
 export namespace Tool {

@@ -30,6 +30,7 @@ import { ApplyPatchTool } from "./apply_patch"
 import { DelegateTool } from "./delegate"
 import { AllLegionTools } from "./legion"
 import { isLegionAvailable } from "../legion/auth"
+// import { McpToolSearchTool, McpCallTool } from "../mcp/tool-search"
 
 export namespace ToolRegistry {
   const log = Log.create({ service: "tool.registry" })
@@ -151,8 +152,10 @@ export namespace ToolRegistry {
       ApplyPatchTool,
       ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
-      ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool, PlanEnterTool] : []),
+      PlanExitTool,
+      PlanEnterTool,
       ...(isLegionAvailable() ? [DelegateTool, ...AllLegionTools] : []),
+      // ...(config.experimental?.mcp_tool_search ? [McpToolSearchTool, McpCallTool] : []),
       ...custom,
     ]
   }

@@ -399,6 +399,8 @@ export const RunCommand = cmd({
     }
 
     async function execute(sdk: OpencodeClient) {
+      let totalTokens = 0
+
       function tool(part: ToolPart) {
         try {
           if (part.tool === "bash") return bash(props<typeof BashTool>(part))
@@ -473,6 +475,16 @@ export const RunCommand = cmd({
 
             if (part.type === "step-finish") {
               if (emit("step_finish", { part })) continue
+              if (part.tokens && args.format !== "json") {
+                const total = part.tokens.total ?? ((part.tokens.input ?? 0) + (part.tokens.output ?? 0))
+                totalTokens += total
+                UI.println(
+                  UI.Style.TEXT_DIM +
+                    `\u001b[3mTokens: ${total.toLocaleString()} (Session: ${totalTokens.toLocaleString()})\u001b[0m` +
+                    UI.Style.TEXT_NORMAL,
+                )
+                UI.empty()
+              }
             }
 
             if (part.type === "text" && part.time?.end) {
@@ -567,6 +579,19 @@ export const RunCommand = cmd({
         UI.error("Session not found")
         process.exit(1)
       }
+
+      try {
+        const history = await sdk.session.messages({ sessionID })
+        if (history.data) {
+          for (const msg of history.data) {
+            if (msg.info.role === "assistant" && msg.info.tokens) {
+              const t = msg.info.tokens.total ?? ((msg.info.tokens.input ?? 0) + (msg.info.tokens.output ?? 0))
+              totalTokens += t
+            }
+          }
+        }
+      } catch {}
+
       await share(sdk, sessionID)
 
       loop().catch((e) => {

@@ -534,12 +534,36 @@ export namespace SessionPrompt {
 
       // pending compaction
       if (task?.type === "compaction") {
+        // Cache-safe compaction: resolve the parent session's agent and tools so the
+        // compaction API call shares the same prefix (system + tools + messages) as
+        // the parent conversation. This enables Anthropic prompt cache hits when the
+        // compaction model matches the parent model.
+        const parentAgent = await Agent.get(lastUser.agent)
+        // Create a minimal processor stub for tool resolution — tools won't be called
+        // during compaction, they're only present for cache prefix alignment.
+        const compactionCacheProcessor = {
+          message: { id: "compaction-cache" } as any,
+          partFromToolCall: () => undefined as any,
+          process: () => undefined as any,
+        } as unknown as SessionProcessor.Info
+        const parentTools = await resolveTools({
+          agent: parentAgent,
+          session,
+          model,
+          tools: lastUser.tools,
+          processor: compactionCacheProcessor,
+          bypassAgentCheck: false,
+          messages: msgs,
+        })
         const result = await SessionCompaction.process({
           messages: msgs,
           parentID: lastUser.id,
           abort,
           sessionID,
           auto: task.auto,
+          system: [],
+          tools: parentTools,
+          parentAgent,
         })
         if (result === "stop") break
         continue
@@ -659,12 +683,19 @@ export namespace SessionPrompt {
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: sessionMessages })
 
       // Build system prompt, adding structured output instruction if needed
-      const system = [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system())]
+      // NOTE: environment block is intentionally excluded from the system prompt to preserve
+      // Anthropic prompt cache stability. Dynamic env data (date, cwd) is prepended to the
+      // conversation as the first user message instead.
+      // NOTE: external file/URL instructions (CLAUDE.md, HTTP) are also excluded — reading
+      // them from disk/network on every turn busts the Anthropic prompt cache.
+      // const system = [...(await InstructionPrompt.system())]
+      const system = []
       const format = lastUser.format ?? { type: "text" }
       if (format.type === "json_schema") {
         system.push(STRUCTURED_OUTPUT_SYSTEM_PROMPT)
       }
 
+      const envBlock = (await SystemPrompt.environment(model, sessionID)).join("\n")
       const result = await processor.process({
         user: lastUser,
         agent,
@@ -672,6 +703,7 @@ export namespace SessionPrompt {
         sessionID,
         system,
         messages: [
+          { role: "user" as const, content: envBlock },
           ...MessageV2.toModelMessages(sessionMessages, model),
           ...(isLastStep
             ? [
@@ -760,7 +792,7 @@ export namespace SessionPrompt {
     //   }
     // }
 
-    SessionCompaction.prune({ sessionID })
+    // SessionCompaction.prune({ sessionID }) — disabled: mutates live messages, busts Anthropic prompt cache
     for await (const item of MessageV2.stream(sessionID)) {
       if (item.info.role === "user") continue
       const queued = state()[sessionID]?.callbacks ?? []
@@ -1397,13 +1429,20 @@ export namespace SessionPrompt {
 !# END CONTEXT`
     }
 
-    // LEGION operational discipline — always appended to every user prompt
-    userMessage.parts.push({
-      id: Identifier.ascending("part"),
-      messageID: userMessage.info.id,
-      sessionID: userMessage.info.sessionID,
-      type: "text",
-      text: `<system_interrupt priority="CRITICAL">
+    // LEGION operational discipline — always appended to every user prompt.
+    // Persist the synthetic tail to DB so subsequent turns replay it identically,
+    // preserving the prompt prefix for Anthropic cache hits on conversation history.
+    // Skip if this message already has a persisted synthetic tail (from a previous turn).
+    const hasSyntheticTail = userMessage.parts.some(
+      (p) => p.type === "text" && p.synthetic && p.text.includes("<system_interrupt"),
+    )
+    if (!hasSyntheticTail) {
+      const tailPart = await Session.updatePart({
+        id: Identifier.ascending("part"),
+        messageID: userMessage.info.id,
+        sessionID: userMessage.info.sessionID,
+        type: "text",
+        text: `<system_interrupt priority="CRITICAL">
   <operational_heuristics>
     <check trigger="Always">Are you speaking and acting strictly as your defined persona?</check>
     <check trigger="Before taking any action">Does this specific file read, edit, or tool call directly serve the \`ultimate_goal\`?</check>
@@ -1411,13 +1450,15 @@ export namespace SessionPrompt {
     <check trigger="When completing a task or hitting a hard blocker">Have you logged this state change via \`addEntry\`?</check>
   </operational_heuristics>${contextInfo}
 </system_interrupt>`,
-      synthetic: true,
-    })
+        synthetic: true,
+      })
+      userMessage.parts.push(tailPart)
+    }
 
     // Original logic when experimental plan mode is disabled
     if (!Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE) {
       if (input.agent.name === "plan") {
-        userMessage.parts.push({
+        const planPart = await Session.updatePart({
           id: Identifier.ascending("part"),
           messageID: userMessage.info.id,
           sessionID: userMessage.info.sessionID,
@@ -1425,10 +1466,11 @@ export namespace SessionPrompt {
           text: PROMPT_PLAN,
           synthetic: true,
         })
+        userMessage.parts.push(planPart)
       }
       const wasPlan = input.messages.some((msg) => msg.info.role === "assistant" && msg.info.agent === "plan")
       if (wasPlan && input.agent.name === "build") {
-        userMessage.parts.push({
+        const switchPart = await Session.updatePart({
           id: Identifier.ascending("part"),
           messageID: userMessage.info.id,
           sessionID: userMessage.info.sessionID,
@@ -1436,6 +1478,7 @@ export namespace SessionPrompt {
           text: BUILD_SWITCH,
           synthetic: true,
         })
+        userMessage.parts.push(switchPart)
       }
       return input.messages
     }

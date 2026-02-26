@@ -34,6 +34,16 @@ export namespace SessionProcessor {
     let blocked = false
     let attempt = 0
     let needsCompaction = false
+    let stepCount = 0
+    const cumulativeTokens = {
+      input: 0,
+      output: 0,
+      reasoning: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      total: 0,
+      cost: 0,
+    }
 
     const result = {
       get message() {
@@ -255,6 +265,26 @@ export namespace SessionProcessor {
                   input.assistantMessage.finish = value.finishReason
                   input.assistantMessage.cost += usage.cost
                   input.assistantMessage.tokens = usage.tokens
+
+                  // Per-turn cache metrics logging
+                  stepCount++
+                  cumulativeTokens.input += usage.tokens.input
+                  cumulativeTokens.output += usage.tokens.output
+                  cumulativeTokens.reasoning += usage.tokens.reasoning
+                  cumulativeTokens.cacheRead += usage.tokens.cache.read
+                  cumulativeTokens.cacheWrite += usage.tokens.cache.write
+                  cumulativeTokens.total += usage.tokens.total ?? 0
+                  cumulativeTokens.cost += usage.cost
+
+                  const fmt = (n: number) => n.toLocaleString("en-US")
+                  const fmtCost = (n: number) => "$" + n.toFixed(4)
+                  log.info(
+                    `[Cache] Turn ${stepCount} | reads: ${fmt(usage.tokens.cache.read)} | writes: ${fmt(usage.tokens.cache.write)} | input: ${fmt(usage.tokens.input)} | output: ${fmt(usage.tokens.output)} | reasoning: ${fmt(usage.tokens.reasoning)} | total: ${fmt(usage.tokens.total ?? 0)} | cost: ${fmtCost(usage.cost)}`,
+                  )
+                  log.info(
+                    `[Cache] Cumulative | reads: ${fmt(cumulativeTokens.cacheRead)} | writes: ${fmt(cumulativeTokens.cacheWrite)} | input: ${fmt(cumulativeTokens.input)} | output: ${fmt(cumulativeTokens.output)} | reasoning: ${fmt(cumulativeTokens.reasoning)} | total: ${fmt(cumulativeTokens.total)} | cost: ${fmtCost(cumulativeTokens.cost)}`,
+                  )
+
                   await Session.updatePart({
                     id: Identifier.ascending("part"),
                     reason: value.finishReason,

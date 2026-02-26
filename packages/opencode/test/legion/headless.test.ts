@@ -34,12 +34,26 @@ describe("HeadlessMode", () => {
       "ipcSock: string",
       "model?: string",
       "context?: string",
+      // "mcpConfig?: string",
     ]
 
     for (const field of expectedFields) {
       expect(content).toContain(field)
     }
   })
+
+  // test("propagates mcpConfig to OPENCODE_MCP_CONFIG_OVERRIDE env var before bootstrap", async () => {
+  //   const content = await fs.readFile(headlessPath, "utf-8")
+  //   // Must set env var BEFORE bootstrap() so Config.state picks it up on first lazy-init
+  //   expect(content).toContain("OPENCODE_MCP_CONFIG_OVERRIDE")
+  //   expect(content).toContain("params.mcpConfig")
+  //   // Env var must be set prior to the bootstrap() call
+  //   const mcpIdx = content.indexOf("OPENCODE_MCP_CONFIG_OVERRIDE")
+  //   const bootstrapIdx = content.indexOf("await bootstrap(")
+  //   expect(mcpIdx).toBeGreaterThan(0)
+  //   expect(bootstrapIdx).toBeGreaterThan(0)
+  //   expect(mcpIdx).toBeLessThan(bootstrapIdx)
+  // })
 
   test("imports IpcClient for IPC communication", async () => {
     const content = await fs.readFile(headlessPath, "utf-8")

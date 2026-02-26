@@ -16,17 +16,21 @@ export namespace SystemPrompt {
     return [PROMPT_LEGION_BASE]
   }
 
-  export async function environment(model: Provider.Model) {
+  export async function environment(model: Provider.Model, sessionID?: string) {
     const project = Instance.project
     return [
       [
+        `You are Legion mind. You are here to help the user with tasks.`,
+        `You are operating in OpenCode based Legion CLI`,
         `You are powered by the model named ${model.api.id}. The exact model ID is ${model.providerID}/${model.api.id}`,
+        `You never do anything without clear understanding of the user's request and the context.`,
         `Here is some useful information about the environment you are running in:`,
         `<env>`,
         `  Working directory: ${Instance.directory}`,
         `  Is directory a git repo: ${project.vcs === "git" ? "yes" : "no"}`,
         `  Platform: ${process.platform}`,
         `  Today's date: ${new Date().toDateString()}`,
+        ...(sessionID ? [`  Session ID: ${sessionID}`] : []),
         `</env>`,
         `<directories>`,
         `  ${

@@ -102,7 +102,7 @@ NEW_CONFIG='${JSON.stringify({ legion: { url: apiUrl } })}'
 
 if [ -f "\${CONFIG_FILE}" ]; then
   # Merge with existing config using Python (available on all macOS)
-  python3 -c "
+  sudo -u "\${REAL_USER}" python3 -c "
 import json, sys
 
 existing_path = sys.argv[1]

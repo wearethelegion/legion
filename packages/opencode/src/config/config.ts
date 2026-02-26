@@ -192,6 +192,24 @@ export namespace Config {
       }
     }
 
+    // Inherit MCP config from parent process when running as a delegation subprocess.
+    // The parent serialises its resolved mcp section as OPENCODE_MCP_CONFIG_OVERRIDE
+    // before spawning so that sub-agents get access to the same MCP servers.
+    // Local project config always wins — parent config acts only as fallback.
+    // if (process.env.OPENCODE_MCP_CONFIG_OVERRIDE) {
+    //   try {
+    //     const parentMcp = JSON.parse(process.env.OPENCODE_MCP_CONFIG_OVERRIDE) as Record<string, unknown>
+    //     result.mcp = { ...parentMcp, ...result.mcp } as Info["mcp"]
+    //     log.info("merged parent MCP config from OPENCODE_MCP_CONFIG_OVERRIDE", {
+    //       servers: Object.keys(parentMcp).join(", "),
+    //     })
+    //   } catch (err) {
+    //     log.warn("failed to parse OPENCODE_MCP_CONFIG_OVERRIDE — ignoring", {
+    //       error: err instanceof Error ? err.message : String(err),
+    //     })
+    //   }
+    // }
+
     // Migrate deprecated mode field to agent field
     for (const [name, mode] of Object.entries(result.mode ?? {})) {
       result.agent = mergeDeep(result.agent ?? {}, {
@@ -238,6 +256,9 @@ export namespace Config {
     }
 
     result.plugin = deduplicatePlugins(result.plugin ?? [])
+
+    // Default mcp_tool_search to "auto" — project/global config can override
+    // result.experimental = { mcp_tool_search: "auto", ...result.experimental }
 
     return {
       config: result,
@@ -1223,6 +1244,12 @@ export namespace Config {
             .positive()
             .optional()
             .describe("Timeout in milliseconds for model context protocol (MCP) requests"),
+          mcp_tool_search: z
+            .union([z.literal("auto"), z.boolean()])
+            .optional()
+            .describe(
+              "Enable MCP tool search mode. When enabled, exposes only mcp_tool_search and mcp_call_tool meta-tools instead of loading all MCP tools upfront.",
+            ),
         })
         .optional(),
       legion: Legion.optional().describe("LEGION integration configuration"),

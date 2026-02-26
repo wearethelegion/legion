@@ -209,6 +209,26 @@ export namespace MCP {
     },
   )
 
+  // // Last-known-good state snapshot — populated whenever state() succeeds.
+  // // Used as a fallback when the Instance context is unavailable (e.g. gRPC/API calls).
+  // let lastKnownState: { status: Record<string, Status>; clients: Record<string, MCPClient> } | undefined
+
+  // // Safe wrapper for state() that provides fallback when Instance context is unavailable
+  // async function safeState() {
+  //   try {
+  //     const s = await state()
+  //     lastKnownState = s
+  //     return s
+  //   } catch (error) {
+  //     if (lastKnownState) {
+  //       log.debug("Instance context unavailable for MCP state, using last-known-good state")
+  //       return lastKnownState
+  //     }
+  //     log.debug("Instance context unavailable for MCP state, returning empty state")
+  //     return { status: {} as Record<string, Status>, clients: {} as Record<string, MCPClient> }
+  //   }
+  // }
+
   // Helper function to fetch prompts for a specific client
   async function fetchPromptsForClient(clientName: string, client: Client) {
     const prompts = await client.listPrompts().catch((e) => {
@@ -495,6 +515,7 @@ export namespace MCP {
 
   export async function status() {
     const s = await state()
+    // const s = await safeState()
     const cfg = await Config.get()
     const config = cfg.mcp ?? {}
     const result: Record<string, Status> = {}
@@ -510,6 +531,7 @@ export namespace MCP {
 
   export async function clients() {
     return state().then((state) => state.clients)
+    // return safeState().then((state) => state.clients)
   }
 
   export async function connect(name: string) {
@@ -566,8 +588,13 @@ export namespace MCP {
   export async function tools() {
     const result: Record<string, Tool> = {}
     const s = await state()
+    // const s = await safeState()
     const cfg = await Config.get()
     const config = cfg.mcp ?? {}
+
+    // if (cfg.experimental?.mcp_tool_search) {
+    //   return {} // meta-tools handle MCP in tool-search mode
+    // }
     const clientsSnapshot = await clients()
     const defaultTimeout = cfg.experimental?.mcp_timeout
 
@@ -606,7 +633,8 @@ export namespace MCP {
   }
 
   export async function prompts() {
-    const s = await state()
+        const s = await state()
+    // const s = await safeState()
     const clientsSnapshot = await clients()
 
     const prompts = Object.fromEntries<PromptInfo & { client: string }>(
@@ -627,7 +655,8 @@ export namespace MCP {
   }
 
   export async function resources() {
-    const s = await state()
+        const s = await state()
+    // const s = await safeState()
     const clientsSnapshot = await clients()
 
     const result = Object.fromEntries<ResourceInfo & { client: string }>(
@@ -934,4 +963,46 @@ export namespace MCP {
     const expired = await McpAuth.isTokenExpired(mcpName)
     return expired ? "expired" : "authenticated"
   }
+
+  /**
+   * Search across all connected MCP servers for tools matching the given query.
+   * Performs a case-insensitive substring match against tool name and description.
+   */
+  // export async function searchTools(query: string) {
+  //   const s = await safeState()
+  //   const lowerQuery = query.toLowerCase()
+
+  //   const matches: Array<{ server: string; name: string; description: string; inputSchema: unknown }> = []
+
+  //   await Promise.all(
+  //     Object.entries(s.clients).map(async ([serverName, client]) => {
+  //       if (s.status[serverName]?.status !== "connected") return
+  //       const toolsResult = await client.listTools().catch(() => undefined)
+  //       if (!toolsResult) return
+  //       for (const tool of toolsResult.tools) {
+  //         const haystack = `${tool.name} ${tool.description ?? ""}`.toLowerCase()
+  //         if (haystack.includes(lowerQuery)) {
+  //           matches.push({
+  //             server: serverName,
+  //             name: tool.name,
+  //             description: tool.description ?? "",
+  //             inputSchema: tool.inputSchema,
+  //           })
+  //         }
+  //       }
+  //     }),
+  //   )
+
+  //   return matches
+  // }
+
+  // /**
+  //  * Call a named tool on a specific MCP server by server name and tool name.
+  //  */
+  // export async function callToolByName(server: string, tool: string, args: Record<string, unknown>) {
+  //   const s = await safeState()
+  //   const client = s.clients[server]
+  //   if (!client) throw new Error(`MCP server not found: ${server}`)
+  //   return client.callTool({ name: tool, arguments: args }, CallToolResultSchema)
+  // }
 }

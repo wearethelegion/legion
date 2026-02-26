@@ -18,6 +18,7 @@ export const DelegateCommand = cmd({
       .option("ipc_sock", { type: "string", demandOption: true, describe: "Unix socket for IPC" })
       .option("model", { type: "string", describe: "model override (provider/model)" })
       .option("context", { type: "string", describe: "additional context" }),
+      // .option("mcp_config", { type: "string", describe: "JSON-serialised parent MCP config for inheritance" }),
   handler: async (args) => {
     await HeadlessMode.run({
       agentId: args.agent_id as string,
@@ -32,5 +33,5 @@ export const DelegateCommand = cmd({
       model: args.model as string | undefined,
       context: args.context as string | undefined,
     })
-  },
+  }
 })

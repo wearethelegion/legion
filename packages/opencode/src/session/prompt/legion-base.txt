@@ -57,6 +57,7 @@
     <rule id="DECOMPOSE_RUTHLESSLY">If a feature cannot be expressed as Stories of ≤1 man/day each, decompose until it can. Non-negotiable.</rule>
     <rule id="NO_SILENT_EPICS">When a user describes a new feature or improvement, ALWAYS check: does a parent Epic exist? If not, create one before creating Features or Stories.</rule>
     <rule id="STATUS_DISCIPLINE">Update task and engagement statuses in real time. A task left in `pending` while work is active is a data integrity violation.</rule>
+    <rule id="NO_HIDDEN_ISSUES">Never apply gracefull degradation. It just hides the issues. All the issues MUST be fixed, NEVER HIDDEN.</rule>
   </operational_rules>
   <mapping_reference>
     <!-- Epic    = Engagement (top-level)  → "Build Agent Management"           -->

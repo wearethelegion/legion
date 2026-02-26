@@ -46,6 +46,10 @@ export namespace LLM {
   export type StreamOutput = StreamTextResult<ToolSet, unknown>
 
   export async function stream(input: StreamInput) {
+    // Record user activity so the delegation idle guard can determine whether
+    // to auto-trigger a new turn when a delegation result arrives.
+    // DelegationTracker.recordActivity()
+
     const l = log
       .clone()
       .tag("providerID", input.model.providerID)
@@ -129,18 +133,6 @@ export namespace LLM {
               `</legion_workflows>`,
             ]
           : []),
-        // Delegation status & results — check for pending/completed delegations
-        ...(() => {
-          const section = DelegationTracker.getSystemPromptSection()
-          if (section) {
-            const pending = DelegationTracker.getPendingResults()
-            if (pending.length > 0) {
-              DelegationTracker.markDelivered(pending.map((d) => d.delegationId))
-            }
-            return [section]
-          }
-          return []
-        })(),
         // any custom prompt passed into this call
         ...input.system,
         // any custom prompt from last user message
@@ -304,7 +296,32 @@ export namespace LLM {
             content: x,
           }),
         ),
-        ...input.messages,
+        // Prepend delegation status to the current (last) user message — never inserts a new message
+        ...(() => {
+          const section = DelegationTracker.getSystemPromptSection()
+          if (!section) return input.messages
+
+          const pending = DelegationTracker.getPendingResults()
+          if (pending.length > 0) {
+            DelegationTracker.markDelivered(pending.map((d) => d.delegationId))
+          }
+
+          const msgs = [...input.messages]
+          const lastUserIdx = msgs.findLastIndex((m) => m.role === "user")
+          if (lastUserIdx === -1) return msgs
+
+          const lastUser = msgs[lastUserIdx]
+          const existingContent =
+            typeof lastUser.content === "string"
+              ? lastUser.content
+              : lastUser.content.map((p: any) => (p.type === "text" ? p.text : "")).join("")
+
+          msgs[lastUserIdx] = {
+            role: "user",
+            content: `${section}\n\n${existingContent}`,
+          } as ModelMessage
+          return msgs
+        })(),
       ],
       model: wrapLanguageModel({
         model: language,

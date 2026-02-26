@@ -18,6 +18,7 @@ import { Provider } from "../provider/provider"
 import { PermissionNext } from "../permission/next"
 import { ExtractionDrain } from "../extraction/drain"
 import { authenticateLegion, getLegionClient } from "./auth"
+// import { bootstrapLegion } from "./bootstrap"
 import { Log } from "../util/log"
 
 const log = Log.create({ service: "legion.headless" })
@@ -35,6 +36,7 @@ export namespace HeadlessMode {
     ipcSock: string
     model?: string
     context?: string
+    // mcpConfig?: string
   }
 
   export async function run(params: Params): Promise<void> {
@@ -68,6 +70,12 @@ export namespace HeadlessMode {
     process.on("SIGTERM", shutdown)
     process.on("SIGINT", shutdown)
 
+    // Propagate parent MCP config to subprocess BEFORE bootstrap() so Config.state
+    // // can pick it up during its single lazy-init pass.
+    // if (params.mcpConfig) {
+    //   process.env.OPENCODE_MCP_CONFIG_OVERRIDE = params.mcpConfig
+    // }
+
     try {
       await bootstrap(params.targetPath, async () => {
         process.env.LEGION_ENGAGEMENT_ID = params.engagementId
@@ -81,6 +89,22 @@ export namespace HeadlessMode {
         // ---------------------------------------------------------------
         await authenticateLegion()
 
+        // Bootstrap agent identity so getLegionIdentity() returns the correct
+        // persona/system_prompt for this delegated agent (not null).
+        // if (getLegionClient()) {
+        //   await bootstrapLegion({
+        //     agentId: params.agentId,
+        //     companyId: params.companyId,
+        //     projectId: params.projectId,
+        //   }).catch((err) => {
+        //     log.warn("bootstrapLegion failed in delegation subprocess — agent will run without identity", {
+        //       delegationId: params.delegationId,
+        //       agentId: params.agentId,
+        //       error: err instanceof Error ? err.message : String(err),
+        //     })
+        //   })
+        // }
+
         if (!getLegionClient()) {
           log.warn(
             "LEGION client not available in delegation subprocess — status updates and progress tracking will be unavailable",
@@ -93,6 +117,7 @@ export namespace HeadlessMode {
 
         // Heartbeat interval handle — must be accessible to completion handlers
         let heartbeatInterval: ReturnType<typeof setInterval> | undefined
+
 
         if (getLegionClient()) {
           log.info("setting delegation to running", { delegationId: params.delegationId })
@@ -122,6 +147,42 @@ export namespace HeadlessMode {
             })
           }, 15_000) // every 15s
         }
+
+        // if (getLegionClient()) {
+        //   log.info("setting delegation to running", { delegationId: params.delegationId })
+        //   getLegionClient()!
+        //     .updateDelegationStatus(params.delegationId, "running")
+        //     .then(() => {
+        //       log.info("delegation set to running OK", { delegationId: params.delegationId })
+        //     })
+        //     .catch((err) => {
+        //       log.warn("failed to set delegation running", {
+        //         delegationId: params.delegationId,
+        //         error: err instanceof Error ? err.message : String(err),
+        //       })
+        //     })
+
+        //   // Claim ownership and start heartbeat so the server knows we're alive
+        //   const ownerId = `pid-${process.pid}`
+        //   getLegionClient()!
+        //     .claimDelegation(params.delegationId, ownerId)
+        //     .catch((err) => {
+        //       log.warn("failed to claim delegation", {
+        //         delegationId: params.delegationId,
+        //         error: err instanceof Error ? err.message : String(err),
+        //       })
+        //     })
+        //   heartbeatInterval = setInterval(() => {
+        //     getLegionClient()
+        //       ?.updateHeartbeat(params.delegationId, ownerId)
+        //       .catch((err) => {
+        //         log.warn("heartbeat failed", {
+        //           delegationId: params.delegationId,
+        //           error: err instanceof Error ? err.message : String(err),
+        //         })
+        //       })
+        //   }, 15_000) // every 15s
+        // }
 
         // Internal SDK client — same pattern as run.ts line 590-594
         // CRITICAL: pass directory so the server middleware uses the same Instance

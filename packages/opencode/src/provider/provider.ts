@@ -1085,6 +1085,25 @@ export namespace Provider {
           opts.signal = combined
         }
 
+        // Add top-level auto-caching for Anthropic/Claude API requests.
+        // This complements the existing per-message cache breakpoints in applyCaching()
+        // by telling the API to automatically find the longest cacheable prefix.
+        // NOTE: Bedrock uses a different caching mechanism (cachePoint) — handled via per-message
+        // providerOptions in applyCaching() (transform.ts), not top-level cache_control.
+        // See: https://platform.claude.com/docs/en/build-with-claude/prompt-caching#automatic-caching
+        if (
+          (model.api.npm === "@ai-sdk/anthropic" ||
+            model.api.npm === "@ai-sdk/google-vertex/anthropic") &&
+          opts.body &&
+          opts.method === "POST"
+        ) {
+          const body = JSON.parse(opts.body as string)
+          if (body.messages && !body.cache_control) {
+            body.cache_control = { type: "ephemeral" }
+            opts.body = JSON.stringify(body)
+          }
+        }
+
         // Strip openai itemId metadata following what codex does
         // Codex uses #[serde(skip_serializing)] on id fields for all item types:
         // Message, Reasoning, FunctionCall, LocalShellCall, CustomToolCall, WebSearchCall

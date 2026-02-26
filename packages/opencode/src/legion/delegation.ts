@@ -20,6 +20,9 @@
 
 import { Log } from "../util/log"
 import { getLegionClient, isLegionAvailable } from "./auth"
+import { Bus } from "../bus"
+import { BusEvent } from "../bus/bus-event"
+import z from "zod"
 import type { DelegationResultResponse } from "@opencode-ai/legion-client"
 
 const log = Log.create({ service: "legion.delegation" })
@@ -62,6 +65,9 @@ interface DelegationResult {
 const tracked = new Map<string, TrackedDelegation>()
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
+/** Timestamp of last user activity (LLM stream invocation). Used for idle guard. */
+// let lastActivityAt: number = Date.now()
+
 /** How often to poll for delegation status (ms) */
 const POLL_INTERVAL_MS = 10_000 // 10 seconds
 
@@ -73,6 +79,23 @@ const CLEANUP_AFTER_MS = 5 * 60_000 // 5 minutes
 // ---------------------------------------------------------------------------
 
 export namespace DelegationTracker {
+  /**
+   * Bus events published by the DelegationTracker.
+   * ResultReady fires when a delegation completes and its result is collected.
+   * Subscribers can use this to trigger a new LLM turn on idle sessions.
+   */
+  // export const Event = {
+  //   ResultReady: BusEvent.define(
+  //     "legion.delegation.result_ready",
+  //     z.object({
+  //       delegationId: z.string(),
+  //       agentName: z.string(),
+  //       status: z.enum(["completed", "failed"]),
+  //       summary: z.string(),
+  //     }),
+  //   ),
+  // }
+
   /**
    * Bootstrap: run a single discovery poll to pick up any pre-existing
    * active delegations. Continuous polling only starts if actives are found.
@@ -89,6 +112,22 @@ export namespace DelegationTracker {
   export function notify() {
     ensurePolling()
   }
+
+  /**
+   * Record that user activity occurred (e.g. an LLM stream was initiated).
+   * Used by the 2-minute idle guard to determine whether to auto-trigger a turn.
+   */
+  // export function recordActivity() {
+  //   lastActivityAt = Date.now()
+  // }
+
+  // /**
+  //  * Returns true if no user activity has occurred for at least 2 minutes.
+  //  * When true, a completed delegation should auto-trigger a new LLM turn.
+  //  */
+  // export function isIdle(): boolean {
+  //   return Date.now() - lastActivityAt >= 60 * 1000
+  // }
 
   /**
    * Stop background polling. Call during shutdown.
@@ -326,6 +365,15 @@ async function fetchResult(delegationId: string) {
       turns: String(d.result.turns),
       cost: `$${d.result.costUsd.toFixed(2)}`,
     })
+
+    // // Notify subscribers that a result is ready so idle sessions can
+    // // process it immediately without waiting for the next user message.
+    // Bus.publish(DelegationTracker.Event.ResultReady, {
+    //   delegationId,
+    //   agentName: d.agentName,
+    //   status: d.status as "completed" | "failed",
+    //   summary: d.result.summary,
+    // })
   } catch (err) {
     log.warn("failed to fetch delegation result", {
       delegationId,

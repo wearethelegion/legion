@@ -13,6 +13,7 @@ import { fn } from "@/util/fn"
 import { Agent } from "@/agent/agent"
 import { Plugin } from "@/plugin"
 import { Config } from "@/config/config"
+import type { Tool as AITool } from "ai"
 import { ProviderTransform } from "@/provider/transform"
 import { getLegionClient } from "../legion/auth"
 import { ExtractionBuffer } from "../extraction/buffer"
@@ -88,7 +89,7 @@ export namespace SessionCompaction {
         memoryKey: `session-handoff-${sessionID}`,
         content: text,
         engagementId: engagementId || undefined,
-        promoteToPermanent: true,
+        // promoteToPermanent: false,
         memoryType: "instruction",
         importance: 8,
       })
@@ -239,6 +240,12 @@ export namespace SessionCompaction {
     sessionID: string
     abort: AbortSignal
     auto: boolean
+    /** Parent session's system prompt for cache-safe compaction */
+    system?: string[]
+    /** Parent session's resolved tools for cache-safe compaction */
+    tools?: Record<string, AITool>
+    /** Parent session's agent for cache-aligned system prompt construction */
+    parentAgent?: Agent.Info
   }) {
     return llmCompaction(input)
   }
@@ -254,6 +261,9 @@ export namespace SessionCompaction {
     sessionID: string
     abort: AbortSignal
     auto: boolean
+    system?: string[]
+    tools?: Record<string, AITool>
+    parentAgent?: Agent.Info
   }): Promise<"continue" | "stop"> {
     const userMessage = input.messages.findLast((m) => m.info.id === input.parentID)!.info as MessageV2.User
     const agent = await Agent.get("compaction")
@@ -325,13 +335,16 @@ Write your next prompt with this structure:
 ${recentTurns ? `\n## Recent conversation (last 5 turns)\nPreserve any substance from these that isn't already in LEGION:\n\n${recentTurns}` : ""}`
 
     const promptText = compacting.prompt ?? [defaultPrompt, ...compacting.context].join("\n\n")
+    // Cache-safe compaction: use the parent session's system prompt, tools, and agent
+    // so the API request prefix matches the parent conversation's cached prefix.
+    // This enables cache hits when the compaction model matches the parent model.
     const result = await processor.process({
       user: userMessage,
-      agent,
+      agent: input.parentAgent ?? agent,
       abort: input.abort,
       sessionID: input.sessionID,
-      tools: {},
-      system: [],
+      tools: input.tools ?? {},
+      system: input.system ?? [],
       messages: [
         ...MessageV2.toModelMessages(input.messages, model),
         {

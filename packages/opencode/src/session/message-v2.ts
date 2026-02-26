@@ -560,6 +560,7 @@ export namespace MessageV2 {
             userMessage.parts.push({
               type: "text",
               text: part.text,
+              ...(part.metadata ? { providerOptions: part.metadata } : {}),
             })
           // text/plain and directory files are converted into text parts, ignore them
           if (part.type === "file" && part.mime !== "text/plain" && part.mime !== "application/x-directory")

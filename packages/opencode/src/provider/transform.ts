@@ -173,7 +173,9 @@ export namespace ProviderTransform {
 
   function applyCaching(msgs: ModelMessage[], model: Provider.Model): ModelMessage[] {
     const system = msgs.filter((msg) => msg.role === "system").slice(0, 2)
-    const final = msgs.filter((msg) => msg.role !== "system").slice(-2)
+    // With top-level auto-caching enabled (provider.ts), conversation messages are cached
+    // automatically via prefix matching. Manual breakpoints only needed on system messages
+    // to anchor the stable prefix. Anthropic enforces a max of 4 cache_control blocks per request.
 
     const providerOptions = {
       anthropic: {
@@ -193,12 +195,12 @@ export namespace ProviderTransform {
       },
     }
 
-    for (const msg of unique([...system, ...final])) {
+    for (const msg of unique([...system])) {
       const useMessageLevelOptions = model.providerID === "anthropic" || model.providerID.includes("bedrock")
       const shouldUseContentOptions = !useMessageLevelOptions && Array.isArray(msg.content) && msg.content.length > 0
 
       if (shouldUseContentOptions) {
-        const lastContent = msg.content[msg.content.length - 1]
+        const lastContent = msg.content[msg.content.length - 1] as unknown as Record<string, any> | undefined
         if (lastContent && typeof lastContent === "object") {
           lastContent.providerOptions = mergeDeep(lastContent.providerOptions ?? {}, providerOptions)
           continue

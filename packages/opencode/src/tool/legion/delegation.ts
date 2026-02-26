@@ -9,7 +9,8 @@ const GetDelegationStatusTool = Tool.define("getDelegationStatus", {
   }),
   async execute(params) {
     const result = await client().getDelegationStatus(params.delegation_id)
-    return output(result)
+    const { progress: _progress, ...brief } = result as any
+    return output(brief)
   },
 })
 

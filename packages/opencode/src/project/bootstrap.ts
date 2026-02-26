@@ -16,6 +16,10 @@ import { Truncate } from "../tool/truncation"
 import { Config } from "../config/config"
 import { initializeLegion } from "../legion"
 import { DelegationTracker } from "../legion/delegation"
+// import { SessionStatus } from "../session/status"
+// import { Session } from "../session"
+// import { MessageV2 } from "../session/message-v2"
+// import { Identifier } from "../id/id"
 
 export async function InstanceBootstrap() {
   Log.Default.info("bootstrapping", { directory: Instance.directory })
@@ -54,6 +58,91 @@ export async function InstanceBootstrap() {
       }
       // Start background delegation monitoring (F-029)
       DelegationTracker.start()
+
+      // When a delegation completes, auto-trigger the LLM on any idle session
+      // so the result is processed immediately without requiring user input.
+      // The 1-minute idle guard ensures we only trigger if the user hasn't been
+      // active recently — preventing interruption of an ongoing conversation.
+      // Bus.subscribe(DelegationTracker.Event.ResultReady, async (event) => {
+      //   const { delegationId, agentName } = event.properties
+      //   Log.Default.info("delegation result ready — checking for idle session", {
+      //     delegationId,
+      //     agent: agentName,
+      //   })
+
+      //   // 1-minute idle guard: only auto-trigger if no user activity in last 1 minute
+      //   if (!DelegationTracker.isIdle()) {
+      //     Log.Default.info("delegation result: session not idle — result will be injected on next user message", {
+      //       delegationId,
+      //     })
+      //     return
+      //   }
+
+      //   // Find the most recently updated session that is currently idle
+      //   const idleSessions = [...Session.list()].filter((s) => SessionStatus.get(s.id).type === "idle")
+      //   if (idleSessions.length === 0) {
+      //     Log.Default.info("no idle session found — result will be injected on next user message", {
+      //       delegationId,
+      //     })
+      //     return
+      //   }
+
+      //   // Target the most recently active idle session
+      //   const target = idleSessions.reduce((a, b) => (a.time.updated > b.time.updated ? a : b))
+
+      //   Log.Default.info("triggering LLM turn for idle session", {
+      //     delegationId,
+      //     sessionID: target.id,
+      //   })
+
+      //   // Import lazily to avoid circular dependency at module load time
+      //   const { SessionPrompt } = await import("../session/prompt")
+      //   try {
+      //     SessionPrompt.assertNotBusy(target.id)
+
+      //     // Option B: SessionPrompt.loop() exits early on idle sessions (prompt.ts:325-331)
+      //     // when lastAssistant.finish is terminal and no new user message exists.
+      //     // Fix: inject a synthetic user message so lastUser.id > lastAssistant.id,
+      //     // which bypasses the early-exit guard. LLM.stream() then injects the
+      //     // delegation results via DelegationTracker.getSystemPromptSection() (llm.ts:300-307).
+      //     let lastUserAgent: string | undefined
+      //     let lastUserModel: { providerID: string; modelID: string } | undefined
+      //     for await (const msg of MessageV2.stream(target.id)) {
+      //       if (msg.info.role === "user") {
+      //         lastUserAgent = msg.info.agent
+      //         lastUserModel = msg.info.model
+      //       }
+      //     }
+
+      //     const syntheticUserMsg: MessageV2.User = {
+      //       id: Identifier.ascending("message"),
+      //       sessionID: target.id,
+      //       role: "user",
+      //       time: { created: Date.now() },
+      //       agent: lastUserAgent ?? "build",
+      //       model: lastUserModel ?? { providerID: "anthropic", modelID: "claude-sonnet-4-5" },
+      //     }
+      //     await Session.updateMessage(syntheticUserMsg)
+      //     await Session.updatePart({
+      //       id: Identifier.ascending("part"),
+      //       messageID: syntheticUserMsg.id,
+      //       sessionID: target.id,
+      //       type: "text",
+      //       text: "Delegation results are ready. Review the <legion-delegations> section in the system context and act on any completed delegations.",
+      //       synthetic: true,
+      //     } satisfies MessageV2.TextPart)
+      //     await Session.touch(target.id)
+
+      //     await SessionPrompt.loop({ sessionID: target.id })
+      //   } catch (err) {
+      //     // Session became busy between the idle check and loop start — ignore
+      //     Log.Default.info("session became busy before delegation result could be injected", {
+      //       delegationId,
+      //       sessionID: target.id,
+      //       error: err instanceof Error ? err.message : String(err),
+      //     })
+      //   }
+      // })
 
       // Initialize extraction pipeline — always active when LEGION is available
       const { ExtractionBuffer, ExtractionDrain } = await import("../extraction")
