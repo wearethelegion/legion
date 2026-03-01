@@ -1,10 +1,23 @@
-Use this tool when you need to ask the user questions during execution. This allows you to:
-1. Gather user preferences or requirements
-2. Clarify ambiguous instructions
-3. Get decisions on implementation choices as you work
-4. Offer choices to the user about what direction to take.
+Asks the user a question with predefined answer choices and an optional free-text input. Use this to gather input, clarify intent, or present a decision to the user during task execution.
 
-Usage notes:
-- When `custom` is enabled (default), a "Type your own answer" option is added automatically; don't include "Other" or catch-all options
-- Answers are returned as arrays of labels; set `multiple: true` to allow selecting more than one
-- If you recommend a specific option, make that the first option in the list and add "(Recommended)" at the end of the label
+USE THIS TOOL FOR:
+- Clarifying ambiguous requirements before proceeding with implementation
+- Presenting a choice between implementation approaches and letting the user decide
+- Gathering user preferences (e.g. framework choice, naming conventions)
+- Any point mid-task where you need user input to continue correctly
+
+DO NOT USE THIS TOOL FOR:
+- Questions that have a clearly correct answer you can determine yourself
+- Simple yes/no confirmations where you can infer intent from context
+- Asking about information already provided in the conversation
+
+KEY PARAMETERS:
+- question: The question to ask the user (required).
+- options: Array of predefined answer labels. Each is a string the user can select.
+- multiple: If true, the user can select more than one option. Default: false.
+- custom: If true (default), adds a "Type your own answer" option automatically. Do NOT include an "Other" option manually — it's added for you.
+
+USAGE NOTES:
+- If you recommend a specific option, put it first in the options list and append "(Recommended)" to the label.
+- Answers are returned as an array of selected labels.
+- Keep questions focused — one decision per call.

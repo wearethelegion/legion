@@ -1,14 +1,25 @@
-- Search the web using Exa AI - performs real-time web searches and can scrape content from specific URLs
-- Provides up-to-date information for current events and recent data
-- Supports configurable result counts and returns the content from the most relevant websites
-- Use this tool for accessing information beyond knowledge cutoff
-- Searches are performed automatically within a single API call
+Searches the web in real time using Exa AI. Returns current information from live websites.
 
-Usage notes:
-  - Supports live crawling modes: 'fallback' (backup if cached unavailable) or 'preferred' (prioritize live crawling)
-  - Search types: 'auto' (balanced), 'fast' (quick results), 'deep' (comprehensive search)
-  - Configurable context length for optimal LLM integration
-  - Domain filtering and advanced search options available
+USE THIS TOOL FOR:
+- Getting up-to-date information beyond your training knowledge cutoff
+- Researching current events, recent releases, or live data
+- Finding documentation, changelogs, or announcements for tools and libraries
+- Any question where freshness matters
 
-The current year is {{year}}. You MUST use this year when searching for recent information or current events
-- Example: If the current year is 2026 and the user asks for "latest AI news", search for "AI news 2026", NOT "AI news 2025"
+DO NOT USE THIS TOOL FOR:
+- Searching LOCAL codebase files → use Grep or Glob instead
+- Fetching a SPECIFIC known URL → use WebFetch instead
+- Searching for code examples and API docs → use CodeSearch instead (higher quality for programming)
+
+KEY PARAMETERS:
+- query: Search query string (required). Be specific. Include the current year for time-sensitive searches.
+- num_results: Number of results to return (configurable).
+- live_crawl: `"fallback"` (use cached, fall back to live if unavailable) or `"preferred"` (prioritize live crawling).
+- search_type: `"auto"` (balanced), `"fast"` (quick results), `"deep"` (comprehensive).
+
+USAGE NOTES:
+- The current year is {{year}}. Always use this year when searching for recent information.
+  - CORRECT: search "TypeScript 5.8 release notes 2026"
+  - WRONG: search "TypeScript latest release notes 2025" (wrong year)
+- Results include content from the most relevant websites, not just links.
+- Domain filtering and advanced search options are available if you need to restrict sources.

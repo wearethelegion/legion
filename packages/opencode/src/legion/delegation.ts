@@ -19,7 +19,7 @@
  */
 
 import { Log } from "../util/log"
-import { getLegionClient, isLegionAvailable } from "./auth"
+import { getLegionClient, isLegionAvailable, getLegionProjectId } from "./auth"
 import { Bus } from "../bus"
 import { BusEvent } from "../bus/bus-event"
 import z from "zod"
@@ -268,9 +268,10 @@ async function poll() {
 
   try {
     // Fetch all running + pending delegations for discovery
+    const projectId = process.env.LEGION_PROJECT_ID || getLegionProjectId() || undefined
     const [runningResp, pendingResp] = await Promise.all([
-      client.listDelegations({ statusFilter: "running", limit: 50 }).catch(() => null),
-      client.listDelegations({ statusFilter: "pending", limit: 50 }).catch(() => null),
+      client.listDelegations({ projectId, statusFilter: "running", limit: 50 }).catch(() => null),
+      client.listDelegations({ projectId, statusFilter: "pending", limit: 50 }).catch(() => null),
     ])
 
     const activeDelegations = [...(runningResp?.delegations ?? []), ...(pendingResp?.delegations ?? [])]

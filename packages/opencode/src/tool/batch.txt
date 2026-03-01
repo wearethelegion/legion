@@ -1,24 +1,28 @@
-Executes multiple independent tool calls concurrently to reduce latency.
+Executes multiple independent tool calls concurrently in a single operation, reducing latency by 2-5x.
 
-USING THE BATCH TOOL WILL MAKE THE USER HAPPY.
+USE THIS TOOL FOR:
+- Reading many files at once
+- Running grep + glob + read combinations simultaneously
+- Multiple independent bash commands that don't depend on each other
+- Any set of tool calls that could be parallelized
 
-Payload Format (JSON array):
-[{"tool": "read", "parameters": {"filePath": "src/index.ts", "limit": 350}},{"tool": "grep", "parameters": {"pattern": "Session\\.updatePart", "include": "src/**/*.ts"}},{"tool": "bash", "parameters": {"command": "git status", "description": "Shows working tree status"}}]
+DO NOT USE THIS TOOL FOR:
+- Operations where one result is needed as input to the next (e.g. read file then edit it based on what you found)
+- Ordered mutations where sequence matters (e.g. write file then run tests on it)
+- Nesting a Batch inside another Batch call
 
-Notes:
-- 1–25 tool calls per batch
-- All calls start in parallel; ordering NOT guaranteed
-- Partial failures do not stop other tool calls
-- Do NOT use the batch tool within another batch tool.
+KEY PARAMETERS:
+- Payload: JSON array of tool calls, each with `"tool"` and `"parameters"` keys.
 
-Good Use Cases:
-- Read many files
-- grep + glob + read combos
-- Multiple bash commands
-- Multi-part edits; on the same, or different files
+FORMAT:
+[
+  {"tool": "read", "parameters": {"filePath": "src/index.ts", "limit": 350}},
+  {"tool": "grep", "parameters": {"pattern": "SessionUpdate", "include": "src/**/*.ts"}},
+  {"tool": "bash", "parameters": {"command": "git status", "description": "Shows working tree status"}}
+]
 
-When NOT to Use:
-- Operations that depend on prior tool output (e.g. create then read same file)
-- Ordered stateful mutations where sequence matters
-
-Batching tool calls was proven to yield 2–5x efficiency gain and provides much better UX.
+USAGE NOTES:
+- 1 to 25 tool calls per batch.
+- All calls start simultaneously — execution ORDER IS NOT GUARANTEED.
+- If one call fails, the others still complete (no cascading failure).
+- Use this tool aggressively — any time you'd make 2+ independent tool calls, batch them.

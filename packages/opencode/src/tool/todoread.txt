@@ -1,14 +1,19 @@
-Use this tool to read the current to-do list for the session. This tool should be used proactively and frequently to ensure that you are aware of
-the status of the current task list. You should make use of this tool as often as possible, especially in the following situations:
-- At the beginning of conversations to see what's pending
-- Before starting new tasks to prioritize work
-- When the user asks about previous tasks or plans
-- Whenever you're uncertain about what to do next
-- After completing tasks to update your understanding of remaining work
-- After every few messages to ensure you're on track
+Reads the current session todo list. Returns all todo items with their status, priority, and content.
 
-Usage:
-- This tool takes in no parameters. So leave the input blank or empty. DO NOT include a dummy object, placeholder string or a key like "input" or "empty". LEAVE IT BLANK.
-- Returns a list of todo items with their status, priority, and content
-- Use this information to track progress and plan next steps
-- If no todos exist yet, an empty list will be returned
+USE THIS TOOL FOR:
+- Checking what tasks are pending at the start of a conversation
+- Reviewing remaining work before starting a new task
+- Confirming what was completed and what still needs to be done
+- Recovering context after a gap in the conversation
+
+WHEN TO CALL:
+- At the start of a new session to see what's in progress
+- Before starting a new task to prioritize correctly
+- After completing a task to understand what comes next
+- Whenever you're uncertain about what to do next
+- After every few messages on a multi-step task to stay on track
+
+USAGE NOTES:
+- Takes NO parameters. Pass an empty input — do NOT include a key like `"input"` or `"empty"`.
+- If no todos exist, returns an empty list.
+- Use the returned list to plan next steps, not just to acknowledge it.

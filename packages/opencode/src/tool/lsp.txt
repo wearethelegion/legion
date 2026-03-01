@@ -1,19 +1,33 @@
-Interact with Language Server Protocol (LSP) servers to get code intelligence features.
+Queries Language Server Protocol (LSP) servers for code intelligence: definitions, references, hover info, and call hierarchies.
 
-Supported operations:
-- goToDefinition: Find where a symbol is defined
-- findReferences: Find all references to a symbol
-- hover: Get hover information (documentation, type info) for a symbol
-- documentSymbol: Get all symbols (functions, classes, variables) in a document
-- workspaceSymbol: Search for symbols across the entire workspace
-- goToImplementation: Find implementations of an interface or abstract method
-- prepareCallHierarchy: Get call hierarchy item at a position (functions/methods)
-- incomingCalls: Find all functions/methods that call the function at a position
-- outgoingCalls: Find all functions/methods called by the function at a position
+USE THIS TOOL FOR:
+- Finding where a symbol (function, class, variable) is defined: `goToDefinition`
+- Finding all usages of a symbol across the codebase: `findReferences`
+- Understanding a symbol's type or documentation at a position: `hover`
+- Listing all functions/classes in a file: `documentSymbol`
+- Searching for a symbol across the whole project: `workspaceSymbol`
+- Finding interface implementations: `goToImplementation`
+- Understanding call hierarchies (who calls what): `prepareCallHierarchy`, `incomingCalls`, `outgoingCalls`
 
-All operations require:
-- filePath: The file to operate on
-- line: The line number (1-based, as shown in editors)
-- character: The character offset (1-based, as shown in editors)
+DO NOT USE THIS TOOL FOR:
+- Text-based search patterns → use Grep instead
+- Reading file contents → use Read instead
+- Finding files → use Glob instead
 
-Note: LSP servers must be configured for the file type. If no server is available, an error will be returned.
+SUPPORTED OPERATIONS:
+- goToDefinition — jumps to the definition of the symbol at the given position
+- findReferences — finds all places the symbol is referenced
+- hover — returns documentation/type info for the symbol at the position
+- documentSymbol — lists all named symbols (functions, classes, vars) in a file
+- workspaceSymbol — searches for a symbol by name across all project files
+- goToImplementation — finds concrete implementations of an abstract method or interface
+- prepareCallHierarchy — gets call hierarchy item at a position
+- incomingCalls — finds all callers of a function
+- outgoingCalls — finds all functions called by a function
+
+REQUIRED PARAMETERS FOR ALL OPERATIONS:
+- filePath: Absolute path to the file (required)
+- line: Line number (1-based, as shown in editors) (required)
+- character: Character offset on the line (1-based) (required)
+
+NOTE: LSP servers must be configured for the file type. If no server is available, the tool returns an error.

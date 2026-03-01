@@ -1,8 +1,24 @@
-- Fast content search tool that works with any codebase size
-- Searches file contents using regular expressions
-- Supports full regex syntax (eg. "log.*Error", "function\s+\w+", etc.)
-- Filter files by pattern with the include parameter (eg. "*.js", "*.{ts,tsx}")
-- Returns file paths and line numbers with at least one match sorted by modification time
-- Use this tool when you need to find files containing specific patterns
-- If you need to identify/count the number of matches within files, use the Bash tool with `rg` (ripgrep) directly. Do NOT use `grep`.
-- When you are doing an open-ended search that may require multiple rounds of globbing and grepping, use the Task tool instead
+Searches file contents using regular expressions. Returns file paths and line numbers for all matches, sorted by modification time.
+
+USE THIS TOOL FOR:
+- Finding where a function, class, variable, or string is used or defined
+- Locating all files that import or reference a specific module
+- Searching for error messages, log patterns, or configuration values across the codebase
+- Narrowing down which files to read after a Glob search
+
+DO NOT USE THIS TOOL FOR:
+- Finding files by name → use Glob instead
+- Listing directory contents → use Read on the directory, or Ls
+- Counting matches or computing match stats → use Bash with `rg` (ripgrep) directly
+- Open-ended searches requiring multiple rounds of globbing AND grepping → use Task instead
+
+KEY PARAMETERS:
+- pattern: Regex pattern to search for (required). Supports full regex syntax: `log.*Error`, `function\s+\w+`, `import.*from\s+['"]react['"]`
+- path: Directory to search in. Defaults to current workspace directory.
+- include: Glob pattern to restrict which files are searched. Examples: `*.ts`, `*.{js,jsx}`, `src/**/*.py`
+
+USAGE NOTES:
+- Returns file path + line number for each match, not the surrounding code. Use Read with offset to see context.
+- Case-sensitive by default. Use `(?i)` prefix for case-insensitive matching.
+- Run multiple Grep searches in parallel when searching for different patterns.
+- If you need exact match counts per file: use Bash with `rg --count pattern .`

@@ -26,12 +26,12 @@ When you have enough information, synthesize a coherent answer that matches the 
 Be concise but thorough. Cite sources by type and title.`
 
 async function model() {
-  const env = process.env.LEGION_INNER_AI_MODEL
-  if (env) {
-    const parsed = Provider.parseModel(env)
-    const m = await Provider.getModel(parsed.providerID, parsed.modelID)
-    return Provider.getLanguage(m)
-  }
+  // const env = process.env.LEGION_INNER_AI_MODEL
+  // if (env) {
+  //   const parsed = Provider.parseModel(env)
+  //   const m = await Provider.getModel(parsed.providerID, parsed.modelID)
+  //   return Provider.getLanguage(m)
+  // }
   const def = await Provider.defaultModel()
   const small = await Provider.getSmallModel(def.providerID)
   if (small) return Provider.getLanguage(small)

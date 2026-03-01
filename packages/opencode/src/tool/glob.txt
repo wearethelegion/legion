@@ -1,6 +1,21 @@
-- Fast file pattern matching tool that works with any codebase size
-- Supports glob patterns like "**/*.js" or "src/**/*.ts"
-- Returns matching file paths sorted by modification time
-- Use this tool when you need to find files by name patterns
-- When you are doing an open-ended search that may require multiple rounds of globbing and grepping, use the Task tool instead
-- You have the capability to call multiple tools in a single response. It is always better to speculatively perform multiple searches as a batch that are potentially useful.
+Finds files by name pattern using glob syntax. Returns matching paths sorted by modification time (most recently modified first).
+
+USE THIS TOOL FOR:
+- Finding files when you know part of the filename or extension (e.g. `**/*.ts`, `src/**/*.test.js`)
+- Discovering all files of a given type in a directory tree
+- Checking whether a specific file exists before reading it
+
+DO NOT USE THIS TOOL FOR:
+- Searching file CONTENTS for a pattern → use Grep instead
+- Listing a directory's immediate children → use Read on the directory path, or Ls
+- Open-ended multi-round searches that need grepping too → use Task instead
+
+KEY PARAMETERS:
+- pattern: Glob pattern to match (required). Examples: `**/*.ts`, `src/**/*.{js,jsx}`, `**/package.json`
+- path: Directory to search in. Defaults to the current workspace directory. Use absolute paths.
+
+USAGE NOTES:
+- Supports `**` for recursive matching, `*` for single-segment wildcard, `{a,b}` for alternatives.
+- Results are sorted by modification time — most recently changed files appear first.
+- Call multiple Glob searches in parallel in the same message when looking for different patterns.
+- If you need to match content inside the files too, follow up with Grep on the results.

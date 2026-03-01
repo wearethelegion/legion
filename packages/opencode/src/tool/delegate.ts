@@ -262,8 +262,13 @@ export const DelegateTool = Tool.define("delegate", async () => {
         `socket: ${socketPath}`,
         ``,
         `The delegation is now running in a separate process.`,
-        `Results will be automatically injected into your system prompt when complete.`,
-        `You do NOT need to poll — continue with other work.`,
+        `CRITICAL: After every delegation you MUST call the Bash tool with "sleep 60" — this blocks in the foreground and is mandatory. Do NOT skip it. Do NOT say "will surface when done".`,
+        `Polling loop:`,
+        `  1. Bash tool: sleep 60  ← BLOCKING. Required. No exceptions.`,
+        `  2. getDelegationStatus(delegation_id) — is status "completed"?`,
+        `  3. If running → go to step 1`,
+        `  4. If completed → getDelegationResult(delegation_id)`,
+        `  5. Verify result, report to user`,
       ].join("\n")
 
       return {

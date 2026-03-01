@@ -1,18 +1,27 @@
-Use the `apply_patch` tool to edit files. Your patch language is a stripped‑down, file‑oriented diff format designed to be easy to parse and safe to apply. You can think of it as a high‑level envelope:
+Applies a structured patch to create, update, or delete files using a simplified diff format.
 
-*** Begin Patch
-[ one or more file sections ]
-*** End Patch
+USE THIS TOOL FOR:
+- Making changes across multiple files in a single operation
+- Creating new files, renaming files, or deleting files
+- Applying a batch of changes expressed as a unified patch
 
-Within that envelope, you get a sequence of file operations.
-You MUST include a header to specify the action you are taking.
-Each operation starts with one of three headers:
+DO NOT USE THIS TOOL FOR:
+- Single-file edits → use Edit or MultiEdit instead (simpler, less error-prone)
+- Reading files → use Read instead
+- Running commands → use Bash instead
 
-*** Add File: <path> - create a new file. Every following line is a + line (the initial contents).
-*** Delete File: <path> - remove an existing file. Nothing follows.
-*** Update File: <path> - patch an existing file in place (optionally with a rename).
+PATCH FORMAT:
 
-Example patch:
+The patch must be wrapped in `*** Begin Patch` / `*** End Patch` delimiters. Inside, each file operation starts with one of:
+
+- `*** Add File: <path>` — creates a new file. All following lines prefixed with `+` become the file contents.
+- `*** Delete File: <path>` — removes the file entirely. Nothing follows.
+- `*** Update File: <path>` — patches an existing file in place.
+  - Optionally: `*** Move to: <new_path>` to rename the file while patching.
+  - Use context lines (no prefix), `+` for additions, `-` for deletions.
+  - Hunks start with `@@ <context line>` to anchor the patch location.
+
+EXAMPLE:
 
 ```
 *** Begin Patch
@@ -21,13 +30,14 @@ Example patch:
 *** Update File: src/app.py
 *** Move to: src/main.py
 @@ def greet():
--print("Hi")
-+print("Hello, world!")
+-    print("Hi")
++    print("Hello, world!")
 *** Delete File: obsolete.txt
 *** End Patch
 ```
 
-It is important to remember:
-
-- You must include a header with your intended action (Add/Delete/Update)
-- You must prefix new lines with `+` even when creating a new file
+REQUIREMENTS:
+- Every file section MUST start with one of the three headers (Add/Delete/Update).
+- For `Add File`: every content line must start with `+`.
+- For `Update File`: provide enough context lines around changes to uniquely identify the location.
+- Paths are relative to the working directory unless absolute.

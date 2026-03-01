@@ -1,41 +1,31 @@
-This is a tool for making multiple edits to a single file in one operation. It is built on top of the Edit tool and allows you to perform multiple find-and-replace operations efficiently. Prefer this tool over the Edit tool when you need to make multiple edits to the same file.
+Makes multiple find-and-replace edits to a single file in one atomic operation. All edits succeed or none are applied.
 
-Before using this tool:
+USE THIS TOOL FOR:
+- Making 2 or more targeted changes to the same file in a single operation
+- Renaming a variable or symbol that appears in multiple locations in one file
+- Applying a set of related fixes to one file without multiple round-trips
 
-1. Use the Read tool to understand the file's contents and context
-2. Verify the directory path is correct
+DO NOT USE THIS TOOL FOR:
+- A single edit → use Edit instead
+- Editing multiple different files → use Edit or Batch with multiple Edit calls
+- Completely rewriting a file → use Write instead
+- Searching for content → use Grep instead
 
-To make multiple file edits, provide the following:
-1. file_path: The absolute path to the file to modify (must be absolute, not relative)
-2. edits: An array of edit operations to perform, where each edit contains:
-   - oldString: The text to replace (must match the file contents exactly, including all whitespace and indentation)
-   - newString: The edited text to replace the oldString
-   - replaceAll: Replace all occurrences of oldString. This parameter is optional and defaults to false.
+KEY PARAMETERS:
+- file_path: Absolute path to the file to modify (required).
+- edits: Array of edit operations (required). Each edit has:
+  - oldString: Exact text to find (must match file contents exactly, including whitespace and indentation)
+  - newString: Replacement text (must differ from oldString)
+  - replaceAll: If true, replaces ALL occurrences of oldString in the file. Default: false.
 
-IMPORTANT:
-- All edits are applied in sequence, in the order they are provided
-- Each edit operates on the result of the previous edit
-- All edits must be valid for the operation to succeed - if any edit fails, none will be applied
-- This tool is ideal when you need to make several changes to different parts of the same file
+REQUIREMENTS:
+- You MUST call Read on the file before using MultiEdit.
+- Edits are applied IN ORDER — each edit operates on the result of the previous one.
+- If ANY edit fails, NO changes are applied (atomic). Verify your oldStrings are accurate.
+- Plan edits carefully: an earlier edit may shift or remove text that a later edit is trying to find.
+- All oldStrings must match file content exactly. Copy from Read output and strip the line number prefix.
 
-CRITICAL REQUIREMENTS:
-1. All edits follow the same requirements as the single Edit tool
-2. The edits are atomic - either all succeed or none are applied
-3. Plan your edits carefully to avoid conflicts between sequential operations
-
-WARNING:
-- The tool will fail if edits.oldString doesn't match the file contents exactly (including whitespace)
-- The tool will fail if edits.oldString and edits.newString are the same
-- Since edits are applied in sequence, ensure that earlier edits don't affect the text that later edits are trying to find
-
-When making edits:
-- Ensure all edits result in idiomatic, correct code
-- Do not leave the code in a broken state
-- Always use absolute file paths (starting with /)
-- Only use emojis if the user explicitly requests it. Avoid adding emojis to files unless asked.
-- Use replaceAll for replacing and renaming strings across the file. This parameter is useful if you want to rename a variable for instance.
-
-If you want to create a new file, use:
-- A new file path, including dir name if needed
-- First edit: empty oldString and the new file's contents as newString
-- Subsequent edits: normal edit operations on the created content
+ERRORS:
+- "oldString not found" → text doesn't match exactly; check whitespace/indentation
+- "Found multiple matches" → provide more surrounding context to make oldString unique, or set replaceAll: true
+- "oldString and newString are identical" → edits must change something

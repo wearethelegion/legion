@@ -1,8 +1,23 @@
-Writes a file to the local filesystem.
+Writes content to a file on the local filesystem. Overwrites the file if it already exists.
 
-Usage:
-- This tool will overwrite the existing file if there is one at the provided path.
-- If this is an existing file, you MUST use the Read tool first to read the file's contents. This tool will fail if you did not read the file first.
-- ALWAYS prefer editing existing files in the codebase. NEVER write new files unless explicitly required.
-- NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
-- Only use emojis if the user explicitly requests it. Avoid writing emojis to files unless asked.
+USE THIS TOOL FOR:
+- Creating a new file that does not exist yet
+- Completely replacing the contents of an existing file
+- Writing generated output (e.g. a compiled config, a scaffold, a report)
+
+DO NOT USE THIS TOOL FOR:
+- Making targeted edits to an existing file → use Edit or MultiEdit instead (safer, shows intent)
+- Appending to a file → use Edit or Bash with `>>`
+- Reading a file → use Read instead
+- Searching file contents → use Grep instead
+
+KEY PARAMETERS:
+- filePath: Absolute path to the file to write (required). Directory must already exist.
+- content: The full content to write to the file (required).
+
+REQUIREMENTS:
+- If the file already exists, you MUST call Read on it first. Write will fail if you haven't read the existing file.
+- Prefer Edit for targeted changes — Write replaces the entire file and loses diff history.
+- NEVER proactively create documentation files (*.md, README) unless the user explicitly requests them.
+- Do not add emojis to file content unless the user asks for them.
+- Do not expose credentials or secrets in written files.

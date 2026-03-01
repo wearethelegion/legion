@@ -1,1 +1,19 @@
-Lists files and directories in a given path. The path parameter must be absolute; omit it to use the current workspace directory. You can optionally provide an array of glob patterns to ignore with the ignore parameter. You should generally prefer the Glob and Grep tools, if you know which directories to search.
+Lists files and directories at a given path.
+
+USE THIS TOOL FOR:
+- Quickly inspecting what's in a specific directory before deciding what to read
+- Verifying a directory exists before creating files inside it
+- Checking for the presence of specific files or subdirectories
+
+DO NOT USE THIS TOOL FOR:
+- Finding files recursively across a directory tree → use Glob with `**` patterns instead
+- Searching file contents → use Grep instead
+- Reading a file → use Read instead
+
+KEY PARAMETERS:
+- path: Absolute path to the directory to list. Omit to use the current workspace directory.
+- ignore: Array of glob patterns to exclude from the listing (optional).
+
+USAGE NOTES:
+- Prefer Glob and Grep over Ls when you know what you're looking for — they're faster and more targeted.
+- Use Ls to orient yourself in an unfamiliar directory structure, or to confirm a path exists before writing to it.

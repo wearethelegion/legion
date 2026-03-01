@@ -1,12 +1,21 @@
-- Search and get relevant context for any programming task using Exa Code API
-- Provides the highest quality and freshest context for libraries, SDKs, and APIs
-- Use this tool for ANY question or task related to programming
-- Returns comprehensive code examples, documentation, and API references
-- Optimized for finding specific programming patterns and solutions
+Searches for high-quality, up-to-date code examples and documentation using the Exa Code API. Returns code samples, API references, and library documentation from real sources.
 
-Usage notes:
-  - Adjustable token count (1000-50000) for focused or comprehensive results
-  - Default 5000 tokens provides balanced context for most queries
-  - Use lower values for specific questions, higher values for comprehensive documentation
-  - Supports queries about frameworks, libraries, APIs, and programming concepts
-  - Examples: 'React useState hook examples', 'Python pandas dataframe filtering', 'Express.js middleware'
+USE THIS TOOL FOR:
+- Finding usage examples for a library, SDK, or framework you're unfamiliar with
+- Looking up API signatures, method options, or configuration formats
+- Getting fresh documentation when your training knowledge may be outdated
+- Researching how to implement a specific programming pattern
+
+DO NOT USE THIS TOOL FOR:
+- Searching the LOCAL codebase → use Grep or Glob instead
+- General web research (news, non-code topics) → use WebSearch instead
+- Fetching a specific known URL → use WebFetch instead
+
+KEY PARAMETERS:
+- query: Natural language or code-based search query (required). Be specific: library name + concept. Examples: `"React useEffect cleanup function"`, `"Express.js error handling middleware"`, `"pandas groupby agg multiple functions"`
+- tokens: Token count for the response (1000-50000). Default 5000. Use lower for quick lookups, higher for comprehensive documentation.
+
+USAGE NOTES:
+- Results are optimized for programming content — not suitable for general research.
+- Returns actual code snippets and documentation text, not just links.
+- Use when you need the most current API surface for a rapidly-evolving library.

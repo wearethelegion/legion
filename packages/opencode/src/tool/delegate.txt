@@ -1,20 +1,32 @@
-Delegate a task to a LEGION specialist agent running in an isolated subprocess.
+Delegates a task to a LEGION specialist agent running in an isolated subprocess. The agent has full tool access (Read, Write, Edit, Bash, Grep, Glob, MCP tools, etc.) and executes autonomously against the provided task description.
 
-Each delegation spawns a separate headless process with full tool access (Read, Write, Edit, Bash, Grep, Glob, MCP tools, etc.). The agent's personality, system prompt, and skills are loaded from LEGION automatically.
+USE THIS TOOL FOR:
+- Routing work to a specialist (e.g. Tommy for backend code, Bobby for frontend, Allen for architecture)
+- Running parallel workstreams — delegate multiple tasks in the same message
+- Offloading work that requires deep domain knowledge or extended execution
+- Any task that exceeds your immediate context or would benefit from a specialist perspective
 
-This tool returns IMMEDIATELY with the delegation_id. You do NOT need to poll or wait — delegation results are automatically injected into your system prompt when they complete.
+DO NOT USE THIS TOOL FOR:
+- Simple file reads, edits, or searches — do those directly
+- Tasks with no clear specialist owner — handle them yourself
 
-Parameters:
-- agent_id: UUID of the LEGION agent to delegate to
-- task: Clear description of what the agent should accomplish
-- engagement_id: LEGION engagement UUID for traceability
-- target_path: (optional) Working directory for the agent. Defaults to current project directory.
-- task_id: (optional) LEGION task UUID to link this delegation to
-- model: (optional) Model override in provider/model format (e.g. "anthropic/claude-sonnet-4-20250514")
-- context: (optional) Additional context prepended to the task
+HOW IT WORKS:
+- This tool returns IMMEDIATELY with a delegation_id.
+- The agent runs asynchronously in a subprocess.
+- CRITICAL: After every delegation, immediately call the Bash tool with "sleep 60" — this blocks in the foreground. This is mandatory, no exceptions. Then getDelegationStatus(delegation_id) to check if completed. If still running, sleep 60 again and repeat. Only when completed, call getDelegationResult(delegation_id). Never say "will surface when done".
+- Each delegation is crash-isolated: one failing agent cannot affect others.
 
-Tips:
-- Launch multiple delegations in parallel by calling this tool multiple times in the same message
-- Results appear in your system prompt automatically — no need to call get_delegation_status
-- Each delegation is crash-isolated — one failing agent cannot affect others
-- Use engagement_id and task_id for full audit trail in LEGION
+KEY PARAMETERS:
+- agent_id: UUID of the LEGION agent to delegate to (required). Use the agent roster in your identity to pick the right specialist.
+- task: Clear, specific description of what the agent must accomplish (required). Include success criteria.
+- engagement_id: LEGION engagement UUID for traceability (required for audit trail).
+- context: Additional context prepended to the task. Use for sharing relevant background, constraints, or prior decisions.
+- target_path: Working directory for the agent. Defaults to current project directory.
+- task_id: LEGION task UUID to link this delegation to (for full traceability).
+- model: Model override in `provider/model` format (e.g. `"anthropic/claude-sonnet-4-20250514"`).
+
+USAGE NOTES:
+- Always write an `addEntry(type: "plan")` to the engagement BEFORE delegating — the agent reads this plan.
+- Launch multiple delegations in parallel by calling this tool multiple times in the same message.
+- After delegating, proceed with other work. When the result appears in your system prompt, verify it against the plan.
+- Every delegation must include engagement_id for a complete audit trail.
