@@ -17,6 +17,7 @@ KEY PARAMETERS:
   - oldString: Exact text to find (must match file contents exactly, including whitespace and indentation)
   - newString: Replacement text (must differ from oldString)
   - replaceAll: If true, replaces ALL occurrences of oldString in the file. Default: false.
+- engagement_id: LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.
 
 REQUIREMENTS:
 - You MUST call Read on the file before using MultiEdit.

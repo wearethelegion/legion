@@ -23,7 +23,7 @@ import { Flag } from "@/flag/flag"
 import { PermissionNext } from "@/permission/next"
 import { Auth } from "@/auth"
 import { getLegionIdentity } from "@/legion"
-import { DelegationTracker } from "@/legion/delegation"
+// import { DelegationTracker } from "@/legion/delegation"
 
 export namespace LLM {
   const log = Log.create({ service: "llm" })
@@ -46,9 +46,7 @@ export namespace LLM {
   export type StreamOutput = StreamTextResult<ToolSet, unknown>
 
   export async function stream(input: StreamInput) {
-    // Record user activity so the delegation idle guard can determine whether
-    // to auto-trigger a new turn when a delegation result arrives.
-    // DelegationTracker.recordActivity()
+    // DelegationTracker.recordActivity() — disabled, background tracking removed
 
     const l = log
       .clone()
@@ -71,6 +69,10 @@ export namespace LLM {
     const isCodex = provider.id === "openai" && auth?.type === "oauth"
 
     const system = []
+
+    // Background delegation tracking disabled — Arthur polls manually when needed.
+    // const legionDelegationsBlock = DelegationTracker.getSystemPromptSection()
+
     const legionIdentity = getLegionIdentity()
     const legionPrompt = legionIdentity?.raw.system_prompt
     const legionPersonality = legionIdentity?.raw.personality
@@ -236,6 +238,10 @@ export namespace LLM {
       })
     }
 
+    // Delegation injection into <system_interrupt> disabled — background tracking removed.
+    // if (legionDelegationsBlock) { ... inject into last user message ... }
+    const messagesForLLM = [...input.messages]
+
     return streamText({
       onError(error) {
         l.error("stream error", {
@@ -296,32 +302,7 @@ export namespace LLM {
             content: x,
           }),
         ),
-        // Prepend delegation status to the current (last) user message — never inserts a new message
-        ...(() => {
-          const section = DelegationTracker.getSystemPromptSection()
-          if (!section) return input.messages
-
-          const pending = DelegationTracker.getPendingResults()
-          if (pending.length > 0) {
-            DelegationTracker.markDelivered(pending.map((d) => d.delegationId))
-          }
-
-          const msgs = [...input.messages]
-          const lastUserIdx = msgs.findLastIndex((m) => m.role === "user")
-          if (lastUserIdx === -1) return msgs
-
-          const lastUser = msgs[lastUserIdx]
-          const existingContent =
-            typeof lastUser.content === "string"
-              ? lastUser.content
-              : lastUser.content.map((p: any) => (p.type === "text" ? p.text : "")).join("")
-
-          msgs[lastUserIdx] = {
-            role: "user",
-            content: `${section}\n\n${existingContent}`,
-          } as ModelMessage
-          return msgs
-        })(),
+        ...messagesForLLM,
       ],
       model: wrapLanguageModel({
         model: language,

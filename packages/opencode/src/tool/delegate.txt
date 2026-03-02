@@ -7,8 +7,11 @@ USE THIS TOOL FOR:
 - Any task that exceeds your immediate context or would benefit from a specialist perspective
 
 DO NOT USE THIS TOOL FOR:
-- Simple file reads, edits, or searches — do those directly
-- Tasks with no clear specialist owner — handle them yourself
+- Mechanical tasks (reading a file, grepping, simple lookup) — handle those directly
+
+DELEGATE WHEN:
+- The task requires reasoning, analysis, synthesis, or judgment
+- A specialist would do it better or faster than you
 
 HOW IT WORKS:
 - This tool returns IMMEDIATELY with a delegation_id.
@@ -26,7 +29,6 @@ KEY PARAMETERS:
 - model: Model override in `provider/model` format (e.g. `"anthropic/claude-sonnet-4-20250514"`).
 
 USAGE NOTES:
-- Always write an `addEntry(type: "plan")` to the engagement BEFORE delegating — the agent reads this plan.
-- Launch multiple delegations in parallel by calling this tool multiple times in the same message.
-- After delegating, proceed with other work. When the result appears in your system prompt, verify it against the plan.
+- Launch multiple delegations in parallel by calling this tool multiple times in the same message. The same specialist agent can be used for multiple parallel delegations simultaneously.
+- After delegating, poll with sleep 60 → getDelegationStatus → getDelegationResult. Verify the result against the plan.
 - Every delegation must include engagement_id for a complete audit trail.

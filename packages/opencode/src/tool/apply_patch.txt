@@ -41,3 +41,4 @@ REQUIREMENTS:
 - For `Add File`: every content line must start with `+`.
 - For `Update File`: provide enough context lines around changes to uniquely identify the location.
 - Paths are relative to the working directory unless absolute.
+- engagement_id: LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.

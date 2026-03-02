@@ -92,7 +92,8 @@ const ResumeEngagementTool = Tool.define("resumeEngagement", {
 })
 
 const AddEntryTool = Tool.define("addEntry", {
-  description: "Add an entry to an engagement (requirement, insight, decision, plan, note, question).",
+  description:
+    "Add an entry to an engagement (requirement, insight, decision, plan, note, question). Requires engagement_id.",
   parameters: z.object({
     engagement_id: z.string().optional().describe("Engagement UUID (falls back to LEGION_ENGAGEMENT_ID env var)"),
     entry_type: z.string().describe("requirement, insight, decision, plan, note, question"),
@@ -121,13 +122,18 @@ const AddEntryTool = Tool.define("addEntry", {
 })
 
 const UpdateEntryTool = Tool.define("updateEntry", {
-  description: "Update an existing entry's content, references, or tags.",
+  description: "Update an existing entry's content, references, or tags. Requires engagement_id.",
   parameters: z.object({
     entry_id: z.string().describe("Entry UUID"),
     content: z.string().optional(),
     references: z.array(z.string()).optional(),
     tags: z.array(z.string()).optional(),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().updateEntry(params.entry_id, {

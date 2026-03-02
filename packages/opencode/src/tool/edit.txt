@@ -17,6 +17,7 @@ KEY PARAMETERS:
 - oldString: The exact text to find and replace (required). Must match file contents exactly, including all whitespace and indentation.
 - newString: The replacement text (required). Must differ from oldString.
 - replaceAll: If true, replaces ALL occurrences of oldString. Default: false. Use for renaming.
+- engagement_id: LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.
 
 REQUIREMENTS:
 - You MUST call Read on the file at least once before editing. Edit will fail if you haven't read the file.

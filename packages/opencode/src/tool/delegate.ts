@@ -12,7 +12,7 @@ import { getLegionClient } from "../legion/auth"
 import { companyId as getCompanyId, projectId as getProjectId } from "./legion/index"
 import { IpcServer } from "../legion/ipc/server"
 import type { StatusEvent } from "../legion/ipc/protocol"
-// import { DelegationTracker } from "../legion/delegation"
+import { DelegationTracker } from "../legion/delegation"
 // import { Config } from "../config/config"
 import DESCRIPTION from "./delegate.txt"
 
@@ -251,7 +251,7 @@ export const DelegateTool = Tool.define("delegate", async () => {
       // Ensure polling starts now so results are collected without waiting for
       // the next user message. Without this, pollTimer stays null until the
       // next manual trigger and delegation results are never delivered.
-      // DelegationTracker.notify()
+      DelegationTracker.notify()
 
       const output = [
         `Delegation spawned successfully.`,

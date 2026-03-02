@@ -3,7 +3,7 @@ import { Tool } from "../tool"
 import { client, output, companyId, projectId } from "./index"
 
 const CreateAgentTool = Tool.define("createAgent", {
-  description: "Create a new specialist agent. Auto-links learning skill.",
+  description: "Create a new specialist agent. Auto-links learning skill. Requires engagement_id.",
   parameters: z.object({
     name: z.string().describe("Agent name"),
     role: z.string().describe("Functional role (researcher, developer, etc.)"),
@@ -13,7 +13,12 @@ const CreateAgentTool = Tool.define("createAgent", {
     when_to_use: z.string().describe("When to delegate to this agent"),
     capabilities: z.array(z.string()).optional().describe("Skill tags"),
     specialization: z.string().optional().describe("Primary domain"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().createAgent({
@@ -32,7 +37,7 @@ const CreateAgentTool = Tool.define("createAgent", {
 })
 
 const UpdateAgentTool = Tool.define("updateAgent", {
-  description: "Update an existing agent. Only provided fields are changed.",
+  description: "Update an existing agent. Only provided fields are changed. Requires engagement_id.",
   parameters: z.object({
     agent_id: z.string().describe("Agent UUID"),
     name: z.string().optional(),
@@ -42,7 +47,12 @@ const UpdateAgentTool = Tool.define("updateAgent", {
     when_to_use: z.string().optional().describe("When to delegate to this agent"),
     metadata_json: z.string().optional().describe("JSON string of metadata dict"),
     public: z.boolean().optional(),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().updateAgent(params.agent_id, {
@@ -60,10 +70,15 @@ const UpdateAgentTool = Tool.define("updateAgent", {
 })
 
 const DeleteAgentTool = Tool.define("deleteAgent", {
-  description: "Delete an agent and clean up all associations. Permanent.",
+  description: "Delete an agent and clean up all associations. Permanent. Requires engagement_id.",
   parameters: z.object({
     agent_id: z.string().describe("Agent UUID to delete"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().deleteAgent(params.agent_id)
@@ -119,11 +134,16 @@ const GetSkillContentTool = Tool.define("getSkillContent", {
 })
 
 const LinkAgentSkillTool = Tool.define("linkAgentSkill", {
-  description: "Link an expertise document to an agent, making it a navigable skill.",
+  description: "Link an expertise document to an agent, making it a navigable skill. Requires engagement_id.",
   parameters: z.object({
     agent_id: z.string().describe("Agent UUID"),
     expertise_id: z.string().describe("Expertise UUID to link"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().linkAgentSkill(params.agent_id, params.expertise_id)
@@ -132,11 +152,17 @@ const LinkAgentSkillTool = Tool.define("linkAgentSkill", {
 })
 
 const UnlinkAgentSkillTool = Tool.define("unlinkAgentSkill", {
-  description: "Remove a skill link from an agent. Does NOT delete the expertise, only the link.",
+  description:
+    "Remove a skill link from an agent. Does NOT delete the expertise, only the link. Requires engagement_id.",
   parameters: z.object({
     agent_id: z.string().describe("Agent UUID"),
     expertise_id: z.string().describe("Expertise UUID to unlink"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().unlinkAgentSkill(params.agent_id, params.expertise_id)

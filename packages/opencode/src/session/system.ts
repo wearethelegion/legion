@@ -4,7 +4,7 @@ import { Instance } from "../project/instance"
 
 import PROMPT_LEGION_BASE from "./prompt/legion-base.txt"
 import PROMPT_CODEX from "./prompt/codex_header.txt"
-import type { Provider } from "@/provider/provider"
+import { Provider } from "@/provider/provider"
 
 export namespace SystemPrompt {
   export function instructions() {
@@ -18,11 +18,36 @@ export namespace SystemPrompt {
 
   export async function environment(model: Provider.Model, sessionID?: string) {
     const project = Instance.project
+
+    const modelLines: string[] = []
+    try {
+      const providers = await Provider.list()
+      const entries: { line: string; isCurrent: boolean }[] = []
+      for (const [providerID, info] of Object.entries(providers)) {
+        for (const [modelID, m] of Object.entries(info.models)) {
+          const isCurrent = providerID === model.providerID && modelID === model.api.id
+          entries.push({
+            line: `- ${providerID}/${modelID} (${m.name})${isCurrent ? " [current]" : ""}`,
+            isCurrent,
+          })
+        }
+      }
+      entries.sort((a, b) => {
+        if (a.isCurrent) return -1
+        if (b.isCurrent) return 1
+        return a.line.localeCompare(b.line)
+      })
+      modelLines.push(`Available models for delegation:`, ...entries.map((e) => e.line))
+    } catch {
+      // silently skip if Provider.list() fails
+    }
+
     return [
       [
         `You are Legion mind. You are here to help the user with tasks.`,
         `You are operating in OpenCode based Legion CLI`,
         `You are powered by the model named ${model.api.id}. The exact model ID is ${model.providerID}/${model.api.id}`,
+        ...(modelLines.length > 0 ? modelLines : []),
         `You never do anything without clear understanding of the user's request and the context.`,
         `Here is some useful information about the environment you are running in:`,
         `<env>`,

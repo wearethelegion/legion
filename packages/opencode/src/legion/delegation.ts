@@ -43,6 +43,8 @@ interface TrackedDelegation {
   result?: DelegationResult
   /** Whether this result has been injected into the LLM conversation */
   delivered: boolean
+  /** Whether ResultReady bus event has been published — prevents re-firing on repeated poll cycles */
+  resultPublished: boolean
   /** Timestamp when we started tracking */
   trackedAt: number
   /** Timestamp of last status change */
@@ -66,7 +68,7 @@ const tracked = new Map<string, TrackedDelegation>()
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 /** Timestamp of last user activity (LLM stream invocation). Used for idle guard. */
-// let lastActivityAt: number = Date.now()
+let lastActivityAt: number = Date.now()
 
 /** How often to poll for delegation status (ms) */
 const POLL_INTERVAL_MS = 10_000 // 10 seconds
@@ -84,17 +86,17 @@ export namespace DelegationTracker {
    * ResultReady fires when a delegation completes and its result is collected.
    * Subscribers can use this to trigger a new LLM turn on idle sessions.
    */
-  // export const Event = {
-  //   ResultReady: BusEvent.define(
-  //     "legion.delegation.result_ready",
-  //     z.object({
-  //       delegationId: z.string(),
-  //       agentName: z.string(),
-  //       status: z.enum(["completed", "failed"]),
-  //       summary: z.string(),
-  //     }),
-  //   ),
-  // }
+  export const Event = {
+    ResultReady: BusEvent.define(
+      "legion.delegation.result_ready",
+      z.object({
+        delegationId: z.string(),
+        agentName: z.string(),
+        status: z.enum(["completed", "failed"]),
+        summary: z.string(),
+      }),
+    ),
+  }
 
   /**
    * Bootstrap: run a single discovery poll to pick up any pre-existing
@@ -117,17 +119,17 @@ export namespace DelegationTracker {
    * Record that user activity occurred (e.g. an LLM stream was initiated).
    * Used by the 2-minute idle guard to determine whether to auto-trigger a turn.
    */
-  // export function recordActivity() {
-  //   lastActivityAt = Date.now()
-  // }
+  export function recordActivity() {
+    lastActivityAt = Date.now()
+  }
 
-  // /**
-  //  * Returns true if no user activity has occurred for at least 2 minutes.
-  //  * When true, a completed delegation should auto-trigger a new LLM turn.
-  //  */
-  // export function isIdle(): boolean {
-  //   return Date.now() - lastActivityAt >= 60 * 1000
-  // }
+  /**
+   * Returns true if no user activity has occurred for at least 2 minutes.
+   * When true, a completed delegation should auto-trigger a new LLM turn.
+   */
+  export function isIdle(): boolean {
+    return Date.now() - lastActivityAt >= 60 * 1000
+  }
 
   /**
    * Stop background polling. Call during shutdown.
@@ -288,6 +290,7 @@ async function poll() {
           stepNumber: d.steps_completed,
           stepDescription: "",
           delivered: false,
+          resultPublished: false,
           trackedAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -367,14 +370,20 @@ async function fetchResult(delegationId: string) {
       cost: `$${d.result.costUsd.toFixed(2)}`,
     })
 
-    // // Notify subscribers that a result is ready so idle sessions can
-    // // process it immediately without waiting for the next user message.
-    // Bus.publish(DelegationTracker.Event.ResultReady, {
-    //   delegationId,
-    //   agentName: d.agentName,
-    //   status: d.status as "completed" | "failed",
-    //   summary: d.result.summary,
-    // })
+    // Notify subscribers that a result is ready so idle sessions can
+    // process it immediately without waiting for the next user message.
+    // Guard: publish exactly once per delegation — prevents infinite wake-up
+    // loops when fetchResult() is called on repeated poll cycles before
+    // markDelivered() has run (e.g. when SessionPrompt.loop() threw assertNotBusy).
+    if (!d.resultPublished) {
+      d.resultPublished = true
+      Bus.publish(DelegationTracker.Event.ResultReady, {
+        delegationId,
+        agentName: d.agentName,
+        status: d.status as "completed" | "failed",
+        summary: d.result.summary,
+      })
+    }
   } catch (err) {
     log.warn("failed to fetch delegation result", {
       delegationId,

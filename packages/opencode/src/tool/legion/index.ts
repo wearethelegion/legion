@@ -43,6 +43,7 @@ import { MemoryTools } from "./memory"
 import { TaskTools } from "./task"
 import { DelegationTools } from "./delegation"
 import { WhatIKnowTools } from "./what-i-know"
+import { ContextResetTools } from "./context-reset"
 
 export const AllLegionTools: Tool.Info[] = [
   ...AuthTools,
@@ -57,4 +58,5 @@ export const AllLegionTools: Tool.Info[] = [
   ...TaskTools,
   ...DelegationTools,
   ...WhatIKnowTools,
+  ...ContextResetTools,
 ]

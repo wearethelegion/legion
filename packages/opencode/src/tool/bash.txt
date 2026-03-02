@@ -19,6 +19,7 @@ KEY PARAMETERS:
 - workdir: Working directory for the command. Use this instead of `cd dir && command` patterns.
 - timeout: Timeout in milliseconds (default: 120000ms / 2 minutes).
 - description: 5-10 word summary of what the command does.
+- engagement_id: LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.
 
 USAGE NOTES:
 - All commands run in ${directory} by default. Override with `workdir`.

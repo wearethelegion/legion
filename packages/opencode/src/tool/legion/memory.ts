@@ -3,12 +3,17 @@ import { Tool } from "../tool"
 import { client, output, stringRecord, companyId, projectId } from "./index"
 
 const RememberTool = Tool.define("remember", {
-  description: "Store short-term memory for current session, optionally promote to permanent.",
+  description: "Store short-term memory for current session, optionally promote to permanent. Requires engagement_id.",
   parameters: z.object({
     agent_id: z.string().describe("Agent UUID who is remembering"),
     memory_key: z.string().describe("Unique identifier for the memory"),
     content: z.string().describe("What to remember"),
-    engagement_id: z.string().optional(),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
     ttl_minutes: z.number().optional().default(0).describe("0 = session-only"),
     promote_to_permanent: z.boolean().optional().default(false),
     memory_type: z.string().optional().describe("fact, preference, learned_pattern, instruction"),
@@ -57,7 +62,7 @@ const RecallTool = Tool.define("recall", {
 })
 
 const RememberPermanentTool = Tool.define("rememberPermanent", {
-  description: "Create permanent memory that persists forever.",
+  description: "Create permanent memory that persists forever. Requires engagement_id.",
   parameters: z.object({
     memory_type: z.string().describe("fact, preference, learned_pattern, instruction"),
     key: z.string().describe("Unique identifier within scope"),
@@ -65,7 +70,12 @@ const RememberPermanentTool = Tool.define("rememberPermanent", {
     agent_id: z.string().optional(),
     metadata: z.record(z.string(), z.string()).optional().describe("Optional tags"),
     importance: z.number().optional().default(5),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().createPermanentMemory({
@@ -83,13 +93,18 @@ const RememberPermanentTool = Tool.define("rememberPermanent", {
 })
 
 const EditPermanentMemoryTool = Tool.define("editPermanentMemory", {
-  description: "Update an existing permanent memory.",
+  description: "Update an existing permanent memory. Requires engagement_id.",
   parameters: z.object({
     memory_id: z.string().describe("Permanent memory UUID"),
     content: z.string().optional(),
     metadata: z.record(z.string(), z.string()).optional().describe("Optional tags"),
     importance: z.number().optional().default(0),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().updatePermanentMemory(params.memory_id, {
@@ -102,10 +117,15 @@ const EditPermanentMemoryTool = Tool.define("editPermanentMemory", {
 })
 
 const DeletePermanentMemoryTool = Tool.define("deletePermanentMemory", {
-  description: "Delete a permanent memory. Cannot be undone.",
+  description: "Delete a permanent memory. Cannot be undone. Requires engagement_id.",
   parameters: z.object({
     memory_id: z.string().describe("Permanent memory UUID"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().deletePermanentMemory(params.memory_id)

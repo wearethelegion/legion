@@ -14,6 +14,7 @@ DO NOT USE THIS TOOL FOR:
 KEY PARAMETERS:
 - filePath: Absolute path to the file to write (required). Directory must already exist.
 - content: The full content to write to the file (required).
+- engagement_id: LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.
 
 REQUIREMENTS:
 - If the file already exists, you MUST call Read on it first. Write will fail if you haven't read the existing file.

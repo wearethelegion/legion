@@ -3,7 +3,8 @@ import { Tool } from "../tool"
 import { client, output, projectId } from "./index"
 
 const RecordLessonTool = Tool.define("recordLesson", {
-  description: "Record a resolved issue as a lesson learned. Document symptom, root cause, solution, prevention.",
+  description:
+    "Record a resolved issue as a lesson learned. Document symptom, root cause, solution, prevention. Requires engagement_id.",
   parameters: z.object({
     category: z.string().describe("Category path (e.g. Infrastructure/Docker)"),
     title: z.string().describe("Short descriptive title"),
@@ -14,7 +15,12 @@ const RecordLessonTool = Tool.define("recordLesson", {
     severity: z.string().optional().default("medium"),
     tags: z.array(z.string()).optional(),
     files_changed: z.array(z.string()).optional(),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().recordLesson({

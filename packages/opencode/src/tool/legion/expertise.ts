@@ -3,13 +3,19 @@ import { Tool } from "../tool"
 import { client, output, stringRecord, companyId, projectId } from "./index"
 
 const CreateExpertiseTool = Tool.define("createExpertise", {
-  description: "Store structured knowledge with hierarchical sections (guides, tutorials, best practices).",
+  description:
+    "Store structured knowledge with hierarchical sections (guides, tutorials, best practices). Requires engagement_id.",
   parameters: z.object({
     text: z.string().describe("Markdown text with headings"),
     when_to_use: z.string().describe("When this expertise should be used"),
     metadata: z.record(z.string(), z.string()).optional().describe("Optional tags"),
     request_id: z.string().optional(),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().createExpertise(params.text, params.when_to_use, {
@@ -23,12 +29,17 @@ const CreateExpertiseTool = Tool.define("createExpertise", {
 })
 
 const AddExpertiseChunkTool = Tool.define("addExpertiseChunk", {
-  description: "Add a section/subsection to existing expertise document.",
+  description: "Add a section/subsection to existing expertise document. Requires engagement_id.",
   parameters: z.object({
     expertise_id: z.string().describe("Expertise UUID"),
     content: z.string().describe("Section content (markdown)"),
     parent_chunk_id: z.string().optional().describe("Parent chunk for nesting"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().addExpertiseChunk(params.expertise_id, params.content, {
@@ -84,11 +95,16 @@ const GetExpertiseTool = Tool.define("getExpertise", {
 })
 
 const UpdateExpertiseTool = Tool.define("updateExpertise", {
-  description: "Update an existing expertise document. Only provided fields are changed.",
+  description: "Update an existing expertise document. Only provided fields are changed. Requires engagement_id.",
   parameters: z.object({
     expertise_id: z.string().describe("Expertise UUID"),
     when_to_use: z.string().optional().describe("When this expertise should be used"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().updateExpertise(params.expertise_id, {

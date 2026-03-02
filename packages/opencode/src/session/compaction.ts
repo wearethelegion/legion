@@ -22,6 +22,14 @@ import { extractForCompaction } from "../extraction/extract"
 export namespace SessionCompaction {
   const log = Log.create({ service: "session.compaction" })
 
+  /** Map of sessionID → agent-written continuation prompt for manual context resets */
+  const manualPrompts = new Map<string, string>()
+
+  /** Called by the reset_context tool to store the agent's own continuation prompt */
+  export function setManualContinuationPrompt(sessionID: string, prompt: string): void {
+    manualPrompts.set(sessionID, prompt)
+  }
+
   const SYSTEM_REMINDER = /<system-reminder>[\s\S]*?<\/system-reminder>/g
   const LEGION_IDENTITY = /<legion-identity>[\s\S]*?<\/legion-identity>/g
 
@@ -302,6 +310,56 @@ export namespace SessionCompaction {
       model,
       abort: input.abort,
     })
+    // Check if this is a manual reset (agent provided its own continuation prompt)
+    const manualPrompt = manualPrompts.get(input.sessionID)
+    if (manualPrompt) {
+      manualPrompts.delete(input.sessionID)
+      // Write the agent's own prompt directly as the summary message text — no LLM call needed
+      await Session.updatePart({
+        id: Identifier.ascending("part"),
+        messageID: msg.id,
+        sessionID: input.sessionID,
+        type: "text",
+        text: manualPrompt,
+        synthetic: false,
+        time: {
+          start: Date.now(),
+          end: Date.now(),
+        },
+      })
+      msg.finish = "stop"
+      msg.time.completed = Date.now()
+      await Session.updateMessage(msg)
+
+      const continueMsg = await Session.updateMessage({
+        id: Identifier.ascending("message"),
+        role: "user",
+        sessionID: input.sessionID,
+        time: {
+          created: Date.now(),
+        },
+        agent: userMessage.agent,
+        model: userMessage.model,
+      })
+      await Session.updatePart({
+        id: Identifier.ascending("part"),
+        messageID: continueMsg.id,
+        sessionID: input.sessionID,
+        type: "text",
+        synthetic: true,
+        text: `Context was reset. Your next prompt is above — use the LEGION IDs in it to restore your full context if needed. Execute the next step from your prompt.`,
+        time: {
+          start: Date.now(),
+          end: Date.now(),
+        },
+      })
+
+      runCompactionExtraction(input.sessionID, input.messages)
+      saveToLegion(input.sessionID, manualPrompt)
+      Bus.publish(Event.Compacted, { sessionID: input.sessionID })
+      return "continue"
+    }
+
     // Allow plugins to inject context or replace compaction prompt
     const compacting = await Plugin.trigger(
       "experimental.session.compacting",

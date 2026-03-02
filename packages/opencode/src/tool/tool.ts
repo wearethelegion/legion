@@ -57,6 +57,7 @@ const READ_ONLY_TOOLS = new Set([
   "getDelegationResult",
   "listDelegations",
   "cancelDelegation", // exempt: cancellation is a control operation, not a knowledge-mutation
+  "context_reset", // exempt: control operation — no knowledge mutation, engagement_id not applicable
   "listWorkflows",
   "activateWorkflow",
   "getAgentSkills",

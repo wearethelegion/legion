@@ -3,13 +3,19 @@ import { Tool } from "../tool"
 import { client, output, stringRecord, projectId } from "./index"
 
 const CreateKnowledgeTool = Tool.define("createKnowledge", {
-  description: "Store text for semantic search. Use for docs, notes, unstructured text. No LLM calls.",
+  description:
+    "Store text for semantic search. Use for docs, notes, unstructured text. No LLM calls. Requires engagement_id.",
   parameters: z.object({
     text: z.string().describe("Text content to store"),
     when_to_use: z.string().describe("When this knowledge should be consulted"),
     metadata: z.record(z.string(), z.string()).optional().describe("Optional tags"),
     request_id: z.string().optional().describe("Idempotency key"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().createKnowledge(params.text, projectId(), params.when_to_use, {

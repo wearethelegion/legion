@@ -14,7 +14,7 @@ const ActivateWorkflowTool = Tool.define("activateWorkflow", {
 })
 
 const CreateWorkflowTool = Tool.define("createWorkflow", {
-  description: "Create a new agent workflow with trigger signals.",
+  description: "Create a new agent workflow with trigger signals. Requires engagement_id.",
   parameters: z.object({
     name: z.string().describe("Unique workflow name"),
     content: z.string().describe("Markdown workflow body with instructions"),
@@ -25,7 +25,12 @@ const CreateWorkflowTool = Tool.define("createWorkflow", {
     agent_id: z.string().optional(),
     public: z.boolean().optional(),
     metadata_json: z.string().optional(),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().createWorkflow({
@@ -46,7 +51,7 @@ const CreateWorkflowTool = Tool.define("createWorkflow", {
 })
 
 const UpdateWorkflowTool = Tool.define("updateWorkflow", {
-  description: "Update an existing workflow. Only provided fields are changed.",
+  description: "Update an existing workflow. Only provided fields are changed. Requires engagement_id.",
   parameters: z.object({
     workflow_id: z.string().describe("Workflow UUID"),
     name: z.string().optional(),
@@ -58,7 +63,12 @@ const UpdateWorkflowTool = Tool.define("updateWorkflow", {
     agent_id: z.string().optional(),
     public: z.boolean().optional(),
     metadata_json: z.string().optional(),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().updateWorkflow(params.workflow_id, {
@@ -78,10 +88,15 @@ const UpdateWorkflowTool = Tool.define("updateWorkflow", {
 })
 
 const DeleteWorkflowTool = Tool.define("deleteWorkflow", {
-  description: "Delete a workflow by ID.",
+  description: "Delete a workflow by ID. Requires engagement_id.",
   parameters: z.object({
     workflow_id: z.string().describe("Workflow UUID"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().deleteWorkflow(params.workflow_id)

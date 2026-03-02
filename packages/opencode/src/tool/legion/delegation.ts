@@ -46,10 +46,16 @@ const ListDelegationsTool = Tool.define("listDelegations", {
 })
 
 const CancelDelegationTool = Tool.define("cancelDelegation", {
-  description: "Cancel a running delegation. Subprocess detects cancellation via heartbeat and exits gracefully.",
+  description:
+    "Cancel a running delegation. Subprocess detects cancellation via heartbeat and exits gracefully. Requires engagement_id.",
   parameters: z.object({
     delegation_id: z.string().describe("Delegation UUID to cancel"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().updateDelegationStatus(params.delegation_id, "cancelled")

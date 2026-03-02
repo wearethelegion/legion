@@ -3,11 +3,16 @@ import { Tool } from "../tool"
 import { client, output, projectId, companyId } from "./index"
 
 const CreateTaskTool = Tool.define("createTask", {
-  description: "Create a new task with optional assignment, priority, and engagement link.",
+  description: "Create a new task with optional assignment, priority, and engagement link. Requires engagement_id.",
   parameters: z.object({
     title: z.string().describe("Task title"),
     ultimate_goal: z.string().describe("Overarching objective (min 10 chars)"),
-    engagement_id: z.string().optional(),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
     description: z.string().optional(),
     priority: z.string().optional().default("medium").describe("low, medium, high, critical"),
     assigned_agent_id: z.string().optional(),
@@ -63,7 +68,7 @@ const ListTasksTool = Tool.define("listTasks", {
 })
 
 const UpdateTaskTool = Tool.define("updateTask", {
-  description: "Update task status, assignment, blockers, priority, or ultimate_goal.",
+  description: "Update task status, assignment, blockers, priority, or ultimate_goal. Requires engagement_id.",
   parameters: z.object({
     task_id: z.string().describe("Task UUID"),
     status: z.string().optional().describe("pending, assigned, in_progress, blocked, completed"),
@@ -71,7 +76,12 @@ const UpdateTaskTool = Tool.define("updateTask", {
     blockers: z.string().optional(),
     priority: z.string().optional(),
     ultimate_goal: z.string().optional(),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().updateTask(params.task_id, {
@@ -86,10 +96,15 @@ const UpdateTaskTool = Tool.define("updateTask", {
 })
 
 const CompleteTaskTool = Tool.define("completeTask", {
-  description: "Mark task as completed with timestamp.",
+  description: "Mark task as completed with timestamp. Requires engagement_id.",
   parameters: z.object({
     task_id: z.string().describe("Task UUID"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().completeTask(params.task_id)
@@ -98,11 +113,16 @@ const CompleteTaskTool = Tool.define("completeTask", {
 })
 
 const AssignTaskTool = Tool.define("assignTask", {
-  description: "Assign task to an agent. Sets status to 'assigned'.",
+  description: "Assign task to an agent. Sets status to 'assigned'. Requires engagement_id.",
   parameters: z.object({
     task_id: z.string().describe("Task UUID"),
     agent_id: z.string().describe("Agent UUID to assign to"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().assignTask(params.task_id, params.agent_id)
@@ -111,12 +131,18 @@ const AssignTaskTool = Tool.define("assignTask", {
 })
 
 const LinkArtifactTool = Tool.define("linkArtifact", {
-  description: "Link an artifact (code, knowledge, expertise, lesson) to a task for traceability.",
+  description:
+    "Link an artifact (code, knowledge, expertise, lesson) to a task for traceability. Requires engagement_id.",
   parameters: z.object({
     task_id: z.string().describe("Task UUID"),
     artifact_type: z.string().describe("code, knowledge, expertise, lesson"),
     artifact_id: z.string().describe("Artifact UUID"),
-    engagement_id: z.string().optional().describe("LEGION engagement UUID for traceability"),
+    engagement_id: z
+      .string()
+      .optional()
+      .describe(
+        "LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.",
+      ),
   }),
   async execute(params) {
     const result = await client().linkArtifact(params.task_id, params.artifact_type, params.artifact_id)

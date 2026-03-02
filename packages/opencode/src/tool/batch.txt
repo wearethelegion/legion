@@ -13,6 +13,7 @@ DO NOT USE THIS TOOL FOR:
 
 KEY PARAMETERS:
 - Payload: JSON array of tool calls, each with `"tool"` and `"parameters"` keys.
+- engagement_id: LEGION engagement UUID — required for all mutation operations. Create one with createEngagement first.
 
 FORMAT:
 [
