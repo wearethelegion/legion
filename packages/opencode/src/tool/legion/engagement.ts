@@ -51,14 +51,6 @@ const ListEngagementsTool = Tool.define("listEngagements", {
       .describe("Optional parent engagement UUID to list only children of that engagement"),
   }),
   async execute(params) {
-    log.debug("listEngagements request", {
-      project_id: projectId(),
-      company_id: companyId(),
-      status: params.status ?? "",
-      limit: params.limit,
-      offset: params.offset,
-      engagement_id: params.engagement_id ?? "",
-    })
     const result = await client().listEngagements(projectId(), {
       companyId: companyId(),
       status: params.status,
@@ -177,14 +169,6 @@ const SearchEntriesTool = Tool.define("searchEntries", {
     limit: z.number().optional().default(10),
   }),
   async execute(params) {
-    log.debug("searchEntries request", {
-      query: params.query,
-      project_id: projectId(),
-      company_id: companyId(),
-      engagement_id: params.engagement_id ?? "",
-      entry_type: params.entry_type ?? "",
-      limit: params.limit,
-    })
     const result = await client().searchEntries(params.query, projectId(), {
       companyId: companyId(),
       engagementId: params.engagement_id,

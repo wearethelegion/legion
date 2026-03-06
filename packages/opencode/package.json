@@ -8,7 +8,7 @@
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "test": "bun test --timeout 30000",
-    "build": "GRPC_SERVER_HOST=${GRPC_SERVER_HOST:-api.wearethelegion.com} GRPC_SERVER_PORT=${GRPC_SERVER_PORT:-50051} bun run script/build.ts",
+    "build": "bun run script/build.ts",
     "build:pkg": "bun run script/build-pkg.ts",
     "dev": "bun run --conditions=browser ./src/index.ts",
     "random": "echo 'Random script updated at $(date)' && echo 'Change queued successfully' && echo 'Another change made' && echo 'Yet another change' && echo 'One more change' && echo 'Final change' && echo 'Another final change' && echo 'Yet another final change'",
