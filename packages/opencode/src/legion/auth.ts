@@ -66,10 +66,12 @@ export function setLegionSession(companyId: string, projectId: string): void {
 }
 
 export function getLegionCompanyId(): string | null {
+  log.debug("getLegionCompanyId()", { selectedCompanyId: selectedCompanyId ?? "null" })
   return selectedCompanyId
 }
 
 export function getLegionProjectId(): string | null {
+  log.debug("getLegionProjectId()", { selectedProjectId: selectedProjectId ?? "null" })
   return selectedProjectId
 }
 
@@ -265,7 +267,7 @@ export async function authenticateLegion(legionConfig?: {
   email?: string
   password?: string
 }): Promise<LegionClient | null> {
-  log.info("authenticateLegion called", {
+  log.debug("authenticateLegion called", {
     hasEmail: String(!!legionConfig?.email),
     hasPassword: String(!!legionConfig?.password),
     serverUrl: legionConfig?.serverUrl ?? "none",
@@ -277,24 +279,24 @@ export async function authenticateLegion(legionConfig?: {
 
   if (!hasExplicitCreds) {
     if (clientInstance) {
-      log.info("returning cached client")
+      log.debug("returning cached client")
       return clientInstance
     }
     if (authPromise) {
-      log.info("returning pending auth promise")
+      log.debug("returning pending auth promise")
       return authPromise
     }
   }
 
   if (hasExplicitCreds && clientInstance) {
-    log.info("closing stale client for fresh auth")
+    log.debug("closing stale client for fresh auth")
     try {
       clientInstance.close()
     } catch {}
     clientInstance = null
   }
 
-  log.info("starting fresh _doAuthenticate")
+  log.debug("starting fresh _doAuthenticate")
   authPromise = _doAuthenticate(legionConfig)
   try {
     return await authPromise
@@ -331,7 +333,7 @@ async function _doAuthenticate(legionConfig?: {
       ])
       if (Array.isArray(dnsResult) && dnsResult.length > 0) {
         resolvedHost = dnsResult[0].address
-        log.info("_doAuthenticate: DNS resolved", { hostname: connConfig.host, ip: resolvedHost })
+        log.debug("_doAuthenticate: DNS resolved", { hostname: connConfig.host, ip: resolvedHost })
       }
     } catch (dnsErr) {
       const msg = dnsErr instanceof Error ? dnsErr.message : String(dnsErr)
@@ -340,7 +342,7 @@ async function _doAuthenticate(legionConfig?: {
       const fallback = KNOWN_HOSTS[connConfig.host]
       if (fallback) {
         resolvedHost = fallback
-        log.info("_doAuthenticate: using hardcoded IP fallback", { hostname: connConfig.host, ip: resolvedHost })
+        log.debug("_doAuthenticate: using hardcoded IP fallback", { hostname: connConfig.host, ip: resolvedHost })
       } else {
         log.warn("_doAuthenticate: no fallback IP — passing hostname as-is (may hang in compiled binary)", {
           host: connConfig.host,
@@ -349,7 +351,7 @@ async function _doAuthenticate(legionConfig?: {
     }
   }
 
-  log.info("_doAuthenticate: creating LegionClient", {
+  log.debug("_doAuthenticate: creating LegionClient", {
     host: resolvedHost,
     port: String(connConfig.port),
     method: connConfig.apiKey ? "api_key" : "email/password",
@@ -365,7 +367,7 @@ async function _doAuthenticate(legionConfig?: {
       password: connConfig.password,
       ...(protoJSON ? { protoJSON } : {}),
     })
-    log.info("_doAuthenticate: LegionClient created OK")
+    log.debug("_doAuthenticate: LegionClient created OK")
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     log.error("_doAuthenticate: LegionClient constructor FAILED", { error: msg })
@@ -373,7 +375,7 @@ async function _doAuthenticate(legionConfig?: {
   }
 
   try {
-    log.info("_doAuthenticate: calling client.authenticate()...")
+    log.debug("_doAuthenticate: calling client.authenticate()...")
     const AUTH_TIMEOUT_MS = 20_000
     const authResult = await Promise.race([
       client.authenticate(),
@@ -384,7 +386,7 @@ async function _doAuthenticate(legionConfig?: {
     log.info("_doAuthenticate: authenticated OK", { email: client.userEmail ?? "unknown" })
     clientInstance = client
 
-    // Persist credentials so subsequent sessions re-authenticate automatically
+    // Persist credentials so subsequent sessions re-authenticate automatically.
     await saveCredentials({
       email: connConfig.email,
       password: connConfig.password,

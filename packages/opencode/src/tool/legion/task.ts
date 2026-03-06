@@ -1,6 +1,9 @@
 import z from "zod"
 import { Tool } from "../tool"
 import { client, output, projectId, companyId } from "./index"
+import { Log } from "../../util/log"
+
+const log = Log.create({ service: "tool.legion.task" })
 
 const CreateTaskTool = Tool.define("createTask", {
   description: "Create a new task with optional assignment, priority, and engagement link. Requires engagement_id.",
@@ -55,8 +58,17 @@ const ListTasksTool = Tool.define("listTasks", {
     offset: z.number().optional().default(0),
   }),
   async execute(params) {
+    log.debug("listTasks request", {
+      project_id: projectId(),
+      engagement_id: params.engagement_id ?? "",
+      agent_id: params.agent_id ?? "",
+      status: params.status ?? "",
+      limit: params.limit,
+      offset: params.offset,
+    })
     const result = await client().listTasks({
       projectId: projectId(),
+      companyId: companyId(),
       engagementId: params.engagement_id,
       agentId: params.agent_id,
       status: params.status,

@@ -164,12 +164,20 @@ export const rpc = {
     process.env.LEGION_COMPANY_ID = input.companyId
     process.env.LEGION_PROJECT_ID = input.projectId
 
-    // Bootstrap identity now that we have a valid project/company scope
-    const { bootstrapLegion } = await import("@/legion/bootstrap")
-    await bootstrapLegion({
-      companyId: input.companyId,
-      projectId: input.projectId,
-    })
+    // Bootstrap identity now that we have a valid project/company scope.
+    // Wrapped in try/catch — env vars above are already set; identity
+    // bootstrap is best-effort and must never roll them back.
+    try {
+      const { bootstrapLegion } = await import("@/legion/bootstrap")
+      await bootstrapLegion({
+        companyId: input.companyId,
+        projectId: input.projectId,
+      })
+    } catch (err) {
+      Log.Default.warn("bootstrapLegion failed after project select — proceeding with env vars only", {
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
   },
   async shutdown() {
     Log.Default.info("worker shutting down")

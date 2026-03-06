@@ -50,7 +50,6 @@ export async function InstanceBootstrap() {
       const identity = getLegionIdentity()
       if (identity?.raw) {
         if (identity.raw.agent_id) process.env.LEGION_AGENT_ID = identity.raw.agent_id
-        if (cfg.legion.companyId) process.env.LEGION_COMPANY_ID = cfg.legion.companyId
       }
       // Start background delegation monitoring (F-029) — disabled, Arthur polls manually.
       // DelegationTracker.start()

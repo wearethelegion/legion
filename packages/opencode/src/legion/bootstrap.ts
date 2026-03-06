@@ -58,7 +58,7 @@ export async function bootstrapLegion(opts: BootstrapOptions = {}): Promise<Legi
   }
 
   try {
-    log.info("calling whoAmI", {
+    log.debug("calling whoAmI", {
       agentId: opts.agentId ?? "(default)",
       projectId: opts.projectId ?? "(none)",
     })

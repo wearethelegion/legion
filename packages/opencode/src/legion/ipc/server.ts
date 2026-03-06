@@ -82,8 +82,8 @@ export class IpcServer {
    * Cleans up stale socket file if it exists.
    */
   static async listen(socketPath: string): Promise<IpcServer> {
-    if (socketPath.length > MAX_SOCKET_PATH) {
-      throw new Error(`Socket path exceeds macOS limit: ${socketPath.length} > ${MAX_SOCKET_PATH}`)
+    if (process.platform !== "win32" && socketPath.length > MAX_SOCKET_PATH) {
+      throw new Error(`Socket path exceeds Unix socket limit: ${socketPath.length} > ${MAX_SOCKET_PATH}`)
     }
 
     // Remove stale socket file

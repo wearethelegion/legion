@@ -1,8 +1,11 @@
 import type { Tool } from "../tool"
 import { getLegionClient, getLegionCompanyId, getLegionProjectId } from "../../legion/auth"
 import z from "zod"
+import { Log } from "../../util/log"
 
 import { getSessionId } from "./session-id"
+
+const log = Log.create({ service: "legion.tool" })
 
 export function client() {
   const c = getLegionClient()
@@ -14,12 +17,22 @@ export function client() {
 
 export function companyId() {
   const id = process.env.LEGION_COMPANY_ID || getLegionCompanyId()
+  if (!id) {
+    log.warn("companyId() resolved null — LEGION company not selected")
+  } else {
+    log.debug("companyId()", { company_id: id })
+  }
   if (!id) throw new Error("LEGION company not selected")
   return id
 }
 
 export function projectId() {
   const id = process.env.LEGION_PROJECT_ID || getLegionProjectId()
+  if (!id) {
+    log.warn("projectId() resolved null — LEGION project not selected")
+  } else {
+    log.debug("projectId()", { project_id: id })
+  }
   if (!id) throw new Error("LEGION project not selected")
   return id
 }

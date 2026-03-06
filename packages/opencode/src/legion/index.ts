@@ -76,8 +76,6 @@ export interface LegionInitResult {
  */
 export async function initializeLegion(config?: LegionConfig): Promise<LegionInitResult> {
   const { authenticateLegion } = await import("./auth")
-  const { bootstrapLegion } = await import("./bootstrap")
-  const { getLegionAgent } = await import("./agent-identity")
 
   const warnings: string[] = []
   const result: LegionInitResult = {
@@ -88,9 +86,9 @@ export async function initializeLegion(config?: LegionConfig): Promise<LegionIni
     warnings,
   }
 
-  log.info("initializing LEGION integration")
+  log.debug("initializing LEGION integration")
 
-  // Step 1: Authenticate (credentials from env vars)
+  // Step 1: Authenticate only — identity bootstrap deferred to selectProject()
   const client = await authenticateLegion(config).catch((err) => {
     log.warn("LEGION authentication error", { error: err instanceof Error ? err.message : String(err) })
     return null
@@ -100,38 +98,9 @@ export async function initializeLegion(config?: LegionConfig): Promise<LegionIni
     return result
   }
 
-  // Step 2: Bootstrap identity (whoAmI)
-  const identity = await bootstrapLegion({
-    companyId: config?.companyId,
-  })
-
-  if (!identity) {
-    warnings.push("whoAmI failed and no cached identity available")
-    log.warn("LEGION auth succeeded but identity bootstrap failed")
-    result.available = true
-    return result
-  }
-
-  if (identity.stale) {
-    warnings.push(`Using stale cached identity from ${identity.fetchedAt}`)
-  }
-
-  // Step 3: Build agent identity
-  const agent = getLegionAgent()
-  if (agent) {
-    result.agentName = agent.name
-    result.agentRole = agent.role
-    result.stale = agent.stale
-  }
-
   result.available = true
 
-  log.info("LEGION initialization complete", {
-    agent: result.agentName ?? "unknown",
-    role: result.agentRole ?? "unknown",
-    stale: String(result.stale),
-    warnings: String(warnings.length),
-  })
+  log.info("LEGION initialization complete — identity deferred to selectProject()")
 
   return result
 }

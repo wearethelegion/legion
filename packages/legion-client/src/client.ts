@@ -510,7 +510,8 @@ export class LegionClient {
     const meta = this.authMetadata()
 
     try {
-      return await callUnary<any, TRes>(client, methodName, reqWithToken, meta)
+      const res = await callUnary<any, TRes>(client, methodName, reqWithToken, meta)
+      return res
     } catch (err: any) {
       // Auto-retry on UNAUTHENTICATED (password mode only)
       if (err?.code === grpc.status.UNAUTHENTICATED) {
@@ -887,10 +888,11 @@ export class LegionClient {
   /** List engagements for a project. */
   async listEngagements(
     projectId: string,
-    opts?: { status?: string; limit?: number; offset?: number; engagementId?: string },
+    opts?: { status?: string; limit?: number; offset?: number; engagementId?: string; companyId?: string },
   ): Promise<ListEngagementsResponse> {
     return this.callWithAuth(this.engagementClient, "ListEngagements", {
       project_id: projectId,
+      company_id: opts?.companyId ?? "",
       status: opts?.status ?? "",
       limit: opts?.limit ?? 50,
       offset: opts?.offset ?? 0,
@@ -971,11 +973,13 @@ export class LegionClient {
       entryType?: string
       engagementId?: string
       offset?: number
+      companyId?: string
     },
   ): Promise<SearchEntriesResponse> {
     return this.callWithAuth(this.engagementClient, "SearchEntries", {
       query,
       project_id: projectId,
+      company_id: opts?.companyId ?? "",
       limit: opts?.limit ?? 10,
       entry_type: opts?.entryType ?? "",
       engagement_id: opts?.engagementId ?? "",
@@ -1163,6 +1167,7 @@ export class LegionClient {
   /** List tasks with optional filters. */
   async listTasks(opts?: {
     projectId?: string
+    companyId?: string
     engagementId?: string
     agentId?: string
     status?: string
@@ -1171,6 +1176,7 @@ export class LegionClient {
   }): Promise<ListTasksResponse> {
     return this.callWithAuth(this.taskClient, "ListTasks", {
       project_id: opts?.projectId ?? "",
+      company_id: opts?.companyId ?? "",
       engagement_id: opts?.engagementId ?? "",
       agent_id: opts?.agentId ?? "",
       status: opts?.status ?? "",

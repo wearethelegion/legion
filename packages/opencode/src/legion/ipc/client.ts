@@ -89,8 +89,8 @@ export class IpcClient {
    * Returns null on failure (degraded mode).
    */
   static async connect(socketPath: string, delegationId: string): Promise<IpcClient | null> {
-    if (socketPath.length > MAX_SOCKET_PATH) {
-      log.warn("socket path exceeds macOS limit", {
+    if (process.platform !== "win32" && socketPath.length > MAX_SOCKET_PATH) {
+      log.warn("socket path exceeds Unix socket limit", {
         length: String(socketPath.length),
         max: String(MAX_SOCKET_PATH),
       })

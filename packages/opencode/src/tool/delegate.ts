@@ -1,5 +1,6 @@
 import z from "zod"
 import path from "path"
+import os from "os"
 import { spawn } from "child_process"
 import { openSync } from "fs"
 import { randomUUID } from "crypto"
@@ -83,6 +84,13 @@ function agentLabel(agentId: string): string {
   return agentId
 }
 
+function socketIpcPath(id: string): string {
+  if (process.platform === "win32") {
+    return `\\\\.\\pipe\\legion-deleg-${id}`
+  }
+  return path.join(os.tmpdir(), `legion-deleg-${id}.sock`)
+}
+
 export const DelegateTool = Tool.define("delegate", async () => {
   return {
     description: DESCRIPTION,
@@ -135,7 +143,7 @@ export const DelegateTool = Tool.define("delegate", async () => {
         }
       }
 
-      const socketPath = `/tmp/legion-deleg-${serverDelegationId}.sock`
+      const socketPath = socketIpcPath(serverDelegationId)
 
       const args = [
         "--agent_id",
@@ -206,7 +214,7 @@ export const DelegateTool = Tool.define("delegate", async () => {
         })
       }
 
-      const stderrLogPath = `/tmp/legion-deleg-${serverDelegationId}.stderr`
+      const stderrLogPath = path.join(os.tmpdir(), `legion-deleg-${serverDelegationId}.stderr`)
       const stderrFd = openSync(stderrLogPath, "w")
       const proc = spawn(cmd[0], cmd.slice(1), {
         cwd: packageDir(),
