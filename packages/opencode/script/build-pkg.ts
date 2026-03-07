@@ -97,55 +97,13 @@ fi
 # Create config directory
 sudo -u "\${REAL_USER}" mkdir -p "\${CONFIG_DIR}"
 
-# New config values to merge
-NEW_CONFIG='${JSON.stringify({ legion: { url: apiUrl } })}'
-
+# Only create config if it doesn't exist — never overwrite existing config
 if [ -f "\${CONFIG_FILE}" ]; then
-  # Merge with existing config using Python (available on all macOS)
-  sudo -u "\${REAL_USER}" python3 -c "
-import json, sys
-
-existing_path = sys.argv[1]
-new_json = sys.argv[2]
-
-with open(existing_path, 'r') as f:
-    try:
-        existing = json.load(f)
-    except (json.JSONDecodeError, ValueError):
-        existing = {}
-
-new = json.loads(new_json)
-
-def merge(base, overlay):
-    for k, v in overlay.items():
-        if k in base and isinstance(base[k], dict) and isinstance(v, dict):
-            merge(base[k], v)
-        else:
-            base[k] = v
-    return base
-
-merged = merge(existing, new)
-
-with open(existing_path, 'w') as f:
-    json.dump(merged, f, indent=2)
-    f.write('\\n')
-" "\${CONFIG_FILE}" "\${NEW_CONFIG}"
-  echo "Merged legion config into \${CONFIG_FILE}"
+  echo "Config already exists at \${CONFIG_FILE} — not modifying"
 else
-  # Write new config
   sudo -u "\${REAL_USER}" bash -c "cat > '\${CONFIG_FILE}'" <<CONFIGEOF
-\${NEW_CONFIG}
+${JSON.stringify({ legion: { url: apiUrl } }, null, 2)}
 CONFIGEOF
-  # Pretty-print the JSON
-  python3 -c "
-import json, sys
-path = sys.argv[1]
-with open(path, 'r') as f:
-    data = json.load(f)
-with open(path, 'w') as f:
-    json.dump(data, f, indent=2)
-    f.write('\\n')
-" "\${CONFIG_FILE}"
   echo "Created \${CONFIG_FILE}"
 fi
 
