@@ -55,6 +55,7 @@ message CreateAgentRequest {
   repeated string capabilities = 8;     // Skill tags
   string specialization = 9;            // Primary domain
   string project_id = 10;               // Optional project scope (NULL = company-wide)
+  string when_to_use = 11;              // When to delegate to this agent (REQUIRED)
 }
 
 message CreateAgentResponse {
@@ -65,6 +66,7 @@ message CreateAgentResponse {
   bool learning_skill_linked = 5;       // True if "How to Research and Create Skills" was auto-linked
   string error_message = 6;
   string error_code = 7;
+  string when_to_use = 8;               // When to delegate to this agent
 }
 
 // DeleteAgent - Remove an agent and clean up all associations
@@ -102,6 +104,8 @@ message UpdateAgentRequest {
   bool project_id_provided = 14;
   bool public = 15;
   bool public_provided = 16;
+  string when_to_use = 17;
+  bool when_to_use_provided = 18;
 }
 
 message UpdateAgentResponse {
@@ -111,6 +115,7 @@ message UpdateAgentResponse {
   string role = 4;
   string error_message = 5;
   string error_code = 6;
+  string when_to_use = 7;               // When to delegate to this agent
 }
 
 // WhoAmI - Identity bootstrap for agent
@@ -129,6 +134,7 @@ message SkillOverview {
   string title = 2;
   string summary = 3;
   int32 sections_count = 4;
+  string when_to_use = 5;
 }
 
 // Available agent that orchestrator can delegate to
@@ -138,6 +144,7 @@ message AvailableAgent {
   string role = 3;
   string specialization = 4;
   string description = 5;
+  string when_to_use = 6;
 }
 
 // Permanent memory returned on every identity bootstrap
@@ -155,6 +162,7 @@ message WorkflowOverview {
   string id = 1;
   string name = 2;
   repeated string signals = 3;   // Trigger hints for when to use this workflow
+  string when_to_use = 4;
 }
 
 message WhoAmIResponse {
@@ -400,6 +408,7 @@ message WorkflowContent {
   int32 version = 12;
   string created_at = 13;
   string updated_at = 14;
+  string when_to_use = 15;    // When to activate this workflow
 }
 
 message GetWorkflowByIdResponse {
@@ -422,6 +431,7 @@ message CreateWorkflowRequest {
   string project_id = 9;
   bool public = 10;
   string metadata_json = 11;
+  string when_to_use = 12;              // When to activate this workflow (REQUIRED)
 }
 
 message CreateWorkflowResponse {
@@ -453,6 +463,8 @@ message UpdateWorkflowRequest {
   bool public_provided = 18;
   string metadata_json = 19;
   bool metadata_provided = 20;
+  string when_to_use = 21;
+  bool when_to_use_provided = 22;
 }
 
 message UpdateWorkflowResponse {

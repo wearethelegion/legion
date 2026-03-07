@@ -11,6 +11,7 @@ service ExpertiseService {
   rpc QueryExpertise(QueryExpertiseRequest) returns (QueryExpertiseResponse);
   rpc ListExpertise(ListExpertiseRequest) returns (ListExpertiseResponse);
   rpc GetExpertise(GetExpertiseRequest) returns (GetExpertiseResponse);
+  rpc UpdateExpertise(UpdateExpertiseRequest) returns (UpdateExpertiseResponse);
 }
 
 // Create Expertise
@@ -23,6 +24,7 @@ message CreateExpertiseRequest {
   map<string, string> metadata = 4;
   string request_id = 5;
   string company_id = 6;           // Optional: for company-level expertise (no project scope)
+  string when_to_use = 7;          // When this expertise should be used (REQUIRED)
 }
 
 message CreateExpertiseResponse {
@@ -38,6 +40,7 @@ message CreateExpertiseResponse {
   int32 relationships_count = 10;
   string error_message = 11;
   string error_code = 12;
+  string when_to_use = 13;
 }
 
 // Add Expertise Chunk
@@ -100,6 +103,7 @@ message ExpertiseInfo {
   int32 chunks_count = 4;
   string created_at = 5;
   string updated_at = 6;
+  string when_to_use = 7;
 }
 
 message ListExpertiseResponse {
@@ -130,4 +134,23 @@ message GetExpertiseResponse {
   string updated_at = 10;
   string error_message = 11;
   string error_code = 12;
+  string when_to_use = 13;
+}
+
+// UpdateExpertise - Update an existing expertise with sentinel booleans
+// Only fields with *_provided = true are applied. All others keep current values.
+message UpdateExpertiseRequest {
+  string user_token = 1;
+  string expertise_id = 2;                // Required: which expertise to update
+  string when_to_use = 3;
+  bool when_to_use_provided = 4;
+}
+
+message UpdateExpertiseResponse {
+  string status = 1;
+  string expertise_id = 2;
+  string title = 3;
+  string when_to_use = 4;
+  string error_message = 5;
+  string error_code = 6;
 }

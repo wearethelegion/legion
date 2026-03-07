@@ -231,6 +231,7 @@ export interface WorkflowContent {
   description: string
   signals: string[]
   version: number
+  when_to_use: string
   created_at: string
   updated_at: string
 }
@@ -884,6 +885,7 @@ export interface ExpertiseInfo {
   expertise_id: string
   title: string
   summary: string
+  when_to_use: string
   chunks_count: number
   created_at: string
   updated_at: string
@@ -1098,6 +1100,7 @@ export interface CreateAgentResponse {
   agent_id: string
   name: string
   role: string
+  when_to_use: string
   learning_skill_linked: boolean
   error_message: string
   error_code: string
@@ -1135,6 +1138,8 @@ export interface UpdateAgentRequest {
   project_id_provided?: boolean
   public?: boolean
   public_provided?: boolean
+  when_to_use?: string
+  when_to_use_provided?: boolean
 }
 
 export interface UpdateAgentResponse {
@@ -1142,6 +1147,7 @@ export interface UpdateAgentResponse {
   agent_id: string
   name: string
   role: string
+  when_to_use: string
   error_message: string
   error_code: string
 }
@@ -1222,6 +1228,8 @@ export interface UpdateWorkflowRequest {
   public_provided?: boolean
   metadata_json?: string
   metadata_provided?: boolean
+  when_to_use?: string
+  when_to_use_provided?: boolean
 }
 
 export interface UpdateWorkflowResponse {
@@ -1443,6 +1451,7 @@ export interface CreateExpertiseResponse {
   company_id: string
   title: string
   summary: string
+  when_to_use: string
   chunks_count: number
   entities_count: number
   relationships_count: number
@@ -1480,6 +1489,7 @@ export interface GetExpertiseResponse {
   expertise_id: string
   title: string
   summary: string
+  when_to_use: string
   content: string
   chunks_count: number
   project_id: string
