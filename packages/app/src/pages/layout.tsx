@@ -16,36 +16,36 @@ import { A, useNavigate, useParams } from "@solidjs/router"
 import { useLayout, LocalProject } from "@/context/layout"
 import { useGlobalSync } from "@/context/global-sync"
 import { Persist, persisted } from "@/utils/persist"
-import { base64Encode } from "@opencode-ai/util/encode"
+import { base64Encode } from "@wearethelegion/util/encode"
 import { decode64 } from "@/utils/base64"
-import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
-import { Button } from "@opencode-ai/ui/button"
-import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
-import { DropdownMenu } from "@opencode-ai/ui/dropdown-menu"
-import { Dialog } from "@opencode-ai/ui/dialog"
-import { getFilename } from "@opencode-ai/util/path"
-import { Session, type Message } from "@opencode-ai/sdk/v2/client"
+import { ResizeHandle } from "@wearethelegion/ui/resize-handle"
+import { Button } from "@wearethelegion/ui/button"
+import { Icon } from "@wearethelegion/ui/icon"
+import { IconButton } from "@wearethelegion/ui/icon-button"
+import { Tooltip, TooltipKeybind } from "@wearethelegion/ui/tooltip"
+import { DropdownMenu } from "@wearethelegion/ui/dropdown-menu"
+import { Dialog } from "@wearethelegion/ui/dialog"
+import { getFilename } from "@wearethelegion/util/path"
+import { Session, type Message } from "@wearethelegion/sdk/v2/client"
 import { usePlatform } from "@/context/platform"
 import { useSettings } from "@/context/settings"
 import { createStore, produce, reconcile } from "solid-js/store"
 import { DragDropProvider, DragDropSensors, DragOverlay, SortableProvider, closestCenter } from "@thisbeyond/solid-dnd"
 import type { DragEvent } from "@thisbeyond/solid-dnd"
 import { useProviders } from "@/hooks/use-providers"
-import { showToast, Toast, toaster } from "@opencode-ai/ui/toast"
+import { showToast, Toast, toaster } from "@wearethelegion/ui/toast"
 import { useGlobalSDK } from "@/context/global-sdk"
 import { clearWorkspaceTerminals } from "@/context/terminal"
 import { useNotification } from "@/context/notification"
 import { usePermission } from "@/context/permission"
-import { Binary } from "@opencode-ai/util/binary"
-import { retry } from "@opencode-ai/util/retry"
+import { Binary } from "@wearethelegion/util/binary"
+import { retry } from "@wearethelegion/util/retry"
 import { playSound, soundSrc } from "@/utils/sound"
 import { createAim } from "@/utils/aim"
 import { Worktree as WorktreeState } from "@/utils/worktree"
 
-import { useDialog } from "@opencode-ai/ui/context/dialog"
-import { useTheme, type ColorScheme } from "@opencode-ai/ui/theme"
+import { useDialog } from "@wearethelegion/ui/context/dialog"
+import { useTheme, type ColorScheme } from "@wearethelegion/ui/theme"
 import { DialogSelectProvider } from "@/components/dialog-select-provider"
 import { DialogSelectServer } from "@/components/dialog-select-server"
 import { DialogSettings } from "@/components/dialog-settings"
@@ -1950,7 +1950,7 @@ export default function Layout(props: ParentProps) {
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
               helpLabel={() => language.t("sidebar.help")}
-              onOpenHelp={() => platform.openLink("https://opencode.ai/desktop-feedback")}
+              onOpenHelp={() => platform.openLink("https://wearethelegion.com/desktop-feedback")}
               renderPanel={() => <SidebarPanel project={currentProject()} />}
             />
           </div>
@@ -2015,7 +2015,7 @@ export default function Layout(props: ParentProps) {
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
               helpLabel={() => language.t("sidebar.help")}
-              onOpenHelp={() => platform.openLink("https://opencode.ai/desktop-feedback")}
+              onOpenHelp={() => platform.openLink("https://wearethelegion.com/desktop-feedback")}
               renderPanel={() => <SidebarPanel project={currentProject()} mobile />}
             />
           </nav>

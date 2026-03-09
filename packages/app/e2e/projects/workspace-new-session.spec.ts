@@ -1,4 +1,4 @@
-import { base64Decode } from "@opencode-ai/util/encode"
+import { base64Decode } from "@wearethelegion/util/encode"
 import type { Page } from "@playwright/test"
 import { test, expect } from "../fixtures"
 import { cleanupTestProject, openSidebar, sessionIDFromUrl, setWorkspacesEnabled } from "../actions"

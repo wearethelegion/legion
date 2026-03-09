@@ -9,20 +9,20 @@ import { usePlatform } from "@/context/platform"
 import { useServer } from "@/context/server"
 import { useSync } from "@/context/sync"
 import { useGlobalSDK } from "@/context/global-sdk"
-import { getFilename } from "@opencode-ai/util/path"
+import { getFilename } from "@wearethelegion/util/path"
 import { decode64 } from "@/utils/base64"
 import { Persist, persisted } from "@/utils/persist"
 
-import { Icon } from "@opencode-ai/ui/icon"
-import { IconButton } from "@opencode-ai/ui/icon-button"
-import { Button } from "@opencode-ai/ui/button"
-import { AppIcon } from "@opencode-ai/ui/app-icon"
-import { DropdownMenu } from "@opencode-ai/ui/dropdown-menu"
-import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
-import { Popover } from "@opencode-ai/ui/popover"
-import { TextField } from "@opencode-ai/ui/text-field"
-import { Keybind } from "@opencode-ai/ui/keybind"
-import { showToast } from "@opencode-ai/ui/toast"
+import { Icon } from "@wearethelegion/ui/icon"
+import { IconButton } from "@wearethelegion/ui/icon-button"
+import { Button } from "@wearethelegion/ui/button"
+import { AppIcon } from "@wearethelegion/ui/app-icon"
+import { DropdownMenu } from "@wearethelegion/ui/dropdown-menu"
+import { Tooltip, TooltipKeybind } from "@wearethelegion/ui/tooltip"
+import { Popover } from "@wearethelegion/ui/popover"
+import { TextField } from "@wearethelegion/ui/text-field"
+import { Keybind } from "@wearethelegion/ui/keybind"
+import { showToast } from "@wearethelegion/ui/toast"
 import { StatusPopover } from "../status-popover"
 
 const OPEN_APPS = [
@@ -311,8 +311,8 @@ export function SessionHeader() {
     platform,
   })
 
-  const centerMount = createMemo(() => document.getElementById("opencode-titlebar-center"))
-  const rightMount = createMemo(() => document.getElementById("opencode-titlebar-right"))
+  const centerMount = createMemo(() => document.getElementById("legion-titlebar-center"))
+  const rightMount = createMemo(() => document.getElementById("legion-titlebar-right"))
 
   return (
     <>

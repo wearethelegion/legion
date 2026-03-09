@@ -1,13 +1,13 @@
 import "@/index.css"
-import { Code } from "@opencode-ai/ui/code"
-import { I18nProvider } from "@opencode-ai/ui/context"
-import { CodeComponentProvider } from "@opencode-ai/ui/context/code"
-import { DialogProvider } from "@opencode-ai/ui/context/dialog"
-import { DiffComponentProvider } from "@opencode-ai/ui/context/diff"
-import { MarkedProvider } from "@opencode-ai/ui/context/marked"
-import { Diff } from "@opencode-ai/ui/diff"
-import { Font } from "@opencode-ai/ui/font"
-import { ThemeProvider } from "@opencode-ai/ui/theme"
+import { Code } from "@wearethelegion/ui/code"
+import { I18nProvider } from "@wearethelegion/ui/context"
+import { CodeComponentProvider } from "@wearethelegion/ui/context/code"
+import { DialogProvider } from "@wearethelegion/ui/context/dialog"
+import { DiffComponentProvider } from "@wearethelegion/ui/context/diff"
+import { MarkedProvider } from "@wearethelegion/ui/context/marked"
+import { Diff } from "@wearethelegion/ui/diff"
+import { Font } from "@wearethelegion/ui/font"
+import { ThemeProvider } from "@wearethelegion/ui/theme"
 import { MetaProvider } from "@solidjs/meta"
 import { Navigate, Route, Router } from "@solidjs/router"
 import { ErrorBoundary, type JSX, lazy, type ParentProps, Show, Suspense } from "solid-js"
@@ -58,7 +58,7 @@ function UiI18nBridge(props: ParentProps) {
 
 declare global {
   interface Window {
-    __OPENCODE__?: {
+    __LEGION__?: {
       updaterEnabled?: boolean
       deepLinks?: string[]
       wsl?: boolean

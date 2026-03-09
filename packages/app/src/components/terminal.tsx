@@ -1,5 +1,5 @@
-import { type HexColor, resolveThemeVariant, useTheme, withAlpha } from "@opencode-ai/ui/theme"
-import { showToast } from "@opencode-ai/ui/toast"
+import { type HexColor, resolveThemeVariant, useTheme, withAlpha } from "@wearethelegion/ui/theme"
+import { showToast } from "@wearethelegion/ui/toast"
 import type { FitAddon, Ghostty, Terminal as Term } from "ghostty-web"
 import { type ComponentProps, createEffect, createSignal, onCleanup, onMount, splitProps } from "solid-js"
 import { SerializeAddon } from "@/addons/serialize"

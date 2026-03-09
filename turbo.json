@@ -8,11 +8,11 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "opencode#test": {
+    "legion#test": {
       "dependsOn": ["^build"],
       "outputs": []
     },
-    "@opencode-ai/app#test": {
+    "@wearethelegion/app#test": {
       "dependsOn": ["^build"],
       "outputs": []
     }

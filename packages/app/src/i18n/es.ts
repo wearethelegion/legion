@@ -98,7 +98,7 @@ export const dict = {
   "dialog.provider.group.popular": "Popular",
   "dialog.provider.group.other": "Otro",
   "dialog.provider.tag.recommended": "Recomendado",
-  "dialog.provider.opencode.note": "Modelos seleccionados incluyendo Claude, GPT, Gemini y más",
+  "dialog.provider.legion.note": "Modelos seleccionados incluyendo Claude, GPT, Gemini y más",
   "dialog.provider.anthropic.note": "Acceso directo a modelos Claude, incluyendo Pro y Max",
   "dialog.provider.copilot.note": "Modelos Claude para asistencia de codificación",
   "dialog.provider.openai.note": "Modelos GPT para tareas de IA generales rápidas y capaces",
@@ -129,13 +129,13 @@ export const dict = {
   "provider.connect.apiKey.label": "Clave API de {{provider}}",
   "provider.connect.apiKey.placeholder": "Clave API",
   "provider.connect.apiKey.required": "La clave API es obligatoria",
-  "provider.connect.opencodeZen.line1":
+  "provider.connect.legionZen.line1":
     "OpenCode Zen te da acceso a un conjunto curado de modelos fiables optimizados para agentes de programación.",
-  "provider.connect.opencodeZen.line2":
+  "provider.connect.legionZen.line2":
     "Con una sola clave API obtendrás acceso a modelos como Claude, GPT, Gemini, GLM y más.",
-  "provider.connect.opencodeZen.visit.prefix": "Visita ",
-  "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",
-  "provider.connect.opencodeZen.visit.suffix": " para obtener tu clave API.",
+  "provider.connect.legionZen.visit.prefix": "Visita ",
+  "provider.connect.legionZen.visit.link": "wearethelegion.com/zen",
+  "provider.connect.legionZen.visit.suffix": " para obtener tu clave API.",
   "provider.connect.oauth.code.visit.prefix": "Visita ",
   "provider.connect.oauth.code.visit.link": "este enlace",
   "provider.connect.oauth.code.visit.suffix":
@@ -290,7 +290,7 @@ export const dict = {
   "dialog.mcp.empty": "No hay MCPs configurados",
 
   "dialog.lsp.empty": "LSPs detectados automáticamente por tipo de archivo",
-  "dialog.plugins.empty": "Plugins configurados en opencode.json",
+  "dialog.plugins.empty": "Plugins configurados en legion.json",
 
   "mcp.status.connected": "conectado",
   "mcp.status.failed": "fallido",
@@ -460,7 +460,7 @@ export const dict = {
   "error.chain.responseBody": "Cuerpo de la respuesta:\n{{body}}",
   "error.chain.didYouMean": "¿Quisiste decir: {{suggestions}}",
   "error.chain.modelNotFound": "Modelo no encontrado: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "Comprueba los nombres de proveedor/modelo en tu configuración (opencode.json)",
+  "error.chain.checkConfig": "Comprueba los nombres de proveedor/modelo en tu configuración (legion.json)",
   "error.chain.mcpFailed": 'El servidor MCP "{{name}}" falló. Nota, OpenCode no soporta autenticación MCP todavía.',
   "error.chain.providerAuthFailed": "Autenticación de proveedor fallida ({{provider}}): {{message}}",
   "error.chain.providerInitFailed":

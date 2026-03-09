@@ -5,7 +5,7 @@ import { type Config } from "./gen/client/types.gen.js"
 import { OpencodeClient } from "./gen/sdk.gen.js"
 export { type Config as OpencodeClientConfig, OpencodeClient }
 
-export function createOpencodeClient(config?: Config & { directory?: string }) {
+export function createLegionClient(config?: Config & { directory?: string }) {
   if (!config?.fetch) {
     const customFetch: any = (req: any) => {
       // @ts-ignore
@@ -23,7 +23,7 @@ export function createOpencodeClient(config?: Config & { directory?: string }) {
     const encodedDirectory = isNonASCII ? encodeURIComponent(config.directory) : config.directory
     config.headers = {
       ...config.headers,
-      "x-opencode-directory": encodedDirectory,
+      "x-legion-directory": encodedDirectory,
     }
   }
 

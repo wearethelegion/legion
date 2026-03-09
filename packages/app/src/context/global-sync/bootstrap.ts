@@ -8,10 +8,10 @@ import type {
   ProviderListResponse,
   QuestionRequest,
   Todo,
-} from "@opencode-ai/sdk/v2/client"
-import { showToast } from "@opencode-ai/ui/toast"
-import { getFilename } from "@opencode-ai/util/path"
-import { retry } from "@opencode-ai/util/retry"
+} from "@wearethelegion/sdk/v2/client"
+import { showToast } from "@wearethelegion/ui/toast"
+import { getFilename } from "@wearethelegion/util/path"
+import { retry } from "@wearethelegion/util/retry"
 import { batch } from "solid-js"
 import { reconcile, type SetStoreFunction, type Store } from "solid-js/store"
 import type { State, VcsCache } from "./types"
@@ -66,7 +66,7 @@ export async function bootstrapGlobal(input: {
       input.globalSDK.project.list().then((x) => {
         const projects = (x.data ?? [])
           .filter((p) => !!p?.id)
-          .filter((p) => !!p.worktree && !p.worktree.includes("opencode-test"))
+          .filter((p) => !!p.worktree && !p.worktree.includes("legion-test"))
           .slice()
           .sort((a, b) => cmp(a.id, b.id))
         input.setGlobalStore("project", projects)

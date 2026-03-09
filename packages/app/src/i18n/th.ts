@@ -98,7 +98,7 @@ export const dict = {
   "dialog.provider.group.popular": "ยอดนิยม",
   "dialog.provider.group.other": "อื่น ๆ",
   "dialog.provider.tag.recommended": "แนะนำ",
-  "dialog.provider.opencode.note": "โมเดลที่คัดสรร รวมถึง Claude, GPT, Gemini และอื่น ๆ",
+  "dialog.provider.legion.note": "โมเดลที่คัดสรร รวมถึง Claude, GPT, Gemini และอื่น ๆ",
   "dialog.provider.anthropic.note": "เข้าถึงโมเดล Claude โดยตรง รวมถึง Pro และ Max",
   "dialog.provider.copilot.note": "โมเดล Claude สำหรับการช่วยเหลือในการเขียนโค้ด",
   "dialog.provider.openai.note": "โมเดล GPT สำหรับงาน AI ทั่วไปที่รวดเร็วและมีความสามารถ",
@@ -129,13 +129,13 @@ export const dict = {
   "provider.connect.apiKey.label": "คีย์ API ของ {{provider}}",
   "provider.connect.apiKey.placeholder": "คีย์ API",
   "provider.connect.apiKey.required": "ต้องใช้คีย์ API",
-  "provider.connect.opencodeZen.line1":
+  "provider.connect.legionZen.line1":
     "OpenCode Zen ให้คุณเข้าถึงชุดโมเดลที่เชื่อถือได้และปรับแต่งแล้วสำหรับเอเจนต์การเขียนโค้ด",
-  "provider.connect.opencodeZen.line2":
+  "provider.connect.legionZen.line2":
     "ด้วยคีย์ API เดียวคุณจะได้รับการเข้าถึงโมเดล เช่น Claude, GPT, Gemini, GLM และอื่น ๆ",
-  "provider.connect.opencodeZen.visit.prefix": "เยี่ยมชม ",
-  "provider.connect.opencodeZen.visit.link": "opencode.ai/zen",
-  "provider.connect.opencodeZen.visit.suffix": " เพื่อรวบรวมคีย์ API ของคุณ",
+  "provider.connect.legionZen.visit.prefix": "เยี่ยมชม ",
+  "provider.connect.legionZen.visit.link": "wearethelegion.com/zen",
+  "provider.connect.legionZen.visit.suffix": " เพื่อรวบรวมคีย์ API ของคุณ",
   "provider.connect.oauth.code.visit.prefix": "เยี่ยมชม ",
   "provider.connect.oauth.code.visit.link": "ลิงก์นี้",
   "provider.connect.oauth.code.visit.suffix":
@@ -290,7 +290,7 @@ export const dict = {
   "dialog.mcp.empty": "ไม่มี MCP ที่กำหนดค่า",
 
   "dialog.lsp.empty": "LSPs ตรวจจับอัตโนมัติจากประเภทไฟล์",
-  "dialog.plugins.empty": "ปลั๊กอินที่กำหนดค่าใน opencode.json",
+  "dialog.plugins.empty": "ปลั๊กอินที่กำหนดค่าใน legion.json",
 
   "mcp.status.connected": "เชื่อมต่อแล้ว",
   "mcp.status.failed": "ล้มเหลว",
@@ -457,7 +457,7 @@ export const dict = {
   "error.chain.responseBody": "เนื้อหาการตอบสนอง:\n{{body}}",
   "error.chain.didYouMean": "คุณหมายถึง: {{suggestions}}",
   "error.chain.modelNotFound": "ไม่พบโมเดล: {{provider}}/{{model}}",
-  "error.chain.checkConfig": "ตรวจสอบการกำหนดค่าของคุณ (opencode.json) ชื่อผู้ให้บริการ/โมเดล",
+  "error.chain.checkConfig": "ตรวจสอบการกำหนดค่าของคุณ (legion.json) ชื่อผู้ให้บริการ/โมเดล",
   "error.chain.mcpFailed": 'เซิร์ฟเวอร์ MCP "{{name}}" ล้มเหลว โปรดทราบว่า OpenCode ยังไม่รองรับการตรวจสอบสิทธิ์ MCP',
   "error.chain.providerAuthFailed": "การตรวจสอบสิทธิ์ผู้ให้บริการล้มเหลว ({{provider}}): {{message}}",
   "error.chain.providerInitFailed": 'ไม่สามารถเริ่มต้นผู้ให้บริการ "{{provider}}" ตรวจสอบข้อมูลรับรองและการกำหนดค่า',

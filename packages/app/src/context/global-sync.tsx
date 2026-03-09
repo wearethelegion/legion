@@ -6,9 +6,9 @@ import type {
   ProviderAuthResponse,
   ProviderListResponse,
   Todo,
-} from "@opencode-ai/sdk/v2/client"
-import { showToast } from "@opencode-ai/ui/toast"
-import { getFilename } from "@opencode-ai/util/path"
+} from "@wearethelegion/sdk/v2/client"
+import { showToast } from "@wearethelegion/ui/toast"
+import { getFilename } from "@wearethelegion/util/path"
 import {
   createContext,
   createEffect,

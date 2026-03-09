@@ -4,9 +4,9 @@ import { $ } from "bun"
 import { tmpdir } from "os"
 import { join } from "path"
 
-const FORK_REPO = "anomalyco/zed-extensions"
+const FORK_REPO = "wearethelegion/zed-extensions"
 const UPSTREAM_REPO = "zed-industries/extensions"
-const EXTENSION_NAME = "opencode"
+const EXTENSION_NAME = "legion"
 
 async function main() {
   const version = process.argv[2]
@@ -87,7 +87,7 @@ async function main() {
   await $`git commit -m ${commitMessage}`
   console.log(`✅ Changes committed`)
 
-  // Delete any existing branches for opencode updates
+  // Delete any existing branches for legion updates
   console.log(`🔍 Checking for existing branches...`)
   const branches = await $`git ls-remote --heads https://x-access-token:${token}@github.com/${FORK_REPO}.git`.text()
   const branchPattern = `refs/heads/update-${EXTENSION_NAME}-`
