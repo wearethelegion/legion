@@ -24,7 +24,7 @@ Legion is an AI-powered development tool for your terminal. It combines autonomo
 ### Install
 
 ```bash
-npm i -g legion-cli@latest
+npm i -g @wearethelegion/legion
 ```
 
 ### Run
