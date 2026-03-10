@@ -163,7 +163,7 @@ export async function createMenu(trigger: (id: string) => void) {
             text: "Legion Documentation",
           }),
           await MenuItem.new({
-            action: () => openUrl("https://discord.com/invite/legion"),
+            action: () => openUrl("https://discord.com/invite/eX5GqGx4"),
             text: "Support Forum",
           }),
           await PredefinedMenuItem.new({

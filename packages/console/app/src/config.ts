@@ -17,7 +17,7 @@ export const config = {
   // Social links
   social: {
     twitter: "https://x.com/legion",
-    discord: "https://discord.gg/legion",
+    discord: "https://discord.gg/eX5GqGx4",
   },
 
   // Static stats (used on landing page)

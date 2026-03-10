@@ -91,7 +91,7 @@ docs/          # Documentation
 
 ## Community
 
-- 💬 [Discord](https://discord.gg/wearethelegion) — ask questions, share ideas
+- 💬 [Discord](https://discord.gg/eX5GqGx4) — ask questions, share ideas
 - 🐙 [GitHub Discussions](https://github.com/wearethelegion/legion/discussions) — longer-form conversations
 
 ## License
