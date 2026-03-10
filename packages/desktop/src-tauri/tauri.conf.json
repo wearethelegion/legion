@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OpenCode Dev",
+  "productName": "Legion Dev",
   "identifier": "ai.legion.desktop.dev",
-  "mainBinaryName": "OpenCode",
+  "mainBinaryName": "Legion",
   "version": "../package.json",
   "build": {
     "beforeDevCommand": "bun run dev",

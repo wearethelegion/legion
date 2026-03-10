@@ -1,7 +1,7 @@
 /**
  * LEGION Integration Layer — Barrel exports + initialization orchestrator.
  *
- * This is the single entry point for LEGION integration in OpenCode.
+ * This is the single entry point for LEGION integration in Legion.
  * Call `initializeLegion()` during startup to authenticate, bootstrap
  * identity, and load project context — all before the first user message.
  */
@@ -67,12 +67,12 @@ export interface LegionInitResult {
  * Sequence:
  * 1. Authenticate with LEGION gRPC server
  * 2. Call whoAmI to bootstrap agent identity
- * 3. Load agent identity into OpenCode-compatible format
+ * 3. Load agent identity into Legion-compatible format
  * 4. Load project context
  * 5. Cache everything for offline mode
  *
  * Graceful degradation: if any step fails, subsequent steps are skipped
- * and OpenCode continues without LEGION.
+ * and Legion continues without LEGION.
  */
 export async function initializeLegion(config?: LegionConfig): Promise<LegionInitResult> {
   const { authenticateLegion } = await import("./auth")
@@ -94,7 +94,7 @@ export async function initializeLegion(config?: LegionConfig): Promise<LegionIni
     return null
   })
   if (!client) {
-    log.info("LEGION not available — OpenCode will run without LEGION")
+    log.info("LEGION not available — Legion will run without LEGION")
     return result
   }
 

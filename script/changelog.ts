@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { $ } from "bun"
-import { createOpencode } from "@wearethelegion/sdk/v2"
+import { createLegion } from "@wearethelegion/sdk/v2"
 import { parseArgs } from "util"
 import { Script } from "@wearethelegion/script"
 
@@ -136,7 +136,7 @@ function getSection(areas: Set<string>): string {
   return "Core"
 }
 
-async function summarizeCommit(legion: Awaited<ReturnType<typeof createOpencode>>, message: string): Promise<string> {
+async function summarizeCommit(legion: Awaited<ReturnType<typeof createLegion>>, message: string): Promise<string> {
   console.log("summarizing commit:", message)
   const session = await legion.client.session.create()
   const result = await legion.client.session
@@ -164,7 +164,7 @@ Commit: ${message}`,
   return result.trim()
 }
 
-export async function generateChangelog(commits: Commit[], legion: Awaited<ReturnType<typeof createOpencode>>) {
+export async function generateChangelog(commits: Commit[], legion: Awaited<ReturnType<typeof createLegion>>) {
   // Summarize commits in parallel with max 10 concurrent requests
   const BATCH_SIZE = 10
   const summaries: string[] = []
@@ -227,7 +227,7 @@ export async function buildNotes(from: string, to: string) {
 
   console.log("generating changelog since " + from)
 
-  const legion = await createOpencode({ port: 0 })
+  const legion = await createLegion({ port: 0 })
   const notes: string[] = []
 
   try {

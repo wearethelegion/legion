@@ -212,7 +212,7 @@ export default function () {
           return (
             <>
               <Show when={info().title}>
-                <Title>{info().title} | OpenCode</Title>
+                <Title>{info().title} | Legion</Title>
               </Show>
               <Meta name="description" content="legion - The AI coding agent built for the terminal." />
               <Meta property="og:image" content={ogImage()} />

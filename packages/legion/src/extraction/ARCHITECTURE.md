@@ -565,7 +565,7 @@ Additional proto fields set by `mapToProto()`:
 | Package | Version | Purpose |
 |---|---|---|
 | `@anthropic-ai/sdk` | ^0.74.0 | `zodOutputFormat()` for constrained Haiku output |
-| `@opencode-ai/legion-client` | workspace link | gRPC client with 4 conversation extraction methods |
+| `@wearethelegion/legion-client` | workspace link | gRPC client with 4 conversation extraction methods |
 | `bun:sqlite` | built-in | SQLite buffer (WAL mode, zero external deps) |
 | `zod` | (existing) | Schema definitions for TurnExtraction |
 
@@ -581,7 +581,7 @@ Additional proto fields set by `mapToProto()`:
 
 ## 10. File Inventory
 
-### CLI -- Extraction Module (`packages/opencode/src/extraction/`)
+### CLI -- Extraction Module (`packages/legion/src/extraction/`)
 
 | File | Lines | Description |
 |---|---|---|

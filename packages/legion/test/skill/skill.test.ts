@@ -362,7 +362,7 @@ name: legion-skill
 description: A skill in the .legion/skill directory.
 ---
 
-# OpenCode Skill
+# Legion Skill
 `,
       )
       await Bun.write(
@@ -372,7 +372,7 @@ name: legion-skill
 description: A skill in the .legion/skills directory.
 ---
 
-# OpenCode Skill
+# Legion Skill
 `,
       )
     },

@@ -40,7 +40,7 @@ import { Config } from "@/config/config"
 import { Todo } from "@/session/todo"
 import { z } from "zod"
 import { LoadAPIKeyError } from "ai"
-import type { AssistantMessage, Event, OpencodeClient, SessionMessageResponse } from "@wearethelegion/sdk/v2"
+import type { AssistantMessage, Event, LegionClient, SessionMessageResponse } from "@wearethelegion/sdk/v2"
 import { applyPatch } from "diff"
 
 type ModeOption = { id: string; name: string; description?: string }
@@ -52,7 +52,7 @@ export namespace ACP {
   const log = Log.create({ service: "acp-agent" })
 
   async function getContextLimit(
-    sdk: OpencodeClient,
+    sdk: LegionClient,
     providerID: string,
     modelID: string,
     directory: string,
@@ -72,7 +72,7 @@ export namespace ACP {
 
   async function sendUsageUpdate(
     connection: AgentSideConnection,
-    sdk: OpencodeClient,
+    sdk: LegionClient,
     sessionID: string,
     directory: string,
   ): Promise<void> {
@@ -119,7 +119,7 @@ export namespace ACP {
       })
   }
 
-  export async function init({ sdk: _sdk }: { sdk: OpencodeClient }) {
+  export async function init({ sdk: _sdk }: { sdk: LegionClient }) {
     return {
       create: (connection: AgentSideConnection, fullConfig: ACPConfig) => {
         return new Agent(connection, fullConfig)
@@ -130,7 +130,7 @@ export namespace ACP {
   export class Agent implements ACPAgent {
     private connection: AgentSideConnection
     private config: ACPConfig
-    private sdk: OpencodeClient
+    private sdk: LegionClient
     private sessionManager: ACPSessionManager
     private eventAbort = new AbortController()
     private eventStarted = false
@@ -518,7 +518,7 @@ export namespace ACP {
           "terminal-auth": {
             command: "legion",
             args: ["auth", "login"],
-            label: "OpenCode Login",
+            label: "Legion Login",
           },
         }
       }
@@ -543,7 +543,7 @@ export namespace ACP {
         },
         authMethods: [authMethod],
         agentInfo: {
-          name: "OpenCode",
+          name: "Legion",
           version: Installation.VERSION,
         },
       }
@@ -966,7 +966,7 @@ export namespace ACP {
           }
         } else if (part.type === "file") {
           // Replay file attachments as appropriate ACP content blocks.
-          // OpenCode stores files internally as { type: "file", url, filename, mime }.
+          // Legion stores files internally as { type: "file", url, filename, mime }.
           // We convert these back to ACP blocks based on the URL scheme and MIME type:
           // - file:// URLs → resource_link
           // - data: URLs with image/* → image block

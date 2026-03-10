@@ -1,8 +1,8 @@
 /**
  * LEGION Agent Identity Injection (F-006)
  *
- * Maps LEGION agent identity (from whoAmI) to OpenCode's agent format.
- * Generates an agent config that OpenCode's agent system understands,
+ * Maps LEGION agent identity (from whoAmI) to Legion's agent format.
+ * Generates an agent config that Legion's agent system understands,
  * injecting the combined system prompt as the agent's prompt.
  */
 
@@ -17,8 +17,8 @@ const log = Log.create({ service: "legion.agent-identity" })
 // ---------------------------------------------------------------------------
 
 /**
- * OpenCode-compatible agent configuration generated from LEGION identity.
- * Matches the shape expected by OpenCode's agent system (Agent.Info fields).
+ * Legion-compatible agent configuration generated from LEGION identity.
+ * Matches the shape expected by Legion's agent system (Agent.Info fields).
  */
 export interface LegionAgentConfig {
   /** Agent name from LEGION (e.g. "Tommy") */
@@ -102,7 +102,7 @@ function roleToPermissions(role: string): ToolPermissionHints {
 // ---------------------------------------------------------------------------
 
 /**
- * Build an OpenCode-compatible agent config from LEGION identity.
+ * Build an Legion-compatible agent config from LEGION identity.
  * Returns null if no identity is available.
  */
 export function getLegionAgent(): LegionAgentConfig | null {

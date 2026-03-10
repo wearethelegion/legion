@@ -150,7 +150,7 @@ export namespace Installation {
         const formula = await getBrewFormula()
         if (formula.includes("/")) {
           cmd =
-            $`brew tap anomalyco/tap && cd "$(brew --repo anomalyco/tap)" && git pull --ff-only && brew upgrade ${formula}`.env(
+            $`brew tap wearethelegion/tap && cd "$(brew --repo wearethelegion/tap)" && git pull --ff-only && brew upgrade ${formula}`.env(
               {
                 HOMEBREW_NO_AUTO_UPDATE: "1",
                 ...process.env,

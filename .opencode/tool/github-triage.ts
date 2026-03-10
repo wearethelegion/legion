@@ -53,14 +53,14 @@ export default tool({
   },
   async execute(args) {
     const issue = getIssueNumber()
-    const owner = "anomalyco"
-    const repo = "opencode"
+    const owner = "wearethelegion"
+    const repo = "legion"
 
     const results: string[] = []
     let labels = [...new Set(args.labels.map((x) => (x === "desktop" ? "web" : x)))]
     const web = labels.includes("web")
     const text = `${process.env.ISSUE_TITLE ?? ""}\n${process.env.ISSUE_BODY ?? ""}`.toLowerCase()
-    const zen = /\bzen\b/.test(text) || text.includes("opencode black")
+    const zen = /\bzen\b/.test(text) || text.includes("legion black")
     const nix = /\bnix(os)?\b/.test(text)
 
     if (labels.includes("nix") && !nix) {

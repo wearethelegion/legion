@@ -144,7 +144,7 @@ try {
   } else {
     Object.assign(process.env, serverEnv)
     process.env.AGENT = "1"
-    process.env.OPENCODE = "1"
+    process.env.LEGION = "1"
 
     const log = await import("../../legion/src/util/log")
     const install = await import("../../legion/src/installation")

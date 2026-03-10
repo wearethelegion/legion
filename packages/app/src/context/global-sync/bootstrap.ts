@@ -1,6 +1,6 @@
 import type {
   Config,
-  OpencodeClient,
+  LegionClient,
   Path,
   PermissionRequest,
   Project,
@@ -31,7 +31,7 @@ type GlobalStore = {
 }
 
 export async function bootstrapGlobal(input: {
-  globalSDK: OpencodeClient
+  globalSDK: LegionClient
   connectErrorTitle: string
   connectErrorDescription: string
   requestFailedTitle: string
@@ -110,7 +110,7 @@ function groupBySession<T extends { id: string; sessionID: string }>(input: T[])
 
 export async function bootstrapDirectory(input: {
   directory: string
-  sdk: OpencodeClient
+  sdk: LegionClient
   store: Store<State>
   setStore: SetStoreFunction<State>
   vcsCache: VcsCache

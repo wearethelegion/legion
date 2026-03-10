@@ -1,30 +1,30 @@
 ---
 title: Proveedores
-description: Usando cualquier proveedor LLM en OpenCode.
+description: Usando cualquier proveedor LLM en Legion.
 ---
 
 import config from "../../../../config.mjs"
 export const console = config.console
 
-OpenCode usa el [AI SDK](https://ai-sdk.dev/) y [Models.dev](https://models.dev) para admitir **75+ proveedores LLM** y admite la ejecución de modelos locales.
+Legion usa el [AI SDK](https://ai-sdk.dev/) y [Models.dev](https://models.dev) para admitir **75+ proveedores LLM** y admite la ejecución de modelos locales.
 
 Para agregar un proveedor necesita:
 
 1. Agregue las claves API para el proveedor usando el comando `/connect`.
-2. Configure el proveedor en su configuración OpenCode.
+2. Configure el proveedor en su configuración Legion.
 
 ---
 
 ### Credenciales
 
 Cuando agrega las claves API de un proveedor con el comando `/connect`, se almacenan
-en `~/.local/share/opencode/auth.json`.
+en `~/.local/share/legion/auth.json`.
 
 ---
 
 ### Configuración
 
-Puedes personalizar los proveedores a través de la sección `provider` en tu OpenCode
+Puedes personalizar los proveedores a través de la sección `provider` en tu Legion
 configuración.
 
 ---
@@ -33,9 +33,9 @@ configuración.
 
 Puede personalizar la URL base para cualquier proveedor configurando la opción `baseURL`. Esto resulta útil cuando se utilizan servicios proxy o puntos finales personalizados.
 
-```json title="opencode.json" {6}
+```json title="legion.json" {6}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "anthropic": {
       "options": {
@@ -48,16 +48,16 @@ Puede personalizar la URL base para cualquier proveedor configurando la opción 
 
 ---
 
-## OpenCode Zen
+## Legion Zen
 
-OpenCode Zen es una lista de modelos proporcionados por el equipo OpenCode que han sido
-probado y verificado para funcionar bien con OpenCode. [Más información](/docs/zen).
+Legion Zen es una lista de modelos proporcionados por el equipo Legion que han sido
+probado y verificado para funcionar bien con Legion. [Más información](/docs/zen).
 
 :::tip
-Si eres nuevo, te recomendamos comenzar con OpenCode Zen.
+Si eres nuevo, te recomendamos comenzar con Legion Zen.
 :::
 
-1. Ejecute el comando `/connect` en TUI, seleccione opencode y diríjase a [opencode.ai/auth](https://opencode.ai/auth).
+1. Ejecute el comando `/connect` en TUI, seleccione legion y diríjase a [legion.dev/auth](https://legion.dev/auth).
 
    ```txt
    /connect
@@ -80,7 +80,7 @@ Si eres nuevo, te recomendamos comenzar con OpenCode Zen.
    /models
    ```
 
-Funciona como cualquier otro proveedor en OpenCode y su uso es completamente opcional.
+Funciona como cualquier otro proveedor en Legion y su uso es completamente opcional.
 
 ---
 
@@ -124,7 +124,7 @@ lista, no dude en abrir un PR.
 
 ### Amazon Bedrock
 
-Para usar Amazon Bedrock con OpenCode:
+Para usar Amazon Bedrock con Legion:
 
 1. Dirígete al **Catálogo de modelos** en la consola Amazon Bedrock y solicita
    Accede a los modelos que desees.
@@ -137,17 +137,17 @@ Para usar Amazon Bedrock con OpenCode:
 
    #### Variables de entorno (Inicio rápido)
 
-   Establezca una de estas variables de entorno mientras ejecuta opencode:
+   Establezca una de estas variables de entorno mientras ejecuta legion:
 
    ```bash
    # Option 1: Using AWS access keys
-   AWS_ACCESS_KEY_ID=XXX AWS_SECRET_ACCESS_KEY=YYY opencode
+   AWS_ACCESS_KEY_ID=XXX AWS_SECRET_ACCESS_KEY=YYY legion
 
    # Option 2: Using named AWS profile
-   AWS_PROFILE=my-profile opencode
+   AWS_PROFILE=my-profile legion
 
    # Option 3: Using Bedrock bearer token
-   AWS_BEARER_TOKEN_BEDROCK=XXX opencode
+   AWS_BEARER_TOKEN_BEDROCK=XXX legion
    ```
 
    O agrégalos a tu perfil de bash:
@@ -159,11 +159,11 @@ Para usar Amazon Bedrock con OpenCode:
 
    #### Archivo de configuración (recomendado)
 
-   Para una configuración persistente o específica del proyecto, utilice `opencode.json`:
+   Para una configuración persistente o específica del proyecto, utilice `legion.json`:
 
-   ```json title="opencode.json"
+   ```json title="legion.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://legion.dev/config.json",
      "provider": {
        "amazon-bedrock": {
          "options": {
@@ -188,9 +188,9 @@ Para usar Amazon Bedrock con OpenCode:
 
    Si utiliza puntos de enlace de VPC para Bedrock:
 
-   ```json title="opencode.json"
+   ```json title="legion.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://legion.dev/config.json",
      "provider": {
        "amazon-bedrock": {
          "options": {
@@ -232,9 +232,9 @@ Para usar Amazon Bedrock con OpenCode:
 :::note
 Para perfiles de inferencia personalizados, utilice el modelo y el nombre del proveedor en la clave y establezca la propiedad `id` en arn. Esto garantiza un almacenamiento en caché correcto:
 
-```json title="opencode.json"
+```json title="legion.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "amazon-bedrock": {
       // ...
@@ -279,7 +279,7 @@ Para perfiles de inferencia personalizados, utilice el modelo y el nombre del pr
    ```
 
 :::info
-El uso de su suscripción Claude Pro/Max en OpenCode no está oficialmente respaldado por [Anthropic](https://anthropic.com).
+El uso de su suscripción Claude Pro/Max en Legion no está oficialmente respaldado por [Anthropic](https://anthropic.com).
 :::
 
 ##### Usando las teclas API
@@ -303,7 +303,7 @@ Si encuentra errores del tipo "Lo siento, pero no puedo ayudar con esa solicitud
 2. Vaya a [Azure AI Foundry](https://ai.azure.com/) e implemente un modelo.
 
    :::nota
-   El nombre de la implementación debe coincidir con el nombre del modelo para que opencode funcione correctamente.
+   El nombre de la implementación debe coincidir con el nombre del modelo para que legion funcione correctamente.
    :::
 
 3. Ejecute el comando `/connect` y busque **Azure**.
@@ -324,7 +324,7 @@ Si encuentra errores del tipo "Lo siento, pero no puedo ayudar con esa solicitud
 5. Configure el nombre de su recurso como una variable de entorno:
 
    ```bash
-   AZURE_RESOURCE_NAME=XXX opencode
+   AZURE_RESOURCE_NAME=XXX legion
    ```
 
    O agrégalo a tu perfil de bash:
@@ -350,7 +350,7 @@ Si encuentra errores del tipo "Lo siento, pero no puedo ayudar con esa solicitud
 2. Vaya a [Azure AI Foundry](https://ai.azure.com/) e implemente un modelo.
 
    :::nota
-   El nombre de la implementación debe coincidir con el nombre del modelo para que opencode funcione correctamente.
+   El nombre de la implementación debe coincidir con el nombre del modelo para que legion funcione correctamente.
    :::
 
 3. Ejecute el comando `/connect` y busque **Azure Cognitive Services**.
@@ -371,7 +371,7 @@ Si encuentra errores del tipo "Lo siento, pero no puedo ayudar con esa solicitud
 5. Configure el nombre de su recurso como una variable de entorno:
 
    ```bash
-   AZURE_COGNITIVE_SERVICES_RESOURCE_NAME=XXX opencode
+   AZURE_COGNITIVE_SERVICES_RESOURCE_NAME=XXX legion
    ```
 
    O agrégalo a tu perfil de bash:
@@ -482,11 +482,11 @@ Cloudflare AI Gateway le permite acceder a modelos de OpenAI, Anthropic, Workers
    /models
    ```
 
-   También puede agregar modelos a través de su configuración opencode.
+   También puede agregar modelos a través de su configuración legion.
 
-   ```json title="opencode.json"
+   ```json title="legion.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://legion.dev/config.json",
      "provider": {
        "cloudflare-ai-gateway": {
          "models": {
@@ -663,7 +663,7 @@ GitLab Duo proporciona chat agente basado en IA con capacidades de llamada de he
    #### Uso del token de acceso personal
    1. Vaya a [GitLab Configuración de usuario > Tokens de acceso](https://gitlab.com/-/user_settings/personal_access_tokens)
    2. Haga clic en **Agregar nuevo token**
-   3. Nombre: `OpenCode`, Alcances: `api`
+   3. Nombre: `Legion`, Alcances: `api`
    4. Copie el token (comienza con `glpat-`)
    5. Introdúcelo en la terminal.
 
@@ -680,20 +680,20 @@ GitLab Duo proporciona chat agente basado en IA con capacidades de llamada de he
 
 :::note
 También puede especificar la variable de entorno 'GITLAB_TOKEN' si no desea
-para almacenar el token en el almacenamiento de autenticación opencode.
+para almacenar el token en el almacenamiento de autenticación legion.
 :::
 
 ##### Autohospedado GitLab
 
 :::note[nota de cumplimiento]
-OpenCode utiliza un modelo pequeño para algunas tareas de IA, como generar el título de la sesión.
-Está configurado para usar gpt-5-nano de forma predeterminada, alojado por Zen. Para bloquear OpenCode
+Legion utiliza un modelo pequeño para algunas tareas de IA, como generar el título de la sesión.
+Está configurado para usar gpt-5-nano de forma predeterminada, alojado por Zen. Para bloquear Legion
 Para usar solo su propia instancia alojada en GitLab, agregue lo siguiente a su
-Archivo `opencode.json`. También se recomienda desactivar el uso compartido de sesiones.
+Archivo `legion.json`. También se recomienda desactivar el uso compartido de sesiones.
 
 ```json
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "small_model": "gitlab/duo-chat-haiku-4-5",
   "share": "disabled"
 }
@@ -747,15 +747,15 @@ Luego exponga el ID de la aplicación como variable de entorno:
 export GITLAB_OAUTH_CLIENT_ID=your_application_id_here
 ```
 
-Más documentación en la página de inicio de [opencode-gitlab-auth](https://www.npmjs.com/package/@gitlab/opencode-gitlab-auth).
+Más documentación en la página de inicio de [legion-gitlab-auth](https://www.npmjs.com/package/@gitlab/legion-gitlab-auth).
 
 ##### Configuración
 
-Personalizar a través de `opencode.json`:
+Personalizar a través de `legion.json`:
 
-```json title="opencode.json"
+```json title="legion.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "gitlab": {
       "options": {
@@ -774,10 +774,10 @@ Personalizar a través de `opencode.json`:
 
 Para acceder a herramientas GitLab (solicitudes de fusión, problemas, canalizaciones, CI/CD, etc.):
 
-```json title="opencode.json"
+```json title="legion.json"
 {
-  "$schema": "https://opencode.ai/config.json",
-  "plugin": ["@gitlab/opencode-gitlab-plugin"]
+  "$schema": "https://legion.dev/config.json",
+  "plugin": ["@gitlab/legion-gitlab-plugin"]
 }
 ```
 
@@ -787,7 +787,7 @@ Este complemento proporciona capacidades integrales de administración del repos
 
 ### GitHub Copilot
 
-Para utilizar su suscripción GitHub Copilot con opencode:
+Para utilizar su suscripción GitHub Copilot con legion:
 
 :::note
 Algunos modelos pueden necesitar un [Pro+
@@ -825,7 +825,7 @@ Algunos modelos deben habilitarse manualmente en su [GitHub configuración del c
 
 ### Google Vertex AI
 
-Para utilizar Google Vertex AI con OpenCode:
+Para utilizar Google Vertex AI con Legion:
 
 1. Dirígete a **Model Garden** en Google Cloud Console y verifica el
    Modelos disponibles en su región.
@@ -841,10 +841,10 @@ Para utilizar Google Vertex AI con OpenCode:
      - `GOOGLE_APPLICATION_CREDENTIALS`: ruta al archivo clave JSON de su cuenta de servicio
      - Autenticar usando gcloud CLI: `gcloud auth application-default login`
 
-   Configúrelos mientras ejecuta opencode.
+   Configúrelos mientras ejecuta legion.
 
    ```bash
-   GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json GOOGLE_CLOUD_PROJECT=your-project-id opencode
+   GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json GOOGLE_CLOUD_PROJECT=your-project-id legion
    ```
 
    O agréguelos a su perfil de bash.
@@ -954,13 +954,13 @@ Para obtener más proveedores y funciones avanzadas como almacenamiento en cach�
 
 #### Configuraciones opcionales
 
-En caso de que vea una característica o modelo de Helicone que no esté configurado automáticamente a través de opencode, siempre podrá configurarlo usted mismo.
+En caso de que vea una característica o modelo de Helicone que no esté configurado automáticamente a través de legion, siempre podrá configurarlo usted mismo.
 
 Aquí está el [Directorio de modelos de Helicone](https://helicone.ai/models), lo necesitará para obtener las ID de los modelos que desea agregar.
 
-```jsonc title="~/.config/opencode/opencode.jsonc"
+```jsonc title="~/.config/legion/legion.jsonc"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -986,9 +986,9 @@ Aquí está el [Directorio de modelos de Helicone](https://helicone.ai/models), 
 
 Helicone admite encabezados personalizados para funciones como almacenamiento en caché, seguimiento de usuarios y gestión de sesiones. Agréguelos a la configuración de su proveedor usando `options.headers`:
 
-```jsonc title="~/.config/opencode/opencode.jsonc"
+```jsonc title="~/.config/legion/legion.jsonc"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -997,7 +997,7 @@ Helicone admite encabezados personalizados para funciones como almacenamiento en
         "baseURL": "https://ai-gateway.helicone.ai",
         "headers": {
           "Helicone-Cache-Enabled": "true",
-          "Helicone-User-Id": "opencode",
+          "Helicone-User-Id": "legion",
         },
       },
     },
@@ -1007,21 +1007,21 @@ Helicone admite encabezados personalizados para funciones como almacenamiento en
 
 ##### Seguimiento de sesión
 
-La función [Sesiones](https://docs.helicone.ai/features/sessions) de Helicone le permite agrupar solicitudes LLM relacionadas. Utilice el complemento [opencode-helicone-session](https://github.com/H2Shami/opencode-helicone-session) para registrar automáticamente cada conversación OpenCode como una sesión en Helicone.
+La función [Sesiones](https://docs.helicone.ai/features/sessions) de Helicone le permite agrupar solicitudes LLM relacionadas. Utilice el complemento [legion-helicone-session](https://github.com/H2Shami/legion-helicone-session) para registrar automáticamente cada conversación Legion como una sesión en Helicone.
 
 ```bash
-npm install -g opencode-helicone-session
+npm install -g legion-helicone-session
 ```
 
 Agréguelo a su configuración.
 
-```json title="opencode.json"
+```json title="legion.json"
 {
-  "plugin": ["opencode-helicone-session"]
+  "plugin": ["legion-helicone-session"]
 }
 ```
 
-El complemento inyecta encabezados `Helicone-Session-Id` y `Helicone-Session-Name` en sus solicitudes. En la página Sesiones de Helicone, verá cada conversación OpenCode enumerada como una sesión separada.
+El complemento inyecta encabezados `Helicone-Session-Id` y `Helicone-Session-Name` en sus solicitudes. En la página Sesiones de Helicone, verá cada conversación Legion enumerada como una sesión separada.
 
 ##### Cabeceras comunes de Helicone
 
@@ -1038,11 +1038,11 @@ Consulte el [Directorio de encabezados de Helicone](https://docs.helicone.ai/hel
 
 ### llama.cpp
 
-Puede configurar opencode para usar modelos locales a través de la utilidad llama-server de [llama.cpp](https://github.com/ggml-org/llama.cpp)
+Puede configurar legion para usar modelos locales a través de la utilidad llama-server de [llama.cpp](https://github.com/ggml-org/llama.cpp)
 
-```json title="opencode.json" "llama.cpp" {5, 6, 8, 10-15}
+```json title="legion.json" "llama.cpp" {5, 6, 8, 10-15}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "llama.cpp": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1105,11 +1105,11 @@ IO.NET ofrece 17 modelos optimizados para varios casos de uso:
 
 ### LM Studio
 
-Puede configurar opencode para usar modelos locales a través de LM Studio.
+Puede configurar legion para usar modelos locales a través de LM Studio.
 
-```json title="opencode.json" "lmstudio" {5, 6, 8, 10-14}
+```json title="legion.json" "lmstudio" {5, 6, 8, 10-14}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "lmstudio": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1222,15 +1222,15 @@ Para usar Kimi K2 de Moonshot AI:
 
 ### Ollama
 
-Puedes configurar opencode para usar modelos locales a través de Ollama.
+Puedes configurar legion para usar modelos locales a través de Ollama.
 
 :::tip
-Ollama puede configurarse automáticamente para OpenCode. Consulte los [documentos de integración de Ollama](https://docs.ollama.com/integrations/opencode) para obtener más detalles.
+Ollama puede configurarse automáticamente para Legion. Consulte los [documentos de integración de Ollama](https://docs.ollama.com/integrations/legion) para obtener más detalles.
 :::
 
-```json title="opencode.json" "ollama" {5, 6, 8, 10-14}
+```json title="legion.json" "ollama" {5, 6, 8, 10-14}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1264,13 +1264,13 @@ Si las llamadas a herramientas no funcionan, intente aumentar `num_ctx` en Ollam
 
 ### Ollama Cloud
 
-Para usar Ollama Cloud con OpenCode:
+Para usar Ollama Cloud con Legion:
 
 1. Dirígete a [https://ollama.com/](https://ollama.com/) e inicia sesión o crea una cuenta.
 
 2. Vaya a **Configuración** > **Claves** y haga clic en **Agregar clave API** para generar una nueva clave API.
 
-3. Copie la clave API para usarla en OpenCode.
+3. Copie la clave API para usarla en Legion.
 
 4. Ejecute el comando `/connect` y busque **Ollama Cloud**.
 
@@ -1287,7 +1287,7 @@ Para usar Ollama Cloud con OpenCode:
    └ enter
    ```
 
-6. **Importante**: Antes de usar modelos en la nube en OpenCode, debe obtener la información del modelo localmente:
+6. **Importante**: Antes de usar modelos en la nube en Legion, debe obtener la información del modelo localmente:
 
    ```bash
    ollama pull gpt-oss:20b-cloud
@@ -1335,19 +1335,19 @@ Si ya tiene una clave API, puede seleccionar **Ingresar manualmente la clave API
 
 ---
 
-### OpenCode Zen
+### Legion Zen
 
-OpenCode Zen es una lista de modelos probados y verificados proporcionada por el equipo OpenCode. [Más información](/docs/zen).
+Legion Zen es una lista de modelos probados y verificados proporcionada por el equipo Legion. [Más información](/docs/zen).
 
-1. Inicie sesión en **<a href={console}>OpenCode Zen</a>** y haga clic en **Crear API clave**.
+1. Inicie sesión en **<a href={console}>Legion Zen</a>** y haga clic en **Crear API clave**.
 
-2. Ejecute el comando `/connect` y busque **OpenCode Zen**.
+2. Ejecute el comando `/connect` y busque **Legion Zen**.
 
    ```txt
    /connect
    ```
 
-3. Ingrese su clave OpenCode API.
+3. Ingrese su clave Legion API.
 
    ```txt
    ┌ API key
@@ -1389,11 +1389,11 @@ OpenCode Zen es una lista de modelos probados y verificados proporcionada por el
    /models
    ```
 
-   También puede agregar modelos adicionales a través de su configuración opencode.
+   También puede agregar modelos adicionales a través de su configuración legion.
 
-   ```json title="opencode.json" {6}
+   ```json title="legion.json" {6}
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://legion.dev/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1404,11 +1404,11 @@ OpenCode Zen es una lista de modelos probados y verificados proporcionada por el
    }
    ```
 
-5. También puedes personalizarlos a través de tu configuración opencode. A continuación se muestra un ejemplo de cómo especificar un proveedor.
+5. También puedes personalizarlos a través de tu configuración legion. A continuación se muestra un ejemplo de cómo especificar un proveedor.
 
-   ```json title="opencode.json"
+   ```json title="legion.json"
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://legion.dev/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1456,7 +1456,7 @@ SAP AI Core brinda acceso a más de 40 modelos de OpenAI, Anthropic, Google, Ama
    O configure la variable de entorno `AICORE_SERVICE_KEY`:
 
    ```bash
-   AICORE_SERVICE_KEY='{"clientid":"...","clientsecret":"...","url":"...","serviceurls":{"AI_API_URL":"..."}}' opencode
+   AICORE_SERVICE_KEY='{"clientid":"...","clientsecret":"...","url":"...","serviceurls":{"AI_API_URL":"..."}}' legion
    ```
 
    O agrégalo a tu perfil de bash:
@@ -1468,7 +1468,7 @@ SAP AI Core brinda acceso a más de 40 modelos de OpenAI, Anthropic, Google, Ama
 4. Opcionalmente, configure el ID de implementación y el grupo de recursos:
 
    ```bash
-   AICORE_DEPLOYMENT_ID=your-deployment-id AICORE_RESOURCE_GROUP=your-resource-group opencode
+   AICORE_DEPLOYMENT_ID=your-deployment-id AICORE_RESOURCE_GROUP=your-resource-group legion
    ```
 
    :::note
@@ -1512,7 +1512,7 @@ SAP AI Core brinda acceso a más de 40 modelos de OpenAI, Anthropic, Google, Ama
 
 ### Scaleway
 
-Para utilizar [API generativas de Scaleway](https://www.scaleway.com/en/docs/generative-apis/) con OpenCode:
+Para utilizar [API generativas de Scaleway](https://www.scaleway.com/en/docs/generative-apis/) con Legion:
 
 1. Dirígete a la [Configuración de IAM de la consola Scaleway](https://console.scaleway.com/iam/api-keys) para generar una nueva clave API.
 
@@ -1620,11 +1620,11 @@ Vercel AI Gateway le permite acceder a modelos de OpenAI, Anthropic, Google, xAI
    /models
    ```
 
-También puede personalizar modelos a través de su configuración opencode. A continuación se muestra un ejemplo de cómo especificar el orden de enrutamiento del proveedor.
+También puede personalizar modelos a través de su configuración legion. A continuación se muestra un ejemplo de cómo especificar el orden de enrutamiento del proveedor.
 
-```json title="opencode.json"
+```json title="legion.json"
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "vercel": {
       "models": {
@@ -1730,11 +1730,11 @@ Algunas opciones de enrutamiento útiles:
    /models
    ```
 
-   También puede agregar modelos adicionales a través de su configuración opencode.
+   También puede agregar modelos adicionales a través de su configuración legion.
 
-   ```json title="opencode.json" {6}
+   ```json title="legion.json" {6}
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://legion.dev/config.json",
      "provider": {
        "zenmux": {
          "models": {
@@ -1752,7 +1752,7 @@ Algunas opciones de enrutamiento útiles:
 Para agregar cualquier proveedor **compatible con OpenAI** que no aparezca en el comando `/connect`:
 
 :::tip
-Puede utilizar cualquier proveedor compatible con OpenAI con opencode. La mayoría de los proveedores de IA modernos ofrecen API compatibles con OpenAI.
+Puede utilizar cualquier proveedor compatible con OpenAI con legion. La mayoría de los proveedores de IA modernos ofrecen API compatibles con OpenAI.
 :::
 
 1. Ejecute el comando `/connect` y desplácese hacia abajo hasta **Otro**.
@@ -1791,18 +1791,18 @@ Puede utilizar cualquier proveedor compatible con OpenAI con opencode. La mayor�
 
    ┌  Add credential
    │
-   ▲  This only stores a credential for myprovider - you will need to configure it in opencode.json, check the docs for examples.
+   ▲  This only stores a credential for myprovider - you will need to configure it in legion.json, check the docs for examples.
    │
    ◇  Enter your API key
    │  sk-...
    └
    ```
 
-4. Cree o actualice su archivo `opencode.json` en el directorio de su proyecto:
+4. Cree o actualice su archivo `legion.json` en el directorio de su proyecto:
 
-   ```json title="opencode.json" ""myprovider"" {5-15}
+   ```json title="legion.json" ""myprovider"" {5-15}
    {
-     "$schema": "https://opencode.ai/config.json",
+     "$schema": "https://legion.dev/config.json",
      "provider": {
        "myprovider": {
          "npm": "@ai-sdk/openai-compatible",
@@ -1838,9 +1838,9 @@ Puede utilizar cualquier proveedor compatible con OpenAI con opencode. La mayor�
 
 A continuación se muestra un ejemplo de configuración de las opciones `apiKey`, `headers` y modelo `limit`.
 
-```json title="opencode.json" {9,11,17-20}
+```json title="legion.json" {9,11,17-20}
 {
-  "$schema": "https://opencode.ai/config.json",
+  "$schema": "https://legion.dev/config.json",
   "provider": {
     "myprovider": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1873,7 +1873,7 @@ Detalles de configuración:
 - **limit.context**: tokens de entrada máximos que acepta el modelo.
 - **limit.output**: tokens máximos que el modelo puede generar.
 
-Los campos `limit` le permiten a OpenCode comprender cuánto contexto le queda. Los proveedores estándar los extraen de models.dev automáticamente.
+Los campos `limit` le permiten a Legion comprender cuánto contexto le queda. Los proveedores estándar los extraen de models.dev automáticamente.
 
 ---
 
@@ -1881,12 +1881,12 @@ Los campos `limit` le permiten a OpenCode comprender cuánto contexto le queda. 
 
 Si tiene problemas para configurar un proveedor, verifique lo siguiente:
 
-1. **Verifique la configuración de autenticación**: Ejecute `opencode auth list` para ver si las credenciales
+1. **Verifique la configuración de autenticación**: Ejecute `legion auth list` para ver si las credenciales
    para el proveedor se agregan a su configuración.
 
    Esto no se aplica a proveedores como Amazon Bedrock, que dependen de variables de entorno para su autenticación.
 
-2. Para proveedores personalizados, verifique la configuración opencode y:
-   - Asegúrese de que el ID del proveedor utilizado en el comando `/connect` coincida con el ID en su configuración opencode.
+2. Para proveedores personalizados, verifique la configuración legion y:
+   - Asegúrese de que el ID del proveedor utilizado en el comando `/connect` coincida con el ID en su configuración legion.
    - Se utiliza el paquete npm correcto para el proveedor. Por ejemplo, utilice `@ai-sdk/cerebras` para Cerebras. Y para todos los demás proveedores compatibles con OpenAI, utilice `@ai-sdk/openai-compatible`.
    - Verifique que se utilice el punto final API correcto en el campo `options.baseURL`.

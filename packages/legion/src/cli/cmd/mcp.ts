@@ -385,16 +385,16 @@ async function resolveConfigPath(baseDir: string, global = false) {
   const candidates = [
     path.join(baseDir, "legion.json"),
     path.join(baseDir, "legion.jsonc"),
-    path.join(baseDir, "opencode.json"),
-    path.join(baseDir, "opencode.jsonc"),
+    path.join(baseDir, "legion.json"),
+    path.join(baseDir, "legion.jsonc"),
   ]
 
   if (!global) {
     candidates.push(
       path.join(baseDir, ".legion", "legion.json"),
       path.join(baseDir, ".legion", "legion.jsonc"),
-      path.join(baseDir, ".opencode", "opencode.json"),
-      path.join(baseDir, ".opencode", "opencode.jsonc"),
+      path.join(baseDir, ".legion", "legion.json"),
+      path.join(baseDir, ".legion", "legion.jsonc"),
     )
   }
 

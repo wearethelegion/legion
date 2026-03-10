@@ -1657,8 +1657,8 @@ describe("LEGION_DISABLE_PROJECT_CONFIG", () => {
         fn: async () => {
           const directories = await Config.directories()
           // Project .legion should NOT be in directories list
-          const hasProjectOpencode = directories.some((d) => d.startsWith(tmp.path))
-          expect(hasProjectOpencode).toBe(false)
+          const hasProjectLegion = directories.some((d) => d.startsWith(tmp.path))
+          expect(hasProjectLegion).toBe(false)
         },
       })
     } finally {

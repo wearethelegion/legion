@@ -1,30 +1,30 @@
 ---
 title: CLI
-description: Opções e comandos da CLI do opencode.
+description: Opções e comandos da CLI do legion.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components"
 
-A CLI do opencode, por padrão, inicia o [TUI](/docs/tui) quando executada sem argumentos.
+A CLI do legion, por padrão, inicia o [TUI](/docs/tui) quando executada sem argumentos.
 
 ```bash
-opencode
+legion
 ```
 
-Mas também aceita comandos conforme documentado nesta página. Isso permite que você interaja com o opencode programaticamente.
+Mas também aceita comandos conforme documentado nesta página. Isso permite que você interaja com o legion programaticamente.
 
 ```bash
-opencode run "Explain how closures work in JavaScript"
+legion run "Explain how closures work in JavaScript"
 ```
 
 ---
 
 ### tui
 
-Inicie a interface de usuário do terminal do opencode.
+Inicie a interface de usuário do terminal do legion.
 
 ```bash
-opencode [project]
+legion [project]
 ```
 
 #### Opções
@@ -44,36 +44,36 @@ opencode [project]
 
 ## Comandos
 
-A CLI do opencode também possui os seguintes comandos.
+A CLI do legion também possui os seguintes comandos.
 
 ---
 
 ### agent
 
-Gerencie agentes para o opencode.
+Gerencie agentes para o legion.
 
 ```bash
-opencode agent [command]
+legion agent [command]
 ```
 
 ---
 
 ### attach
 
-Anexe um terminal a um servidor backend do opencode já em execução, iniciado via comandos `serve` ou `web`.
+Anexe um terminal a um servidor backend do legion já em execução, iniciado via comandos `serve` ou `web`.
 
 ```bash
-opencode attach [url]
+legion attach [url]
 ```
 
-Isso permite usar o TUI com um backend opencode remoto. Por exemplo:
+Isso permite usar o TUI com um backend legion remoto. Por exemplo:
 
 ```bash
 # Inicie o servidor backend para acesso web/mobile
-opencode web --port 4096 --hostname 0.0.0.0
+legion web --port 4096 --hostname 0.0.0.0
 
 # Em outro terminal, anexe o TUI ao backend em execução
-opencode attach http://10.20.30.40:4096
+legion attach http://10.20.30.40:4096
 ```
 
 #### Opções
@@ -90,7 +90,7 @@ opencode attach http://10.20.30.40:4096
 Crie um novo agente com configuração personalizada.
 
 ```bash
-opencode agent create
+legion agent create
 ```
 
 Este comando irá guiá-lo na criação de um novo agente com um prompt de sistema personalizado e configuração de ferramentas.
@@ -102,7 +102,7 @@ Este comando irá guiá-lo na criação de um novo agente com um prompt de siste
 Liste todos os agentes disponíveis.
 
 ```bash
-opencode agent list
+legion agent list
 ```
 
 ---
@@ -112,20 +112,20 @@ opencode agent list
 Comando para gerenciar credenciais e login para provedores.
 
 ```bash
-opencode auth [command]
+legion auth [command]
 ```
 
 ---
 
 #### login
 
-O opencode é alimentado pela lista de provedores em [Models.dev](https://models.dev), então você pode usar `opencode auth login` para configurar chaves de API para qualquer provedor que você gostaria de usar. Isso é armazenado em `~/.local/share/opencode/auth.json`.
+O legion é alimentado pela lista de provedores em [Models.dev](https://models.dev), então você pode usar `legion auth login` para configurar chaves de API para qualquer provedor que você gostaria de usar. Isso é armazenado em `~/.local/share/legion/auth.json`.
 
 ```bash
-opencode auth login
+legion auth login
 ```
 
-Quando o opencode é iniciado, ele carrega os provedores do arquivo de credenciais. E se houver chaves definidas em seus ambientes ou em um arquivo `.env` em seu projeto.
+Quando o legion é iniciado, ele carrega os provedores do arquivo de credenciais. E se houver chaves definidas em seus ambientes ou em um arquivo `.env` em seu projeto.
 
 ---
 
@@ -134,13 +134,13 @@ Quando o opencode é iniciado, ele carrega os provedores do arquivo de credencia
 Lista todos os provedores autenticados conforme armazenado no arquivo de credenciais.
 
 ```bash
-opencode auth list
+legion auth list
 ```
 
 Ou a versão curta.
 
 ```bash
-opencode auth ls
+legion auth ls
 ```
 
 ---
@@ -150,7 +150,7 @@ opencode auth ls
 Desconecta você de um provedor limpando-o do arquivo de credenciais.
 
 ```bash
-opencode auth logout
+legion auth logout
 ```
 
 ---
@@ -160,7 +160,7 @@ opencode auth logout
 Gerencie o agente do GitHub para automação de repositórios.
 
 ```bash
-opencode github [command]
+legion github [command]
 ```
 
 ---
@@ -170,7 +170,7 @@ opencode github [command]
 Instale o agente do GitHub em seu repositório.
 
 ```bash
-opencode github install
+legion github install
 ```
 
 Isso configura o fluxo de trabalho necessário do GitHub Actions e o guia pelo processo de configuração. [Saiba mais](/docs/github).
@@ -182,7 +182,7 @@ Isso configura o fluxo de trabalho necessário do GitHub Actions e o guia pelo p
 Execute o agente do GitHub. Isso é tipicamente usado em GitHub Actions.
 
 ```bash
-opencode github run
+legion github run
 ```
 
 ##### Opções
@@ -199,7 +199,7 @@ opencode github run
 Gerencie servidores do Model Context Protocol.
 
 ```bash
-opencode mcp [command]
+legion mcp [command]
 ```
 
 ---
@@ -209,7 +209,7 @@ opencode mcp [command]
 Adicione um servidor MCP à sua configuração.
 
 ```bash
-opencode mcp add
+legion mcp add
 ```
 
 Este comando irá guiá-lo na adição de um servidor MCP local ou remoto.
@@ -221,13 +221,13 @@ Este comando irá guiá-lo na adição de um servidor MCP local ou remoto.
 Liste todos os servidores MCP configurados e seu status de conexão.
 
 ```bash
-opencode mcp list
+legion mcp list
 ```
 
 Ou use a versão curta.
 
 ```bash
-opencode mcp ls
+legion mcp ls
 ```
 
 ---
@@ -237,7 +237,7 @@ opencode mcp ls
 Autentique-se com um servidor MCP habilitado para OAuth.
 
 ```bash
-opencode mcp auth [name]
+legion mcp auth [name]
 ```
 
 Se você não fornecer um nome de servidor, será solicitado que você selecione entre os servidores disponíveis habilitados para OAuth.
@@ -245,13 +245,13 @@ Se você não fornecer um nome de servidor, será solicitado que você selecione
 Você também pode listar servidores habilitados para OAuth e seu status de autenticação.
 
 ```bash
-opencode mcp auth list
+legion mcp auth list
 ```
 
 Ou use a versão curta.
 
 ```bash
-opencode mcp auth ls
+legion mcp auth ls
 ```
 
 ---
@@ -261,7 +261,7 @@ opencode mcp auth ls
 Remova credenciais OAuth para um servidor MCP.
 
 ```bash
-opencode mcp logout [name]
+legion mcp logout [name]
 ```
 
 ---
@@ -271,7 +271,7 @@ opencode mcp logout [name]
 Depure problemas de conexão OAuth para um servidor MCP.
 
 ```bash
-opencode mcp debug <name>
+legion mcp debug <name>
 ```
 
 ---
@@ -281,7 +281,7 @@ opencode mcp debug <name>
 Liste todos os modelos disponíveis dos provedores configurados.
 
 ```bash
-opencode models [provider]
+legion models [provider]
 ```
 
 Este comando exibe todos os modelos disponíveis entre seus provedores configurados no formato `provider/model`.
@@ -291,7 +291,7 @@ Isso é útil para descobrir o nome exato do modelo a ser usado em [sua configur
 Você pode opcionalmente passar um ID de provedor para filtrar modelos por esse provedor.
 
 ```bash
-opencode models anthropic
+legion models anthropic
 ```
 
 #### Opções
@@ -301,36 +301,36 @@ opencode models anthropic
 | `--refresh` | Atualiza o cache de modelos a partir do models.dev                    |
 | `--verbose` | Use uma saída de modelo mais detalhada (inclui metadados como custos) |
 
-Use a flag `--refresh` para atualizar a lista de modelos em cache. Isso é útil quando novos modelos foram adicionados a um provedor e você deseja vê-los no opencode.
+Use a flag `--refresh` para atualizar a lista de modelos em cache. Isso é útil quando novos modelos foram adicionados a um provedor e você deseja vê-los no legion.
 
 ```bash
-opencode models --refresh
+legion models --refresh
 ```
 
 ---
 
 ### run
 
-Execute o opencode em modo não interativo passando um prompt diretamente.
+Execute o legion em modo não interativo passando um prompt diretamente.
 
 ```bash
-opencode run [message..]
+legion run [message..]
 ```
 
 Isso é útil para scripts, automação ou quando você deseja uma resposta rápida sem iniciar o TUI completo. Por exemplo.
 
-```bash "opencode run"
-opencode run Explique o uso de context em Go
+```bash "legion run"
+legion run Explique o uso de context em Go
 ```
 
-Você também pode se anexar a uma instância em execução do `opencode serve` para evitar tempos de inicialização a frio do servidor MCP em cada execução:
+Você também pode se anexar a uma instância em execução do `legion serve` para evitar tempos de inicialização a frio do servidor MCP em cada execução:
 
 ```bash
 # Inicie um servidor sem cabeça em um terminal
-opencode serve
+legion serve
 
 # Em outro terminal, execute comandos que se anexam a ele
-opencode run --attach http://localhost:4096 "Explique async/await em JavaScript"
+legion run --attach http://localhost:4096 "Explique async/await em JavaScript"
 ```
 
 #### Opções
@@ -347,20 +347,20 @@ opencode run --attach http://localhost:4096 "Explique async/await em JavaScript"
 | `--file`     | `-f`  | Arquivo(s) a serem anexados à mensagem                                        |
 | `--format`   |       | Formato: padrão (formatado) ou json (eventos JSON brutos)                     |
 | `--title`    |       | Título para a sessão (usa o prompt truncado se nenhum valor for fornecido)    |
-| `--attach`   |       | Anexe a um servidor opencode em execução (por exemplo, http://localhost:4096) |
+| `--attach`   |       | Anexe a um servidor legion em execução (por exemplo, http://localhost:4096) |
 | `--port`     |       | Porta para o servidor local (padrão para porta aleatória)                     |
 
 ---
 
 ### serve
 
-Inicie um servidor opencode sem cabeça para acesso à API. Confira a [documentação do servidor](/docs/server) para a interface HTTP completa.
+Inicie um servidor legion sem cabeça para acesso à API. Confira a [documentação do servidor](/docs/server) para a interface HTTP completa.
 
 ```bash
-opencode serve
+legion serve
 ```
 
-Isso inicia um servidor HTTP que fornece acesso à funcionalidade do opencode sem a interface TUI. Defina `OPENCODE_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `opencode`).
+Isso inicia um servidor HTTP que fornece acesso à funcionalidade do legion sem a interface TUI. Defina `LEGION_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `legion`).
 
 #### Opções
 
@@ -375,20 +375,20 @@ Isso inicia um servidor HTTP que fornece acesso à funcionalidade do opencode se
 
 ### session
 
-Gerencie sessões do opencode.
+Gerencie sessões do legion.
 
 ```bash
-opencode session [command]
+legion session [command]
 ```
 
 ---
 
 #### list
 
-Liste todas as sessões do opencode.
+Liste todas as sessões do legion.
 
 ```bash
-opencode session list
+legion session list
 ```
 
 ##### Opções
@@ -402,10 +402,10 @@ opencode session list
 
 ### stats
 
-Mostre o uso de tokens e estatísticas de custo para suas sessões do opencode.
+Mostre o uso de tokens e estatísticas de custo para suas sessões do legion.
 
 ```bash
-opencode stats
+legion stats
 ```
 
 #### Opções
@@ -424,7 +424,7 @@ opencode stats
 Exporte dados da sessão como JSON.
 
 ```bash
-opencode export [sessionID]
+legion export [sessionID]
 ```
 
 Se você não fornecer um ID de sessão, será solicitado que você selecione entre as sessões disponíveis.
@@ -433,30 +433,30 @@ Se você não fornecer um ID de sessão, será solicitado que você selecione en
 
 ### import
 
-Importe dados da sessão de um arquivo JSON ou URL de compartilhamento do opencode.
+Importe dados da sessão de um arquivo JSON ou URL de compartilhamento do legion.
 
 ```bash
-opencode import <file>
+legion import <file>
 ```
 
-Você pode importar de um arquivo local ou de uma URL de compartilhamento do opencode.
+Você pode importar de um arquivo local ou de uma URL de compartilhamento do legion.
 
 ```bash
-opencode import session.json
-opencode import https://opncd.ai/s/abc123
+legion import session.json
+legion import https://opncd.ai/s/abc123
 ```
 
 ---
 
 ### web
 
-Inicie um servidor opencode sem cabeça com uma interface web.
+Inicie um servidor legion sem cabeça com uma interface web.
 
 ```bash
-opencode web
+legion web
 ```
 
-Isso inicia um servidor HTTP e abre um navegador para acessar o opencode através de uma interface web. Defina `OPENCODE_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `opencode`).
+Isso inicia um servidor HTTP e abre um navegador para acessar o legion através de uma interface web. Defina `LEGION_SERVER_PASSWORD` para habilitar a autenticação básica HTTP (o nome de usuário padrão é `legion`).
 
 #### Opções
 
@@ -474,7 +474,7 @@ Isso inicia um servidor HTTP e abre um navegador para acessar o opencode atravé
 Inicie um servidor ACP (Agent Client Protocol).
 
 ```bash
-opencode acp
+legion acp
 ```
 
 Este comando inicia um servidor ACP que se comunica via stdin/stdout usando nd-JSON.
@@ -491,10 +491,10 @@ Este comando inicia um servidor ACP que se comunica via stdin/stdout usando nd-J
 
 ### uninstall
 
-Desinstale o opencode e remova todos os arquivos relacionados.
+Desinstale o legion e remova todos os arquivos relacionados.
 
 ```bash
-opencode uninstall
+legion uninstall
 ```
 
 #### Opções
@@ -510,22 +510,22 @@ opencode uninstall
 
 ### upgrade
 
-Atualiza o opencode para a versão mais recente ou uma versão específica.
+Atualiza o legion para a versão mais recente ou uma versão específica.
 
 ```bash
-opencode upgrade [target]
+legion upgrade [target]
 ```
 
 Para atualizar para a versão mais recente.
 
 ```bash
-opencode upgrade
+legion upgrade
 ```
 
 Para atualizar para uma versão específica.
 
 ```bash
-opencode upgrade v0.1.48
+legion upgrade v0.1.48
 ```
 
 #### Opções
@@ -538,7 +538,7 @@ opencode upgrade v0.1.48
 
 ## Opções Globais
 
-A CLI do opencode aceita as seguintes flags globais.
+A CLI do legion aceita as seguintes flags globais.
 
 | Flag           | Curto | Descrição                               |
 | -------------- | ----- | --------------------------------------- |
@@ -551,34 +551,34 @@ A CLI do opencode aceita as seguintes flags globais.
 
 ## Variáveis de ambiente
 
-O opencode pode ser configurado usando variáveis de ambiente.
+O legion pode ser configurado usando variáveis de ambiente.
 
 | Variável                              | Tipo    | Descrição                                                             |
 | ------------------------------------- | ------- | --------------------------------------------------------------------- |
-| `OPENCODE_AUTO_SHARE`                 | boolean | Compartilhar sessões automaticamente                                  |
-| `OPENCODE_GIT_BASH_PATH`              | string  | Caminho para o executável do Git Bash no Windows                      |
-| `OPENCODE_CONFIG`                     | string  | Caminho para o arquivo de configuração                                |
-| `OPENCODE_CONFIG_DIR`                 | string  | Caminho para o diretório de configuração                              |
-| `OPENCODE_CONFIG_CONTENT`             | string  | Conteúdo de configuração json inline                                  |
-| `OPENCODE_DISABLE_AUTOUPDATE`         | boolean | Desabilitar verificações de atualização automática                    |
-| `OPENCODE_DISABLE_PRUNE`              | boolean | Desabilitar a poda de dados antigos                                   |
-| `OPENCODE_DISABLE_TERMINAL_TITLE`     | boolean | Desabilitar atualizações automáticas do título do terminal            |
-| `OPENCODE_PERMISSION`                 | string  | Configuração de permissões json inline                                |
-| `OPENCODE_DISABLE_DEFAULT_PLUGINS`    | boolean | Desabilitar plugins padrão                                            |
-| `OPENCODE_DISABLE_LSP_DOWNLOAD`       | boolean | Desabilitar downloads automáticos do servidor LSP                     |
-| `OPENCODE_ENABLE_EXPERIMENTAL_MODELS` | boolean | Habilitar modelos experimentais                                       |
-| `OPENCODE_DISABLE_AUTOCOMPACT`        | boolean | Desabilitar compactação automática de contexto                        |
-| `OPENCODE_DISABLE_CLAUDE_CODE`        | boolean | Desabilitar leitura de `.claude` (prompt + habilidades)               |
-| `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` | boolean | Desabilitar leitura de `~/.claude/CLAUDE.md`                          |
-| `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` | boolean | Desabilitar carregamento de `.claude/skills`                          |
-| `OPENCODE_DISABLE_MODELS_FETCH`       | boolean | Desabilitar busca de modelos de fontes remotas                        |
-| `OPENCODE_FAKE_VCS`                   | string  | Provedor VCS falso para fins de teste                                 |
-| `OPENCODE_DISABLE_FILETIME_CHECK`     | boolean | Desabilitar verificação de tempo de arquivo para otimização           |
-| `OPENCODE_CLIENT`                     | string  | Identificador do cliente (padrão é `cli`)                             |
-| `OPENCODE_ENABLE_EXA`                 | boolean | Habilitar ferramentas de busca web Exa                                |
-| `OPENCODE_SERVER_PASSWORD`            | string  | Habilitar autenticação básica para `serve`/`web`                      |
-| `OPENCODE_SERVER_USERNAME`            | string  | Substituir nome de usuário de autenticação básica (padrão `opencode`) |
-| `OPENCODE_MODELS_URL`                 | string  | URL personalizada para buscar configuração de modelos                 |
+| `LEGION_AUTO_SHARE`                 | boolean | Compartilhar sessões automaticamente                                  |
+| `LEGION_GIT_BASH_PATH`              | string  | Caminho para o executável do Git Bash no Windows                      |
+| `LEGION_CONFIG`                     | string  | Caminho para o arquivo de configuração                                |
+| `LEGION_CONFIG_DIR`                 | string  | Caminho para o diretório de configuração                              |
+| `LEGION_CONFIG_CONTENT`             | string  | Conteúdo de configuração json inline                                  |
+| `LEGION_DISABLE_AUTOUPDATE`         | boolean | Desabilitar verificações de atualização automática                    |
+| `LEGION_DISABLE_PRUNE`              | boolean | Desabilitar a poda de dados antigos                                   |
+| `LEGION_DISABLE_TERMINAL_TITLE`     | boolean | Desabilitar atualizações automáticas do título do terminal            |
+| `LEGION_PERMISSION`                 | string  | Configuração de permissões json inline                                |
+| `LEGION_DISABLE_DEFAULT_PLUGINS`    | boolean | Desabilitar plugins padrão                                            |
+| `LEGION_DISABLE_LSP_DOWNLOAD`       | boolean | Desabilitar downloads automáticos do servidor LSP                     |
+| `LEGION_ENABLE_EXPERIMENTAL_MODELS` | boolean | Habilitar modelos experimentais                                       |
+| `LEGION_DISABLE_AUTOCOMPACT`        | boolean | Desabilitar compactação automática de contexto                        |
+| `LEGION_DISABLE_CLAUDE_CODE`        | boolean | Desabilitar leitura de `.claude` (prompt + habilidades)               |
+| `LEGION_DISABLE_CLAUDE_CODE_PROMPT` | boolean | Desabilitar leitura de `~/.claude/CLAUDE.md`                          |
+| `LEGION_DISABLE_CLAUDE_CODE_SKILLS` | boolean | Desabilitar carregamento de `.claude/skills`                          |
+| `LEGION_DISABLE_MODELS_FETCH`       | boolean | Desabilitar busca de modelos de fontes remotas                        |
+| `LEGION_FAKE_VCS`                   | string  | Provedor VCS falso para fins de teste                                 |
+| `LEGION_DISABLE_FILETIME_CHECK`     | boolean | Desabilitar verificação de tempo de arquivo para otimização           |
+| `LEGION_CLIENT`                     | string  | Identificador do cliente (padrão é `cli`)                             |
+| `LEGION_ENABLE_EXA`                 | boolean | Habilitar ferramentas de busca web Exa                                |
+| `LEGION_SERVER_PASSWORD`            | string  | Habilitar autenticação básica para `serve`/`web`                      |
+| `LEGION_SERVER_USERNAME`            | string  | Substituir nome de usuário de autenticação básica (padrão `legion`) |
+| `LEGION_MODELS_URL`                 | string  | URL personalizada para buscar configuração de modelos                 |
 
 ---
 
@@ -588,16 +588,16 @@ Essas variáveis de ambiente habilitam recursos experimentais que podem mudar ou
 
 | Variável                                        | Tipo    | Descrição                                                 |
 | ----------------------------------------------- | ------- | --------------------------------------------------------- |
-| `OPENCODE_EXPERIMENTAL`                         | boolean | Habilitar todos os recursos experimentais                 |
-| `OPENCODE_EXPERIMENTAL_ICON_DISCOVERY`          | boolean | Habilitar descoberta de ícones                            |
-| `OPENCODE_EXPERIMENTAL_DISABLE_COPY_ON_SELECT`  | boolean | Desabilitar cópia ao selecionar no TUI                    |
-| `OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS` | number  | Tempo limite padrão para comandos bash em ms              |
-| `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX`        | number  | Máximo de tokens de saída para respostas LLM              |
-| `OPENCODE_EXPERIMENTAL_FILEWATCHER`             | boolean | Habilitar monitoramento de arquivos para todo o diretório |
-| `OPENCODE_EXPERIMENTAL_OXFMT`                   | boolean | Habilitar formatador oxfmt                                |
-| `OPENCODE_EXPERIMENTAL_LSP_TOOL`                | boolean | Habilitar ferramenta LSP experimental                     |
-| `OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER`     | boolean | Desabilitar monitoramento de arquivos                     |
-| `OPENCODE_EXPERIMENTAL_EXA`                     | boolean | Habilitar recursos experimentais do Exa                   |
-| `OPENCODE_EXPERIMENTAL_LSP_TY`                  | boolean | Habilitar verificação de tipo LSP experimental            |
-| `OPENCODE_EXPERIMENTAL_MARKDOWN`                | boolean | Habilitar recursos experimentais de markdown              |
-| `OPENCODE_EXPERIMENTAL_PLAN_MODE`               | boolean | Habilitar modo de plano                                   |
+| `LEGION_EXPERIMENTAL`                         | boolean | Habilitar todos os recursos experimentais                 |
+| `LEGION_EXPERIMENTAL_ICON_DISCOVERY`          | boolean | Habilitar descoberta de ícones                            |
+| `LEGION_EXPERIMENTAL_DISABLE_COPY_ON_SELECT`  | boolean | Desabilitar cópia ao selecionar no TUI                    |
+| `LEGION_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS` | number  | Tempo limite padrão para comandos bash em ms              |
+| `LEGION_EXPERIMENTAL_OUTPUT_TOKEN_MAX`        | number  | Máximo de tokens de saída para respostas LLM              |
+| `LEGION_EXPERIMENTAL_FILEWATCHER`             | boolean | Habilitar monitoramento de arquivos para todo o diretório |
+| `LEGION_EXPERIMENTAL_OXFMT`                   | boolean | Habilitar formatador oxfmt                                |
+| `LEGION_EXPERIMENTAL_LSP_TOOL`                | boolean | Habilitar ferramenta LSP experimental                     |
+| `LEGION_EXPERIMENTAL_DISABLE_FILEWATCHER`     | boolean | Desabilitar monitoramento de arquivos                     |
+| `LEGION_EXPERIMENTAL_EXA`                     | boolean | Habilitar recursos experimentais do Exa                   |
+| `LEGION_EXPERIMENTAL_LSP_TY`                  | boolean | Habilitar verificação de tipo LSP experimental            |
+| `LEGION_EXPERIMENTAL_MARKDOWN`                | boolean | Habilitar recursos experimentais de markdown              |
+| `LEGION_EXPERIMENTAL_PLAN_MODE`               | boolean | Habilitar modo de plano                                   |

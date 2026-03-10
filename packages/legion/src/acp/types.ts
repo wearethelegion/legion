@@ -1,5 +1,5 @@
 import type { McpServer } from "@agentclientprotocol/sdk"
-import type { OpencodeClient } from "@wearethelegion/sdk/v2"
+import type { LegionClient } from "@wearethelegion/sdk/v2"
 
 export interface ACPSessionState {
   id: string
@@ -15,7 +15,7 @@ export interface ACPSessionState {
 }
 
 export interface ACPConfig {
-  sdk: OpencodeClient
+  sdk: LegionClient
   defaultModel?: {
     providerID: string
     modelID: string

@@ -76,7 +76,7 @@ export const dict = {
   "error.reloadAmountMin": "O valor de recarga deve ser de pelo menos ${{amount}}",
   "error.reloadTriggerMin": "O gatilho de saldo deve ser de pelo menos ${{amount}}",
 
-  "home.title": "OpenCode | O agente de codificação de código aberto com IA",
+  "home.title": "Legion | O agente de codificação de código aberto com IA",
 
   "temp.title": "legion | Agente de codificação com IA feito para o terminal",
   "temp.hero.title": "O agente de codificação com IA feito para o terminal",
@@ -89,8 +89,8 @@ export const dict = {
   "temp.feature.zen.afterLink": "fornecida pela legion",
   "temp.feature.models.beforeLink": "Suporta mais de 75 provedores de LLM através do",
   "temp.feature.models.afterLink": ", incluindo modelos locais",
-  "temp.screenshot.caption": "OpenCode TUI com o tema tokyonight",
-  "temp.screenshot.alt": "OpenCode TUI com tema tokyonight",
+  "temp.screenshot.caption": "Legion TUI com o tema tokyonight",
+  "temp.screenshot.alt": "Legion TUI com tema tokyonight",
 
   "home.banner.badge": "Novo",
   "home.banner.text": "App desktop disponível em beta",
@@ -104,9 +104,9 @@ export const dict = {
 
   "home.install.ariaLabel": "Opções de instalação",
 
-  "home.what.title": "O que é OpenCode?",
+  "home.what.title": "O que é Legion?",
   "home.what.body":
-    "OpenCode é um agente de código aberto que ajuda você a escrever código no seu terminal, IDE ou desktop.",
+    "Legion é um agente de código aberto que ajuda você a escrever código no seu terminal, IDE ou desktop.",
   "home.what.lsp.title": "LSP habilitado",
   "home.what.lsp.body": "Carrega automaticamente os LSPs certos para o LLM",
   "home.what.multiSession.title": "Multissessão",
@@ -125,44 +125,44 @@ export const dict = {
 
   "home.growth.title": "O agente de codificação de código aberto com IA",
   "home.growth.body":
-    "Com mais de <strong>{{stars}}</strong> estrelas no GitHub, <strong>{{contributors}}</strong> colaboradores e mais de <strong>{{commits}}</strong> commits, OpenCode é usado e confiado por mais de <strong>{{monthlyUsers}}</strong> desenvolvedores todos os meses.",
+    "Com mais de <strong>{{stars}}</strong> estrelas no GitHub, <strong>{{contributors}}</strong> colaboradores e mais de <strong>{{commits}}</strong> commits, Legion é usado e confiado por mais de <strong>{{monthlyUsers}}</strong> desenvolvedores todos os meses.",
   "home.growth.githubStars": "Estrelas no GitHub",
   "home.growth.contributors": "Colaboradores",
   "home.growth.monthlyDevs": "Devs mensais",
 
   "home.privacy.title": "Feito com privacidade em primeiro lugar",
   "home.privacy.body":
-    "OpenCode não armazena nenhum código seu nem dados de contexto, para que possa operar em ambientes sensíveis à privacidade.",
+    "Legion não armazena nenhum código seu nem dados de contexto, para que possa operar em ambientes sensíveis à privacidade.",
   "home.privacy.learnMore": "Saiba mais sobre",
   "home.privacy.link": "privacidade",
 
-  "home.faq.q1": "O que é OpenCode?",
+  "home.faq.q1": "O que é Legion?",
   "home.faq.a1":
-    "OpenCode é um agente de código aberto que ajuda você a escrever e executar código com qualquer modelo de IA. Está disponível como interface de terminal, app desktop ou extensão de IDE.",
-  "home.faq.q2": "Como eu uso o OpenCode?",
+    "Legion é um agente de código aberto que ajuda você a escrever e executar código com qualquer modelo de IA. Está disponível como interface de terminal, app desktop ou extensão de IDE.",
+  "home.faq.q2": "Como eu uso o Legion?",
   "home.faq.a2.before": "A maneira mais fácil de começar é ler a",
   "home.faq.a2.link": "introdução",
-  "home.faq.q3": "Preciso de assinaturas extras de IA para usar o OpenCode?",
+  "home.faq.q3": "Preciso de assinaturas extras de IA para usar o Legion?",
   "home.faq.a3.p1":
-    "Não necessariamente, OpenCode vem com um conjunto de modelos grátis que você pode usar sem criar conta.",
+    "Não necessariamente, Legion vem com um conjunto de modelos grátis que você pode usar sem criar conta.",
   "home.faq.a3.p2.beforeZen":
     "Além disso, você pode usar qualquer um dos modelos de codificação populares criando uma conta",
   "home.faq.a3.p2.afterZen": ".",
   "home.faq.a3.p3":
-    "Embora incentivemos os usuários a usar o Zen, OpenCode também funciona com todos os provedores populares, como OpenAI, Anthropic, xAI etc.",
+    "Embora incentivemos os usuários a usar o Zen, Legion também funciona com todos os provedores populares, como OpenAI, Anthropic, xAI etc.",
   "home.faq.a3.p4.beforeLocal": "Você pode até conectar seus",
   "home.faq.a3.p4.localLink": "modelos locais",
-  "home.faq.q4": "Posso usar minhas assinaturas de IA existentes com o OpenCode?",
+  "home.faq.q4": "Posso usar minhas assinaturas de IA existentes com o Legion?",
   "home.faq.a4.p1":
-    "Sim, OpenCode suporta planos de assinatura de todos os principais provedores. Você pode usar suas assinaturas Claude Pro/Max, ChatGPT Plus/Pro ou GitHub Copilot.",
-  "home.faq.q5": "Posso usar o OpenCode apenas no terminal?",
-  "home.faq.a5.beforeDesktop": "Não mais! OpenCode agora está disponível como um app para o seu",
+    "Sim, Legion suporta planos de assinatura de todos os principais provedores. Você pode usar suas assinaturas Claude Pro/Max, ChatGPT Plus/Pro ou GitHub Copilot.",
+  "home.faq.q5": "Posso usar o Legion apenas no terminal?",
+  "home.faq.a5.beforeDesktop": "Não mais! Legion agora está disponível como um app para o seu",
   "home.faq.a5.desktop": "desktop",
   "home.faq.a5.and": "e",
   "home.faq.a5.web": "web",
-  "home.faq.q6": "Quanto custa o OpenCode?",
+  "home.faq.q6": "Quanto custa o Legion?",
   "home.faq.a6":
-    "OpenCode é 100% gratuito para usar. Ele também vem com um conjunto de modelos gratuitos. Pode haver custos adicionais se você conectar qualquer outro provedor.",
+    "Legion é 100% gratuito para usar. Ele também vem com um conjunto de modelos gratuitos. Pode haver custos adicionais se você conectar qualquer outro provedor.",
   "home.faq.q7": "E sobre dados e privacidade?",
   "home.faq.a7.p1":
     "Seus dados e informações só são armazenados quando você usa nossos modelos gratuitos ou cria links compartilháveis.",
@@ -170,8 +170,8 @@ export const dict = {
   "home.faq.a7.p2.modelsLink": "nossos modelos",
   "home.faq.a7.p2.and": "e",
   "home.faq.a7.p2.shareLink": "páginas de compartilhamento",
-  "home.faq.q8": "OpenCode é código aberto?",
-  "home.faq.a8.p1": "Sim, OpenCode é totalmente open source. O código-fonte é público no",
+  "home.faq.q8": "Legion é código aberto?",
+  "home.faq.a8.p1": "Sim, Legion é totalmente open source. O código-fonte é público no",
   "home.faq.a8.p2": "sob a",
   "home.faq.a8.mitLicense": "Licença MIT",
   "home.faq.a8.p3":
@@ -179,23 +179,23 @@ export const dict = {
 
   "home.zenCta.title": "Acesse modelos confiáveis e otimizados para agentes de codificação",
   "home.zenCta.body":
-    "O Zen dá acesso a um conjunto selecionado de modelos de IA que a OpenCode testou e avaliou especificamente para agentes de codificação. Não precisa se preocupar com desempenho e qualidade inconsistentes entre provedores, use modelos validados que funcionam.",
+    "O Zen dá acesso a um conjunto selecionado de modelos de IA que a Legion testou e avaliou especificamente para agentes de codificação. Não precisa se preocupar com desempenho e qualidade inconsistentes entre provedores, use modelos validados que funcionam.",
   "home.zenCta.link": "Saiba mais sobre o Zen",
 
-  "zen.title": "OpenCode Zen | Um conjunto selecionado de modelos confiáveis e otimizados para agentes de codificação",
+  "zen.title": "Legion Zen | Um conjunto selecionado de modelos confiáveis e otimizados para agentes de codificação",
   "zen.hero.title": "Modelos confiáveis e otimizados para agentes de codificação",
   "zen.hero.body":
-    "O Zen dá acesso a um conjunto selecionado de modelos de IA que a OpenCode testou e avaliou especificamente para agentes de codificação. Não precisa se preocupar com desempenho e qualidade inconsistentes, use modelos validados que funcionam.",
+    "O Zen dá acesso a um conjunto selecionado de modelos de IA que a Legion testou e avaliou especificamente para agentes de codificação. Não precisa se preocupar com desempenho e qualidade inconsistentes, use modelos validados que funcionam.",
 
-  "zen.faq.q1": "O que é OpenCode Zen?",
+  "zen.faq.q1": "O que é Legion Zen?",
   "zen.faq.a1":
-    "Zen é um conjunto selecionado de modelos de IA testados e avaliados para agentes de codificação, criado pela equipe por trás do OpenCode.",
+    "Zen é um conjunto selecionado de modelos de IA testados e avaliados para agentes de codificação, criado pela equipe por trás do Legion.",
   "zen.faq.q2": "O que torna o Zen mais preciso?",
   "zen.faq.a2":
     "O Zen fornece apenas modelos que foram especificamente testados e avaliados para agentes de codificação. Você não usaria uma faca de manteiga para cortar um bife, não use modelos ruins para programar.",
   "zen.faq.q3": "O Zen é mais barato?",
   "zen.faq.a3":
-    "O Zen não tem fins lucrativos. O Zen repassa os custos dos provedores de modelos para você. Quanto maior o uso do Zen, mais a OpenCode pode negociar melhores taxas e repassá-las para você.",
+    "O Zen não tem fins lucrativos. O Zen repassa os custos dos provedores de modelos para você. Quanto maior o uso do Zen, mais a Legion pode negociar melhores taxas e repassá-las para você.",
   "zen.faq.q4": "Quanto custa o Zen?",
   "zen.faq.a4.p1.beforePricing": "Zen",
   "zen.faq.a4.p1.pricingLink": "cobra por requisição",
@@ -203,7 +203,7 @@ export const dict = {
   "zen.faq.a4.p2.beforeAccount": "Seu custo total depende do uso, e você pode definir limites de gastos mensais em sua",
   "zen.faq.a4.p2.accountLink": "conta",
   "zen.faq.a4.p3":
-    "Para cobrir custos, a OpenCode adiciona apenas uma pequena taxa de processamento de pagamento de $1,23 por recarga de $20.",
+    "Para cobrir custos, a Legion adiciona apenas uma pequena taxa de processamento de pagamento de $1,23 por recarga de $20.",
   "zen.faq.q5": "E sobre dados e privacidade?",
   "zen.faq.a5.beforeExceptions":
     "Todos os modelos Zen são hospedados nos EUA. Os provedores seguem uma política de retenção zero e não usam seus dados para treinamento de modelos, com as",
@@ -214,7 +214,7 @@ export const dict = {
   "zen.faq.a7": "Sim, você pode desativar o faturamento a qualquer momento e usar seu saldo restante.",
   "zen.faq.q8": "Posso usar o Zen com outros agentes de codificação?",
   "zen.faq.a8":
-    "Embora o Zen funcione muito bem com o OpenCode, você pode usar o Zen com qualquer agente. Siga as instruções de configuração no seu agente de codificação preferido.",
+    "Embora o Zen funcione muito bem com o Legion, você pode usar o Zen com qualquer agente. Siga as instruções de configuração no seu agente de codificação preferido.",
 
   "zen.cta.start": "Comece com o Zen",
   "zen.pricing.title": "Adicionar $20 de saldo pré-pago",
@@ -223,12 +223,12 @@ export const dict = {
   "zen.problem.title": "Que problema o Zen resolve?",
   "zen.problem.body":
     "Existem muitos modelos disponíveis, mas apenas alguns funcionam bem com agentes de codificação. A maioria dos provedores os configura de maneira diferente, com resultados variados.",
-  "zen.problem.subtitle": "Estamos corrigindo isso para todos, não apenas para os usuários do OpenCode.",
+  "zen.problem.subtitle": "Estamos corrigindo isso para todos, não apenas para os usuários do Legion.",
   "zen.problem.item1": "Testando modelos selecionados e consultando suas equipes",
   "zen.problem.item2": "Trabalhando com provedores para garantir que sejam entregues corretamente",
   "zen.problem.item3": "Avaliando todas as combinações de modelo-provedor que recomendamos",
   "zen.how.title": "Como o Zen funciona",
-  "zen.how.body": "Embora sugerimos que você use o Zen com o OpenCode, você pode usá-lo com qualquer agente.",
+  "zen.how.body": "Embora sugerimos que você use o Zen com o Legion, você pode usá-lo com qualquer agente.",
   "zen.how.step1.title": "Cadastre-se e adicione $20 de saldo",
   "zen.how.step1.beforeLink": "siga as",
   "zen.how.step1.link": "instruções de configuração",
@@ -242,11 +242,11 @@ export const dict = {
     "Todos os modelos Zen são hospedados nos EUA. Os provedores seguem uma política de retenção zero e não usam seus dados para treinamento de modelo, com as",
   "zen.privacy.exceptionsLink": "seguintes exceções",
 
-  "black.meta.title": "OpenCode Black | Acesse os melhores modelos de codificação do mundo",
-  "black.meta.description": "Tenha acesso ao Claude, GPT, Gemini e mais com os planos de assinatura OpenCode Black.",
+  "black.meta.title": "Legion Black | Acesse os melhores modelos de codificação do mundo",
+  "black.meta.description": "Tenha acesso ao Claude, GPT, Gemini e mais com os planos de assinatura Legion Black.",
   "black.hero.title": "Acesse os melhores modelos de codificação do mundo",
   "black.hero.subtitle": "Incluindo Claude, GPT, Gemini e mais",
-  "black.title": "OpenCode Black | Preços",
+  "black.title": "Legion Black | Preços",
   "black.plan.icon20": "Plano Black 20",
   "black.plan.icon100": "Plano Black 100",
   "black.plan.icon200": "Plano Black 200",
@@ -264,10 +264,10 @@ export const dict = {
   "black.action.continue": "Continuar",
   "black.finePrint.beforeTerms": "Os preços mostrados não incluem impostos aplicáveis",
   "black.finePrint.terms": "Termos de Serviço",
-  "black.workspace.title": "OpenCode Black | Selecionar Workspace",
+  "black.workspace.title": "Legion Black | Selecionar Workspace",
   "black.workspace.selectPlan": "Selecione um workspace para este plano",
   "black.workspace.name": "Workspace {{n}}",
-  "black.subscribe.title": "Assinar OpenCode Black",
+  "black.subscribe.title": "Assinar Legion Black",
   "black.subscribe.paymentMethod": "Forma de pagamento",
   "black.subscribe.loadingPaymentForm": "Carregando formulário de pagamento...",
   "black.subscribe.selectWorkspaceToContinue": "Selecione um workspace para continuar",
@@ -279,9 +279,9 @@ export const dict = {
   "black.subscribe.processing": "Processando...",
   "black.subscribe.submit": "Assinar ${{plan}}",
   "black.subscribe.form.chargeNotice": "Você só será cobrado quando sua assinatura for ativada",
-  "black.subscribe.success.title": "Você está na lista de espera do OpenCode Black",
+  "black.subscribe.success.title": "Você está na lista de espera do Legion Black",
   "black.subscribe.success.subscriptionPlan": "Plano de assinatura",
-  "black.subscribe.success.planName": "OpenCode Black {{plan}}",
+  "black.subscribe.success.planName": "Legion Black {{plan}}",
   "black.subscribe.success.amount": "Valor",
   "black.subscribe.success.amountValue": "${{plan}} por mês",
   "black.subscribe.success.paymentMethod": "Forma de pagamento",
@@ -466,15 +466,15 @@ export const dict = {
   "workspace.black.time.minutes": "minutos",
   "workspace.black.time.fewSeconds": "alguns segundos",
   "workspace.black.subscription.title": "Assinatura",
-  "workspace.black.subscription.message": "Você assina o OpenCode Black por ${{plan}} por mês.",
+  "workspace.black.subscription.message": "Você assina o Legion Black por ${{plan}} por mês.",
   "workspace.black.subscription.manage": "Gerenciar Assinatura",
   "workspace.black.subscription.rollingUsage": "Uso de 5 horas",
   "workspace.black.subscription.weeklyUsage": "Uso Semanal",
   "workspace.black.subscription.resetsIn": "Reinicia em",
   "workspace.black.subscription.useBalance": "Use seu saldo disponível após atingir os limites de uso",
   "workspace.black.waitlist.title": "Lista de Espera",
-  "workspace.black.waitlist.joined": "Você está na lista de espera para o plano OpenCode Black de ${{plan}} por mês.",
-  "workspace.black.waitlist.ready": "Estamos prontos para inscrever você no plano OpenCode Black de ${{plan}} por mês.",
+  "workspace.black.waitlist.joined": "Você está na lista de espera para o plano Legion Black de ${{plan}} por mês.",
+  "workspace.black.waitlist.ready": "Estamos prontos para inscrever você no plano Legion Black de ${{plan}} por mês.",
   "workspace.black.waitlist.leave": "Sair da Lista de Espera",
   "workspace.black.waitlist.leaving": "Saindo...",
   "workspace.black.waitlist.left": "Saiu",
@@ -484,15 +484,15 @@ export const dict = {
   "workspace.black.waitlist.enrollNote":
     "Ao clicar em Inscrever-se, sua assinatura começará imediatamente e seu cartão será cobrado.",
 
-  "download.title": "OpenCode | Baixar",
-  "download.meta.description": "Baixe o OpenCode para macOS, Windows e Linux",
-  "download.hero.title": "Baixar OpenCode",
+  "download.title": "Legion | Baixar",
+  "download.meta.description": "Baixe o Legion para macOS, Windows e Linux",
+  "download.hero.title": "Baixar Legion",
   "download.hero.subtitle": "Disponível em Beta para macOS, Windows e Linux",
   "download.hero.button": "Baixar para {{os}}",
-  "download.section.terminal": "OpenCode Terminal",
-  "download.section.desktop": "OpenCode Desktop (Beta)",
-  "download.section.extensions": "Extensões OpenCode",
-  "download.section.integrations": "Integrações OpenCode",
+  "download.section.terminal": "Legion Terminal",
+  "download.section.desktop": "Legion Desktop (Beta)",
+  "download.section.extensions": "Extensões Legion",
+  "download.section.integrations": "Integrações Legion",
   "download.action.download": "Baixar",
   "download.action.install": "Instalar",
 
@@ -503,27 +503,27 @@ export const dict = {
   "download.platform.linuxRpm": "Linux (.rpm)",
 
   "download.faq.a3.beforeLocal":
-    "Não necessariamente, mas provavelmente. Você precisará de uma assinatura de IA se quiser conectar o OpenCode a um provedor pago, embora você possa trabalhar com",
+    "Não necessariamente, mas provavelmente. Você precisará de uma assinatura de IA se quiser conectar o Legion a um provedor pago, embora você possa trabalhar com",
   "download.faq.a3.localLink": "modelos locais",
   "download.faq.a3.afterLocal.beforeZen": "de graça. Embora incentivemos os usuários a usar o",
   "download.faq.a3.afterZen":
-    ", o OpenCode funciona com todos os provedores populares, como OpenAI, Anthropic, xAI etc.",
+    ", o Legion funciona com todos os provedores populares, como OpenAI, Anthropic, xAI etc.",
 
-  "download.faq.a5.p1": "O OpenCode é 100% gratuito para usar.",
+  "download.faq.a5.p1": "O Legion é 100% gratuito para usar.",
   "download.faq.a5.p2.beforeZen":
-    "Quaisquer custos adicionais virão da sua assinatura de um provedor de modelo. Embora o OpenCode funcione com qualquer provedor de modelo, recomendamos o uso do",
+    "Quaisquer custos adicionais virão da sua assinatura de um provedor de modelo. Embora o Legion funcione com qualquer provedor de modelo, recomendamos o uso do",
   "download.faq.a5.p2.afterZen": ".",
 
   "download.faq.a6.p1":
-    "Seus dados e informações só são armazenados quando você cria links compartilháveis no OpenCode.",
+    "Seus dados e informações só são armazenados quando você cria links compartilháveis no Legion.",
   "download.faq.a6.p2.beforeShare": "Saiba mais sobre",
   "download.faq.a6.shareLink": "páginas de compartilhamento",
 
-  "enterprise.title": "OpenCode | Soluções empresariais para sua organização",
-  "enterprise.meta.description": "Contate a OpenCode para soluções empresariais",
+  "enterprise.title": "Legion | Soluções empresariais para sua organização",
+  "enterprise.meta.description": "Contate a Legion para soluções empresariais",
   "enterprise.hero.title": "Seu código é seu",
   "enterprise.hero.body1":
-    "O OpenCode opera com segurança dentro da sua organização, sem dados ou contexto armazenados e sem restrições de licenciamento ou reivindicações de propriedade. Inicie um teste com sua equipe e, em seguida, implante em toda a organização integrando-o ao seu SSO e gateway de IA interno.",
+    "O Legion opera com segurança dentro da sua organização, sem dados ou contexto armazenados e sem restrições de licenciamento ou reivindicações de propriedade. Inicie um teste com sua equipe e, em seguida, implante em toda a organização integrando-o ao seu SSO e gateway de IA interno.",
   "enterprise.hero.body2": "Deixe-nos saber como podemos ajudar.",
   "enterprise.form.name.label": "Nome completo",
   "enterprise.form.name.placeholder": "Jeff Bezos",
@@ -537,29 +537,29 @@ export const dict = {
   "enterprise.form.sending": "Enviando...",
   "enterprise.form.success": "Mensagem enviada, entraremos em contato em breve.",
   "enterprise.faq.title": "FAQ",
-  "enterprise.faq.q1": "O que é OpenCode Enterprise?",
+  "enterprise.faq.q1": "O que é Legion Enterprise?",
   "enterprise.faq.a1":
-    "OpenCode Enterprise é para organizações que desejam garantir que seu código e dados nunca saiam de sua infraestrutura. Isso pode ser feito usando uma configuração centralizada que se integra ao seu SSO e gateway de IA interno.",
-  "enterprise.faq.q2": "Como faço para começar com o OpenCode Enterprise?",
+    "Legion Enterprise é para organizações que desejam garantir que seu código e dados nunca saiam de sua infraestrutura. Isso pode ser feito usando uma configuração centralizada que se integra ao seu SSO e gateway de IA interno.",
+  "enterprise.faq.q2": "Como faço para começar com o Legion Enterprise?",
   "enterprise.faq.a2":
-    "Basta começar com um teste interno com sua equipe. O OpenCode por padrão não armazena seu código ou dados de contexto, facilitando o início. Em seguida, entre em contato conosco para discutir opções de preços e implementação.",
+    "Basta começar com um teste interno com sua equipe. O Legion por padrão não armazena seu código ou dados de contexto, facilitando o início. Em seguida, entre em contato conosco para discutir opções de preços e implementação.",
   "enterprise.faq.q3": "Como funciona o preço empresarial?",
   "enterprise.faq.a3":
     "Oferecemos preços empresariais por assento. Se você tiver seu próprio gateway de LLM, não cobramos pelos tokens usados. Para mais detalhes, entre em contato conosco para um orçamento personalizado com base nas necessidades da sua organização.",
-  "enterprise.faq.q4": "Meus dados estão seguros com o OpenCode Enterprise?",
+  "enterprise.faq.q4": "Meus dados estão seguros com o Legion Enterprise?",
   "enterprise.faq.a4":
-    "Sim. O OpenCode não armazena seu código ou dados de contexto. Todo o processamento acontece localmente ou por meio de chamadas de API diretas para seu provedor de IA. Com configuração centralizada e integração de SSO, seus dados permanecem seguros dentro da infraestrutura de sua organização.",
+    "Sim. O Legion não armazena seu código ou dados de contexto. Todo o processamento acontece localmente ou por meio de chamadas de API diretas para seu provedor de IA. Com configuração centralizada e integração de SSO, seus dados permanecem seguros dentro da infraestrutura de sua organização.",
 
-  "brand.title": "OpenCode | Marca",
-  "brand.meta.description": "Diretrizes da marca OpenCode",
+  "brand.title": "Legion | Marca",
+  "brand.meta.description": "Diretrizes da marca Legion",
   "brand.heading": "Diretrizes da marca",
-  "brand.subtitle": "Recursos e ativos para ajudá-lo a trabalhar com a marca OpenCode.",
+  "brand.subtitle": "Recursos e ativos para ajudá-lo a trabalhar com a marca Legion.",
   "brand.downloadAll": "Baixar todos os recursos",
 
-  "changelog.title": "OpenCode | Changelog",
-  "changelog.meta.description": "Notas de versão e changelog do OpenCode",
+  "changelog.title": "Legion | Changelog",
+  "changelog.meta.description": "Notas de versão e changelog do Legion",
   "changelog.hero.title": "Changelog",
-  "changelog.hero.subtitle": "Novas atualizações e melhorias no OpenCode",
+  "changelog.hero.subtitle": "Novas atualizações e melhorias no Legion",
   "changelog.empty": "Nenhuma entrada de changelog encontrada.",
   "changelog.viewJson": "Ver JSON",
 

@@ -20975,10 +20975,10 @@
   },
   "legion": {
     "id": "legion",
-    "env": ["OPENCODE_API_KEY"],
+    "env": ["LEGION_API_KEY"],
     "npm": "@ai-sdk/openai-compatible",
     "api": "https://wearethelegion.com/zen/v1",
-    "name": "OpenCode Zen",
+    "name": "Legion Zen",
     "doc": "https://wearethelegion.com/docs/zen",
     "models": {
       "glm-4.7": {

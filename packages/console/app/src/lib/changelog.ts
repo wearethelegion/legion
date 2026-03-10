@@ -42,7 +42,7 @@ export async function loadChangelog(): Promise<ChangelogData> {
   const response = await fetch("https://api.github.com/repos/wearethelegion/legion/releases?per_page=20", {
     headers: {
       Accept: "application/vnd.github.v3+json",
-      "User-Agent": "OpenCode-Console",
+      "User-Agent": "Legion-Console",
     },
     cf: {
       // best-effort edge caching (ignored outside Cloudflare)

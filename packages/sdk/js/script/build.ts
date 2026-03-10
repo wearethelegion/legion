@@ -24,7 +24,7 @@ await createClient({
     },
     {
       name: "@hey-api/sdk",
-      instance: "OpencodeClient",
+      instance: "LegionClient",
       exportFromIndex: false,
       auth: false,
       paramsStructure: "flat",
