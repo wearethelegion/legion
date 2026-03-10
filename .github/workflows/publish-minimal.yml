@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to publish (e.g. 1.1.63)"
+        description: "Version to publish (e.g. 1.1.64)"
         required: true
         type: string
 
@@ -18,7 +18,19 @@ permissions:
 
 jobs:
   build-cli:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux
+          - os: macos-14
+            name: mac-arm64
+          - os: macos-13
+            name: mac-x64
+          - os: windows-latest
+            name: windows
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,8 +43,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build CLI
-        run: ./packages/legion/script/build.ts
+      - name: Build CLI (single platform)
+        run: ./packages/legion/script/build.ts --single
+        shell: bash
         env:
           LEGION_VERSION: ${{ inputs.version }}
           LEGION_RELEASE: ""
@@ -40,7 +53,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: legion-cli
+          name: legion-cli-${{ matrix.name }}
           path: packages/legion/dist
 
   publish-npm:
@@ -61,10 +74,12 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
+      # Download all platform artifacts into one dist folder
       - uses: actions/download-artifact@v4
         with:
-          name: legion-cli
+          pattern: legion-cli-*
           path: packages/legion/dist
+          merge-multiple: true
 
       - name: List built artifacts
         run: ls -la packages/legion/dist/*/
@@ -78,7 +93,7 @@ jobs:
               echo "Publishing $dir..."
               cd "$dir"
               bun pm pack
-              npm publish *.tgz --access public --tag latest || echo "Failed: $dir"
+              npm publish *.tgz --access public --tag latest || echo "Failed: $dir (may already exist)"
               cd -
             fi
           done
