@@ -32,7 +32,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       - name: Install legion
-        run: curl -fsSL https://legion.dev/install | bash
+        run: curl -fsSL https://wearethelegion.com/install | bash
 
       - name: Get PR details
         id: pr-details

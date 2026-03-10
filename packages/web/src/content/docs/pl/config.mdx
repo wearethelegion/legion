@@ -13,7 +13,7 @@ Legion obsługuje formaty **JSON** i **JSONC** (JSON z komentarzami).
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   // Theme configuration
   "theme": "legion",
   "model": "anthropic/claude-sonnet-4-5",
@@ -142,7 +142,7 @@ Katalog niestandardowy jest ładowany po globalnej konfiguracji i katalogach `.l
 
 ## Schemat
 
-Plik konfiguracyjny ma schemat JSON dostępny pod adresem [**`legion.dev/config.json`**](https://legion.dev/config.json).
+Plik konfiguracyjny ma schemat JSON dostępny pod adresem [**`wearethelegion.com/config.json`**](https://wearethelegion.com/config.json).
 
 Twój edytor powinien zapewniać walidację i autouzupełnianie na podstawie tego schematu.
 
@@ -154,7 +154,7 @@ Możesz skonfigurować zachowanie TUI za pomocą opcji `tui`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "tui": {
     "scroll_speed": 3,
     "scroll_acceleration": {
@@ -181,7 +181,7 @@ Możesz skonfigurować serwer dla `legion serve` i `legion web` za pomocą opcji
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "server": {
     "port": 4096,
     "hostname": "0.0.0.0",
@@ -210,7 +210,7 @@ Kontroluj, które narzędzia są dostępne dla LLM, za pomocą opcji `tools`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "tools": {
     "write": false,
     "bash": false
@@ -228,7 +228,7 @@ Możesz skonfigurować dostawców i modele, których chcesz używać, za pomocą
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {},
   "model": "anthropic/claude-sonnet-4-5",
   "small_model": "anthropic/claude-haiku-4-5"
@@ -241,7 +241,7 @@ Opcje dostawcy mogą zawierać `timeout` i `setCacheKey`:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "anthropic": {
       "options": {
@@ -270,7 +270,7 @@ Amazon Bedrock umożliwia konfigurację połączenia z AWS:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "amazon-bedrock": {
       "options": {
@@ -301,7 +301,7 @@ Skonfiguruj motyw interfejsu Legion za pomocą opcji `theme`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "theme": ""
 }
 ```
@@ -316,7 +316,7 @@ Możesz zdefiniować i skonfigurować agentów za pomocą opcji `agent`.
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "agent": {
     "code-reviewer": {
       "description": "Reviews code for best practices and potential issues",
@@ -342,7 +342,7 @@ Domyślnego agenta można ustawić za pomocą opcji `default_agent`. Określa to
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "default_agent": "plan"
 }
 ```
@@ -359,7 +359,7 @@ Możesz skonfigurować [udostępnianie](/docs/share) za pomocą opcji `share`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "share": "manual"
 }
 ```
@@ -380,7 +380,7 @@ Możesz zdefiniować niestandardowe polecenia dla powtarzalnych zadań za pomoc�
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "command": {
     "test": {
       "template": "Run the full test suite with coverage report and show any failures.\nFocus on the failing tests and suggest fixes.",
@@ -406,7 +406,7 @@ Możesz dostosować skróty klawiszowe za pomocą opcji `keybinds`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "keybinds": {}
 }
 ```
@@ -421,7 +421,7 @@ Legion może automatycznie pobierać nowe wersje. Możesz to kontrolować za pom
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "autoupdate": false
 }
 ```
@@ -437,7 +437,7 @@ Możesz skonfigurować formatery kodu za pomocą opcji `formatter`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "formatter": {
     "prettier": {
       "disabled": true
@@ -465,7 +465,7 @@ Na przykład, aby wymagać zatwierdzenia dla narzędzi `edit` i `bash`:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "permission": {
     "edit": "ask",
     "bash": "ask"
@@ -483,7 +483,7 @@ Możesz kontrolować zachowanie kompaktowania kontekstu za pomocą opcji `compac
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "compaction": {
     "auto": true,
     "prune": true
@@ -502,7 +502,7 @@ Skonfiguruj ignorowane wzorce plików dla obserwatora plików za pomocą `watche
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "watcher": {
     "ignore": ["node_modules/**", "dist/**", ".git/**"]
   }
@@ -519,7 +519,7 @@ Skonfiguruj serwery MCP, których chcesz używać, za pomocą opcji `mcp`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "mcp": {}
 }
 ```
@@ -536,7 +536,7 @@ Umieść pliki wtyczek w `.legion/plugins/` lub `~/.config/legion/plugins/`. Mo�
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "plugin": ["legion-helicone-session", "@my-org/custom-plugin"]
 }
 ```
@@ -551,7 +551,7 @@ Określ pliki instrukcji dla modelu, używając opcji `instructions`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "instructions": ["CONTRIBUTING.md", "docs/guidelines.md", ".cursor/rules/*.md"]
 }
 ```
@@ -566,7 +566,7 @@ Zapobiegaj automatycznemu ładowaniu dostawców za pomocą opcji `disabled_provi
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "disabled_providers": ["openai", "gemini"]
 }
 ```
@@ -589,7 +589,7 @@ Możesz określić listę dozwolonych dostawców za pomocą `enabled_providers`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "enabled_providers": ["anthropic", "openai"]
 }
 ```
@@ -610,7 +610,7 @@ Klucz `experimental` zawiera opcje, które są we wczesnej fazie rozwoju.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "experimental": {}
 }
 ```
@@ -633,7 +633,7 @@ Użyj `{env:VARIABLE_NAME}`, aby wstawić wartość zmiennej środowiskowej:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "model": "{env:LEGION_MODEL}",
   "provider": {
     "anthropic": {
@@ -656,7 +656,7 @@ Użyj `{file:path/to/file}`, aby wstawić zawartość pliku:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "instructions": ["./custom-instructions.md"],
   "provider": {
     "openai": {

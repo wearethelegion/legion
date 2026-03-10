@@ -1,6 +1,6 @@
 # legion GitHub Action
 
-A GitHub Action that integrates [legion](https://legion.dev) directly into your GitHub workflow.
+A GitHub Action that integrates [legion](https://wearethelegion.com) directly into your GitHub workflow.
 
 Mention `/legion` in your comment, and legion will execute tasks within your GitHub Actions runner.
 

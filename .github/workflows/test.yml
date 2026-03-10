@@ -24,7 +24,7 @@ jobs:
 
       - name: Configure git identity
         run: |
-          git config --global user.email "bot@legion.dev"
+          git config --global user.email "bot@wearethelegion.com"
           git config --global user.name "legion"
 
       - name: Run unit tests

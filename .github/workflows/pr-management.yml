@@ -34,7 +34,7 @@ jobs:
         run: bun install
 
       - name: Install legion
-        run: curl -fsSL https://legion.dev/install | bash
+        run: curl -fsSL https://wearethelegion.com/install | bash
 
       - name: Build prompt
         env:

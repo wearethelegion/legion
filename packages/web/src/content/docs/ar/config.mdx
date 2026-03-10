@@ -13,7 +13,7 @@ description: استخدام ملف إعدادات Legion بصيغة JSON.
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   // إعدادات السمة
   "theme": "legion",
   "model": "anthropic/claude-sonnet-4-5",
@@ -145,7 +145,7 @@ legion run "Hello world"
 
 ## المخطط
 
-يحتوي ملف الإعدادات على مخطط مُعرَّف في [**`legion.dev/config.json`**](https://legion.dev/config.json).
+يحتوي ملف الإعدادات على مخطط مُعرَّف في [**`wearethelegion.com/config.json`**](https://wearethelegion.com/config.json).
 
 يفترض أن يتمكن محررك من التحقق والإكمال التلقائي اعتمادًا على هذا المخطط.
 
@@ -157,7 +157,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "tui": {
     "scroll_speed": 3,
     "scroll_acceleration": {
@@ -184,7 +184,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "server": {
     "port": 4096,
     "hostname": "0.0.0.0",
@@ -213,7 +213,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "tools": {
     "write": false,
     "bash": false
@@ -231,7 +231,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {},
   "model": "anthropic/claude-sonnet-4-5",
   "small_model": "anthropic/claude-haiku-4-5"
@@ -244,7 +244,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "anthropic": {
       "options": {
@@ -273,7 +273,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "amazon-bedrock": {
       "options": {
@@ -304,7 +304,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "theme": ""
 }
 ```
@@ -319,7 +319,7 @@ legion run "Hello world"
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "agent": {
     "code-reviewer": {
       "description": "Reviews code for best practices and potential issues",
@@ -345,7 +345,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "default_agent": "plan"
 }
 ```
@@ -362,7 +362,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "share": "manual"
 }
 ```
@@ -383,7 +383,7 @@ legion run "Hello world"
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "command": {
     "test": {
       "template": "Run the full test suite with coverage report and show any failures.\nFocus on the failing tests and suggest fixes.",
@@ -409,7 +409,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "keybinds": {}
 }
 ```
@@ -424,7 +424,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "autoupdate": false
 }
 ```
@@ -440,7 +440,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "formatter": {
     "prettier": {
       "disabled": true
@@ -468,7 +468,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "permission": {
     "edit": "ask",
     "bash": "ask"
@@ -486,7 +486,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "compaction": {
     "auto": true,
     "prune": true
@@ -505,7 +505,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "watcher": {
     "ignore": ["node_modules/**", "dist/**", ".git/**"]
   }
@@ -522,7 +522,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "mcp": {}
 }
 ```
@@ -539,7 +539,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "plugin": ["legion-helicone-session", "@my-org/custom-plugin"]
 }
 ```
@@ -554,7 +554,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "instructions": ["CONTRIBUTING.md", "docs/guidelines.md", ".cursor/rules/*.md"]
 }
 ```
@@ -570,7 +570,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "disabled_providers": ["openai", "gemini"]
 }
 ```
@@ -593,7 +593,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "enabled_providers": ["anthropic", "openai"]
 }
 ```
@@ -614,7 +614,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "experimental": {}
 }
 ```
@@ -637,7 +637,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "model": "{env:LEGION_MODEL}",
   "provider": {
     "anthropic": {
@@ -660,7 +660,7 @@ legion run "Hello world"
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "instructions": ["./custom-instructions.md"],
   "provider": {
     "openai": {

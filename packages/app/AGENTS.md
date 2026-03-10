@@ -4,7 +4,7 @@
 
 ## Local Dev
 
-- `legion dev web` proxies `https://app.legion.dev`, so local UI/CSS changes will not show there.
+- `legion dev web` proxies `https://app.wearethelegion.com`, so local UI/CSS changes will not show there.
 - For local UI changes, run the backend and app dev servers separately.
 - Backend (from `packages/legion`): `bun run --conditions=browser ./src/index.ts serve --port 4096`
 - App (from `packages/app`): `bun dev -- --port 4444`

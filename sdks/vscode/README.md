@@ -1,10 +1,10 @@
 # legion VS Code Extension
 
-A Visual Studio Code extension that integrates [legion](https://legion.dev) directly into your development workflow.
+A Visual Studio Code extension that integrates [legion](https://wearethelegion.com) directly into your development workflow.
 
 ## Prerequisites
 
-This extension requires the [legion CLI](https://legion.dev) to be installed on your system. Visit [legion.dev](https://legion.dev) for installation instructions.
+This extension requires the [legion CLI](https://wearethelegion.com) to be installed on your system. Visit [wearethelegion.com](https://wearethelegion.com) for installation instructions.
 
 ## Features
 

@@ -801,11 +801,11 @@ http://localhost:4096
 http://localhost:4096/doc
 https://app.example.com
 https://AZURE_COGNITIVE_SERVICES_RESOURCE_NAME.cognitiveservices.azure.com/
-https://legion.dev/zen/v1/chat/completions
-https://legion.dev/zen/v1/messages
-https://legion.dev/zen/v1/models/gemini-3-flash
-https://legion.dev/zen/v1/models/gemini-3-pro
-https://legion.dev/zen/v1/responses
+https://wearethelegion.com/zen/v1/chat/completions
+https://wearethelegion.com/zen/v1/messages
+https://wearethelegion.com/zen/v1/models/gemini-3-flash
+https://wearethelegion.com/zen/v1/models/gemini-3-pro
+https://wearethelegion.com/zen/v1/responses
 https://RESOURCE_NAME.openai.azure.com/
 laravel/pint
 log/
@@ -813,7 +813,7 @@ model: "anthropic/claude-sonnet-4-5"
 modes/
 node_modules/
 openai/gpt-4.1
-legion.dev/config.json
+wearethelegion.com/config.json
 legion/<model-id>
 legion/gpt-5.1-codex
 legion/gpt-5.2-codex

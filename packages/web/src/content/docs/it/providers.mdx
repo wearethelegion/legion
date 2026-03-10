@@ -35,7 +35,7 @@ Puoi personalizzare l'URL base per qualsiasi provider impostando l'opzione `base
 
 ```json title="legion.json" {6}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "anthropic": {
       "options": {
@@ -57,7 +57,7 @@ verificati per funzionare bene con Legion. [Scopri di piu](/docs/zen).
 Se sei all'inizio, ti consigliamo di partire da Legion Zen.
 :::
 
-1. Esegui `/connect` nella TUI, seleziona legion e vai su [legion.dev/auth](https://legion.dev/auth).
+1. Esegui `/connect` nella TUI, seleziona legion e vai su [wearethelegion.com/auth](https://wearethelegion.com/auth).
 
    ```txt
    /connect
@@ -163,7 +163,7 @@ Per usare Amazon Bedrock con Legion:
 
    ```json title="legion.json"
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "amazon-bedrock": {
          "options": {
@@ -190,7 +190,7 @@ Per usare Amazon Bedrock con Legion:
 
    ```json title="legion.json"
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "amazon-bedrock": {
          "options": {
@@ -234,7 +234,7 @@ Per profili di inferenza personalizzati, usa il nome del modello e del provider 
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "amazon-bedrock": {
       // ...
@@ -486,7 +486,7 @@ Cloudflare AI Gateway ti permette di accedere a modelli di OpenAI, Anthropic, Wo
 
    ```json title="legion.json"
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "cloudflare-ai-gateway": {
          "models": {
@@ -692,7 +692,7 @@ file `legion.json`. Si raccomanda anche di disabilitare la condivisione sessioni
 
 ```json
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "small_model": "gitlab/duo-chat-haiku-4-5",
   "share": "disabled"
 }
@@ -754,7 +754,7 @@ Personalizza tramite `legion.json`:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "gitlab": {
       "options": {
@@ -775,7 +775,7 @@ Per accedere agli strumenti GitLab (merge requests, issues, pipelines, CI/CD, ec
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "plugin": ["@gitlab/legion-gitlab-plugin"]
 }
 ```
@@ -957,7 +957,7 @@ Ecco la [Model Directory di Helicone](https://helicone.ai/models), ti servirà p
 
 ```jsonc title="~/.config/legion/legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -985,7 +985,7 @@ Helicone supporta header personalizzati per funzionalità come caching, user tra
 
 ```jsonc title="~/.config/legion/legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1039,7 +1039,7 @@ Puoi configurare legion per usare modelli locali tramite l'utility llama-server 
 
 ```json title="legion.json" "llama.cpp" {5, 6, 8, 10-15}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "llama.cpp": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1106,7 +1106,7 @@ Puoi configurare legion per usare modelli locali tramite LM Studio.
 
 ```json title="legion.json" "lmstudio" {5, 6, 8, 10-14}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "lmstudio": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1225,7 +1225,7 @@ Ollama può auto-configurarsi per Legion. Vedi la [documentazione di integrazion
 
 ```json title="legion.json" "ollama" {5, 6, 8, 10-14}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1387,7 +1387,7 @@ Legion Zen è una lista di modelli testati e verificati forniti dal team Legion.
 
    ```json title="legion.json" {6}
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1402,7 +1402,7 @@ Legion Zen è una lista di modelli testati e verificati forniti dal team Legion.
 
    ```json title="legion.json"
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1618,7 +1618,7 @@ Puoi anche personalizzare i modelli tramite la tua configurazione di legion. Ecc
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "vercel": {
       "models": {
@@ -1728,7 +1728,7 @@ Alcune opzioni di routing utili:
 
    ```json title="legion.json" {6}
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "zenmux": {
          "models": {
@@ -1796,7 +1796,7 @@ Puoi usare qualsiasi provider OpenAI-compatible con legion. La maggior parte dei
 
    ```json title="legion.json" ""myprovider"" {5-15}
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "myprovider": {
          "npm": "@ai-sdk/openai-compatible",
@@ -1834,7 +1834,7 @@ Ecco un esempio che imposta le opzioni `apiKey`, `headers` e `limit` del modello
 
 ```json title="legion.json" {9,11,17-20}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "myprovider": {
       "npm": "@ai-sdk/openai-compatible",

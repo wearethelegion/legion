@@ -35,7 +35,7 @@ config.
 
 ```json title="legion.json" {6}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "anthropic": {
       "options": {
@@ -57,7 +57,7 @@ legion ile iyi çalıştığı test edilip doğrulandı. [Daha fazla bilgi](/doc
 Yeniyseniz Legion Zen ile başlamanızı öneririz.
 :::
 
-1. TUI'de `/connect` komutunu çalıştırın, legion'u seçin ve [legion.dev/auth](https://legion.dev/auth)'ye gidin.
+1. TUI'de `/connect` komutunu çalıştırın, legion'u seçin ve [wearethelegion.com/auth](https://wearethelegion.com/auth)'ye gidin.
 
    ```txt
    /connect
@@ -163,7 +163,7 @@ Amazon Bedrock'u legion ile kullanmak için:
 
    ```json title="legion.json"
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "amazon-bedrock": {
          "options": {
@@ -190,7 +190,7 @@ Bedrock için VPC uç noktaları kullanıyorsanız:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "amazon-bedrock": {
       "options": {
@@ -236,7 +236,7 @@ Bir taşıyıcı belirteç ayarlandığında (`/connect` veya `AWS_BEARER_TOKEN_
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "amazon-bedrock": {
       // ...
@@ -488,7 +488,7 @@ Cloudflare AI Gateway, OpenAI, Anthropic, Workers AI ve daha fazlasındaki model
 
    ```json title="legion.json"
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "cloudflare-ai-gateway": {
          "models": {
@@ -694,7 +694,7 @@ yalnızca kendi GitLab tarafından barındırılan örneğinizi kullanmak için 
 
 ```json
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "small_model": "gitlab/duo-chat-haiku-4-5",
   "share": "disabled"
 }
@@ -756,7 +756,7 @@ Daha fazla belge [legion-gitlab-auth](https://www.npmjs.com/package/@gitlab/legi
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "gitlab": {
       "options": {
@@ -777,7 +777,7 @@ GitLab araçlarına (birleştirme istekleri, sorunlar, işlem hatları, CI/CD vb
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "plugin": ["@gitlab/legion-gitlab-plugin"]
 }
 ```
@@ -959,7 +959,7 @@ Helicone'un legion aracılığıyla otomatik olarak yapılandırılmayan bir öz
 
 ```jsonc title="~/.config/legion/legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -987,7 +987,7 @@ Helicone, önbelleğe alma, kullanıcı izleme ve oturum yönetimi gibi özellik
 
 ```jsonc title="~/.config/legion/legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "helicone": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1041,7 +1041,7 @@ legion'u yerel modelleri kullanacak şekilde [llama.cpp's](https://github.com/gg
 
 ```json title="legion.json" "llama.cpp" {5, 6, 8, 10-15}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "llama.cpp": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1108,7 +1108,7 @@ LM Studio aracılığıyla legion'u yerel modelleri kullanacak şekilde yapılan
 
 ```json title="legion.json" "lmstudio" {5, 6, 8, 10-14}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "lmstudio": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1229,7 +1229,7 @@ Ollama kendisini legion için otomatik olarak yapılandırabilir. Ayrıntılar i
 
 ```json title="legion.json" "ollama" {5, 6, 8, 10-14}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -1391,7 +1391,7 @@ Legion Zen, legion ekibinin test edip doğruladığı modellerin bir listesidir.
 
    ```json title="legion.json" {6}
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1406,7 +1406,7 @@ Legion Zen, legion ekibinin test edip doğruladığı modellerin bir listesidir.
 
    ```json title="legion.json"
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "openrouter": {
          "models": {
@@ -1622,7 +1622,7 @@ Modelleri legion yapılandırmanız aracılığıyla da özelleştirebilirsiniz.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "vercel": {
       "models": {
@@ -1732,7 +1732,7 @@ Bazı yararlı yönlendirme seçenekleri:
 
    ```json title="legion.json" {6}
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "zenmux": {
          "models": {
@@ -1800,7 +1800,7 @@ OpenAI uyumlu herhangi bir sağlayıcıyı legion ile kullanabilirsiniz. Çoğu 
 
    ```json title="legion.json" ""myprovider"" {5-15}
    {
-     "$schema": "https://legion.dev/config.json",
+     "$schema": "https://wearethelegion.com/config.json",
      "provider": {
        "myprovider": {
          "npm": "@ai-sdk/openai-compatible",
@@ -1838,7 +1838,7 @@ Burada `apiKey`, `headers` ve model `limit` seçeneklerini ayarlayan bir örnek 
 
 ```json title="legion.json" {9,11,17-20}
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "myprovider": {
       "npm": "@ai-sdk/openai-compatible",

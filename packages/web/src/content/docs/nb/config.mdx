@@ -13,7 +13,7 @@ Legion støtter både **JSON** og **JSONC** (JSON med kommentarer) formater.
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   // Theme configuration
   "theme": "legion",
   "model": "anthropic/claude-sonnet-4-5",
@@ -146,7 +146,7 @@ Den egendefinerte katalogen lastes inn etter den globale konfigurasjonen og `.le
 
 ## Skjema
 
-Konfigurasjonsfilen har et skjema som er definert i [**`legion.dev/config.json`**](https://legion.dev/config.json).
+Konfigurasjonsfilen har et skjema som er definert i [**`wearethelegion.com/config.json`**](https://wearethelegion.com/config.json).
 
 Redaktøren din skal kunne validere og autofullføre basert på skjemaet.
 
@@ -158,7 +158,7 @@ Du kan konfigurere TUI-spesifikke innstillinger gjennom alternativet `tui`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "tui": {
     "scroll_speed": 3,
     "scroll_acceleration": {
@@ -185,7 +185,7 @@ Du kan konfigurere serverinnstillinger for kommandoene `legion serve` og `legion
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "server": {
     "port": 4096,
     "hostname": "0.0.0.0",
@@ -214,7 +214,7 @@ Du kan administrere verktøyene en LLM kan bruke gjennom alternativet `tools`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "tools": {
     "write": false,
     "bash": false
@@ -232,7 +232,7 @@ Du kan konfigurere leverandørene og modellene du vil bruke i Legion-konfigurasj
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {},
   "model": "anthropic/claude-sonnet-4-5",
   "small_model": "anthropic/claude-haiku-4-5"
@@ -245,7 +245,7 @@ Leverandøralternativer kan inkludere `timeout` og `setCacheKey`:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "anthropic": {
       "options": {
@@ -274,7 +274,7 @@ Amazon Bedrock støtter AWS-spesifikk konfigurasjon:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "provider": {
     "amazon-bedrock": {
       "options": {
@@ -305,7 +305,7 @@ Du kan konfigurere temaet du vil bruke i Legion-konfigurasjonen gjennom alternat
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "theme": ""
 }
 ```
@@ -320,7 +320,7 @@ Du kan konfigurere spesialiserte agenter for spesifikke oppgaver gjennom alterna
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "agent": {
     "code-reviewer": {
       "description": "Reviews code for best practices and potential issues",
@@ -346,7 +346,7 @@ Du kan angi standard agent ved å bruke alternativet `default_agent`. Dette best
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "default_agent": "plan"
 }
 ```
@@ -363,7 +363,7 @@ Du kan konfigurere [share](/docs/share)-funksjonen gjennom alternativet `share`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "share": "manual"
 }
 ```
@@ -384,7 +384,7 @@ Du kan konfigurere egendefinerte kommandoer for repeterende oppgaver gjennom alt
 
 ```jsonc title="legion.jsonc"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "command": {
     "test": {
       "template": "Run the full test suite with coverage report and show any failures.\nFocus on the failing tests and suggest fixes.",
@@ -410,7 +410,7 @@ Du kan tilpasse tastebindingene dine gjennom alternativet `keybinds`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "keybinds": {}
 }
 ```
@@ -425,7 +425,7 @@ Legion vil automatisk laste ned eventuelle nye oppdateringer når den starter op
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "autoupdate": false
 }
 ```
@@ -441,7 +441,7 @@ Du kan konfigurere kodeformatere gjennom alternativet `formatter`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "formatter": {
     "prettier": {
       "disabled": true
@@ -469,7 +469,7 @@ Slik sikrer du at verktøyene `edit` og `bash` krever brukergodkjenning:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "permission": {
     "edit": "ask",
     "bash": "ask"
@@ -487,7 +487,7 @@ Du kan styre kontekstkomprimering gjennom alternativet `compaction`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "compaction": {
     "auto": true,
     "prune": true
@@ -506,7 +506,7 @@ Du kan konfigurere ignoreringsmønstre for filovervåking gjennom alternativet `
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "watcher": {
     "ignore": ["node_modules/**", "dist/**", ".git/**"]
   }
@@ -523,7 +523,7 @@ Du kan konfigurere MCP-servere du vil bruke gjennom alternativet `mcp`.
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "mcp": {}
 }
 ```
@@ -540,7 +540,7 @@ Plasser plugin-filer i `.legion/plugins/` eller `~/.config/legion/plugins/`. Du 
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "plugin": ["legion-helicone-session", "@my-org/custom-plugin"]
 }
 ```
@@ -555,7 +555,7 @@ Du kan konfigurere instruksjoner for modellen du bruker gjennom alternativet `in
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "instructions": ["CONTRIBUTING.md", "docs/guidelines.md", ".cursor/rules/*.md"]
 }
 ```
@@ -571,7 +571,7 @@ Du kan deaktivere leverandører som lastes automatisk gjennom alternativet `disa
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "disabled_providers": ["openai", "gemini"]
 }
 ```
@@ -594,7 +594,7 @@ Du kan spesifisere en godkjenningsliste over leverandører gjennom alternativet 
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "enabled_providers": ["anthropic", "openai"]
 }
 ```
@@ -615,7 +615,7 @@ Hvis en leverandør vises i både `enabled_providers` og `disabled_providers`, h
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "experimental": {}
 }
 ```
@@ -638,7 +638,7 @@ Bruk `{env:VARIABLE_NAME}` for å erstatte miljøvariabler:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "model": "{env:LEGION_MODEL}",
   "provider": {
     "anthropic": {
@@ -661,7 +661,7 @@ Bruk `{file:path/to/file}` for å erstatte innholdet i en fil:
 
 ```json title="legion.json"
 {
-  "$schema": "https://legion.dev/config.json",
+  "$schema": "https://wearethelegion.com/config.json",
   "instructions": ["./custom-instructions.md"],
   "provider": {
     "openai": {
