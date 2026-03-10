@@ -18,19 +18,7 @@ permissions:
 
 jobs:
   build-cli:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            name: linux
-          - os: macos-14
-            name: mac-arm64
-          - os: macos-13
-            name: mac-x64
-          - os: windows-latest
-            name: windows
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,9 +31,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build CLI (single platform)
-        run: ./packages/legion/script/build.ts --single
-        shell: bash
+      - name: Build CLI (all platforms via cross-compilation)
+        run: ./packages/legion/script/build.ts
         env:
           LEGION_VERSION: ${{ inputs.version }}
           LEGION_RELEASE: ""
@@ -53,7 +40,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: legion-cli-${{ matrix.name }}
+          name: legion-cli
           path: packages/legion/dist
 
   publish-npm:
@@ -74,12 +61,10 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
-      # Download all platform artifacts into one dist folder
       - uses: actions/download-artifact@v4
         with:
-          pattern: legion-cli-*
+          name: legion-cli
           path: packages/legion/dist
-          merge-multiple: true
 
       - name: List built artifacts
         run: ls -la packages/legion/dist/*/
