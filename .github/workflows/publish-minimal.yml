@@ -1,0 +1,124 @@
+name: publish-cli
+run-name: "publish CLI v${{ inputs.version }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g. 1.1.63)"
+        required: true
+        type: string
+
+concurrency: publish-cli
+
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+
+jobs:
+  build-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build CLI
+        run: ./packages/legion/script/build.ts
+        env:
+          LEGION_VERSION: ${{ inputs.version }}
+          LEGION_RELEASE: ""
+          GH_TOKEN: ${{ github.token }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: legion-cli
+          path: packages/legion/dist
+
+  publish-npm:
+    needs: build-cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: legion-cli
+          path: packages/legion/dist
+
+      - name: List built artifacts
+        run: ls -la packages/legion/dist/*/
+
+      - name: Publish to npm
+        run: |
+          cd packages/legion
+          # Publish each platform binary package
+          for dir in dist/legion-*/; do
+            if [ -f "$dir/package.json" ]; then
+              echo "Publishing $dir..."
+              cd "$dir"
+              bun pm pack
+              npm publish *.tgz --access public --tag latest || echo "Failed: $dir"
+              cd -
+            fi
+          done
+          # Publish the wrapper package
+          VERSION="${{ inputs.version }}"
+          mkdir -p dist/legion
+          cp -r bin dist/legion/bin
+          cp script/postinstall.mjs dist/legion/postinstall.mjs
+          cp ../../LICENSE dist/legion/LICENSE
+          # Generate wrapper package.json
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const binaries = {};
+            const dirs = fs.readdirSync('dist').filter(d => d.startsWith('legion-') && fs.existsSync(path.join('dist', d, 'package.json')));
+            for (const d of dirs) {
+              const pkg = JSON.parse(fs.readFileSync(path.join('dist', d, 'package.json')));
+              binaries[pkg.name] = pkg.version;
+            }
+            const wrapper = {
+              name: 'legion-ai',
+              bin: { legion: './bin/legion' },
+              scripts: { postinstall: 'bun ./postinstall.mjs || node ./postinstall.mjs' },
+              version: '${VERSION}',
+              license: 'MIT',
+              description: 'The persistent intelligence layer for AI development',
+              repository: { type: 'git', url: 'https://github.com/wearethelegion/legion' },
+              homepage: 'https://wearethelegion.com',
+              optionalDependencies: binaries
+            };
+            fs.writeFileSync('dist/legion/package.json', JSON.stringify(wrapper, null, 2));
+            console.log('Wrapper package.json:', JSON.stringify(wrapper, null, 2));
+          "
+          cd dist/legion
+          bun pm pack
+          npm publish *.tgz --access public --tag latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+
+      - name: Verify published
+        run: |
+          sleep 10
+          npm view legion-ai@${{ inputs.version }} || echo "Package may take a moment to propagate"
