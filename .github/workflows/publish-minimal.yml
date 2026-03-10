@@ -99,7 +99,7 @@ jobs:
               binaries[pkg.name] = pkg.version;
             }
             const wrapper = {
-              name: 'legion-ai',
+              name: '@wearethelegion/legion',
               bin: { legion: './bin/legion' },
               scripts: { postinstall: 'bun ./postinstall.mjs || node ./postinstall.mjs' },
               version: '${VERSION}',
@@ -121,4 +121,4 @@ jobs:
       - name: Verify published
         run: |
           sleep 10
-          npm view legion-ai@${{ inputs.version }} || echo "Package may take a moment to propagate"
+          npm view @wearethelegion/legion@${{ inputs.version }} || echo "Package may take a moment to propagate"
