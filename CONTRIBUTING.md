@@ -101,3 +101,24 @@ By contributing, you agree that your contributions will be licensed under the [M
 ---
 
 Thanks for being part of Legion. Let's build something great. ⚔️
+
+---
+
+## Versioning Policy
+
+Legion follows [Semantic Versioning](https://semver.org/):
+
+- **Patch** (1.1.x): Bug fixes, typos, dependency updates
+- **Minor** (1.x.0): New features, new commands, new provider support (backward-compatible)
+- **Major** (x.0.0): Breaking changes to CLI flags, config format, or public API
+
+### Commit Convention
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `fix:` → patch release
+- `feat:` → minor release
+- `feat!:` or `BREAKING CHANGE:` → major release
+- `chore:`, `docs:`, `ci:`, `refactor:` → no release
+
+Releases are published via the `publish-minimal.yml` workflow on `workflow_dispatch`.

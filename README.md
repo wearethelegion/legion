@@ -1,6 +1,10 @@
 # Legion
 
+[![npm version](https://img.shields.io/npm/v/@wearethelegion/legion?style=flat-square&color=cb3837)](https://www.npmjs.com/package/@wearethelegion/legion)
+[![GitHub stars](https://img.shields.io/github/stars/wearethelegion/legion?style=flat-square)](https://github.com/wearethelegion/legion/stargazers)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Discord](https://img.shields.io/discord/1480964626488361135?style=flat-square&logo=discord&logoColor=white&label=Discord&color=5865F2)](https://discord.gg/eX5GqGx4)
+[![GitHub release](https://img.shields.io/github/v/release/wearethelegion/legion?style=flat-square)](https://github.com/wearethelegion/legion/releases)
 
 **The persistent intelligence layer for AI development.**
 

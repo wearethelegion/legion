@@ -78,7 +78,7 @@ jobs:
               echo "Publishing $dir..."
               cd "$dir"
               bun pm pack
-              npm publish *.tgz --access public --tag latest || echo "Failed: $dir (may already exist)"
+              npm publish *.tgz --access public --tag latest --provenance || echo "Failed: $dir (may already exist)"
               cd -
             fi
           done
@@ -114,7 +114,7 @@ jobs:
           "
           cd dist/legion
           bun pm pack
-          npm publish *.tgz --access public --tag latest
+          npm publish *.tgz --access public --tag latest --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
 
