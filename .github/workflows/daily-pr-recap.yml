@@ -8,7 +8,7 @@ on:
 
 jobs:
   pr-recap:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
@@ -55,7 +55,7 @@ jobs:
           # Open PRs with activity today (updated today)
           gh pr list --repo ${{ github.repository }} --state open --search \"updated:${TODAY}\" --json number,title,author,labels,createdAt,updatedAt,reviewDecision,isDraft,additions,deletions --limit 100
 
-          IMPORTANT: EXCLUDE all PRs authored by Anomaly team members. Filter out PRs where the author login matches ANY of these:
+          IMPORTANT: EXCLUDE all PRs authored by Legion team members. Filter out PRs where the author login matches ANY of these:
           adamdotdevin, Brendonovich, fwang, Hona, iamdavidhill, jayair, kitlangton, kommander, MrMushrooooom, R44VC0RP, rekram1-node, thdxr
           This recap is specifically for COMMUNITY (external) contributions only.
 
