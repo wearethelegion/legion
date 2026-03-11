@@ -24,6 +24,6 @@ jobs:
 
       - name: Release
         run: |
-          git config --global user.email "legion@sst.dev"
+          git config --global user.email "bot@wearethelegion.com"
           git config --global user.name "legion"
           ./github/script/release
