@@ -90,6 +90,17 @@ For full configuration and usage docs, visit [wearethelegion.com](https://wearet
 
 If you're interested in contributing to Legion, please read our [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
 
+## Repository Structure
+
+This repo contains the **Legion CLI and desktop app**. Related repos:
+
+| Repo | Description | License |
+|---|---|---|
+| [legion](https://github.com/wearethelegion/legion) | CLI + desktop app (this repo) | MIT |
+| [legion-mcp](https://github.com/wearethelegion/legion-mcp) | MCP server for IDE integration | MIT |
+| [legion-docs](https://github.com/wearethelegion/legion-docs) | Documentation and website | MIT |
+| [legion-server](https://github.com/wearethelegion/legion-server) | Backend intelligence layer | BSL |
+
 ## License
 
 MIT — see [LICENSE](./LICENSE)
