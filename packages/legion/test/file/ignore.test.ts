@@ -7,4 +7,6 @@ test("match nested and non-nested", () => {
   expect(FileIgnore.match("node_modules/")).toBe(true)
   expect(FileIgnore.match("node_modules/bar")).toBe(true)
   expect(FileIgnore.match("node_modules/bar/")).toBe(true)
+  expect(FileIgnore.match("node_modules\\bar\\index.js")).toBe(true)
+  expect(FileIgnore.match("out\\renderer\\index.js")).toBe(true)
 })

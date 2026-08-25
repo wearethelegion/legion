@@ -14,6 +14,7 @@ import { companyId as getCompanyId, projectId as getProjectId } from "./legion/i
 import { IpcServer } from "../legion/ipc/server"
 import type { StatusEvent } from "../legion/ipc/protocol"
 import { DelegationTracker } from "../legion/delegation"
+import { delegationProcessOptions } from "./delegation-process"
 // import { Config } from "../config/config"
 import DESCRIPTION from "./delegate.txt"
 
@@ -219,7 +220,7 @@ export const DelegateTool = Tool.define("delegate", async () => {
       const proc = spawn(cmd[0], cmd.slice(1), {
         cwd: packageDir(),
         stdio: ["ignore", "ignore", stderrFd],
-        detached: process.platform !== "win32",
+        ...delegationProcessOptions(),
         env: { ...process.env },
       })
 

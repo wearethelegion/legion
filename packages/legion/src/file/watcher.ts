@@ -14,6 +14,7 @@ import type ParcelWatcher from "@parcel/watcher"
 import { $ } from "bun"
 import { Flag } from "@/flag/flag"
 import { readdir } from "fs/promises"
+import { shouldPublishWatcherPath } from "./watcher-filter"
 
 const SUBSCRIBE_TIMEOUT_MS = 10_000
 
@@ -63,23 +64,33 @@ export namespace FileWatcher {
       const w = watcher()
       if (!w) return {}
 
-      const subscribe: ParcelWatcher.SubscribeCallback = (err, evts) => {
-        if (err) return
-        for (const evt of evts) {
-          if (evt.type === "create") Bus.publish(Event.Updated, { file: evt.path, event: "add" })
-          if (evt.type === "update") Bus.publish(Event.Updated, { file: evt.path, event: "change" })
-          if (evt.type === "delete") Bus.publish(Event.Updated, { file: evt.path, event: "unlink" })
-        }
-      }
-
       const subs: ParcelWatcher.AsyncSubscription[] = []
       const cfgIgnores = cfg.watcher?.ignore ?? []
 
+      const subscribe = (directory: string, ignore: string[], git = false) => {
+        const callback: ParcelWatcher.SubscribeCallback = (err, evts) => {
+          if (err) return
+          for (const evt of evts) {
+            if (
+              !shouldPublishWatcherPath({
+                directory,
+                file: evt.path,
+                git,
+                configuredIgnores: cfgIgnores,
+              })
+            ) {
+              continue
+            }
+            if (evt.type === "create") Bus.publish(Event.Updated, { file: evt.path, event: "add" })
+            if (evt.type === "update") Bus.publish(Event.Updated, { file: evt.path, event: "change" })
+            if (evt.type === "delete") Bus.publish(Event.Updated, { file: evt.path, event: "unlink" })
+          }
+        }
+        return w.subscribe(directory, callback, { ignore, backend })
+      }
+
       if (Flag.LEGION_EXPERIMENTAL_FILEWATCHER) {
-        const pending = w.subscribe(Instance.directory, subscribe, {
-          ignore: [...FileIgnore.PATTERNS, ...cfgIgnores],
-          backend,
-        })
+        const pending = subscribe(Instance.directory, [...FileIgnore.PATTERNS, ...cfgIgnores])
         const sub = await withTimeout(pending, SUBSCRIBE_TIMEOUT_MS).catch((err) => {
           log.error("failed to subscribe to Instance.directory", { error: err })
           pending.then((s) => s.unsubscribe()).catch(() => {})
@@ -98,10 +109,7 @@ export namespace FileWatcher {
       if (vcsDir && !cfgIgnores.includes(".git") && !cfgIgnores.includes(vcsDir)) {
         const gitDirContents = await readdir(vcsDir).catch(() => [])
         const ignoreList = gitDirContents.filter((entry) => entry !== "HEAD")
-        const pending = w.subscribe(vcsDir, subscribe, {
-          ignore: ignoreList,
-          backend,
-        })
+        const pending = subscribe(vcsDir, ignoreList, true)
         const sub = await withTimeout(pending, SUBSCRIBE_TIMEOUT_MS).catch((err) => {
           log.error("failed to subscribe to vcsDir", { error: err })
           pending.then((s) => s.unsubscribe()).catch(() => {})
