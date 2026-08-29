@@ -52,10 +52,19 @@ describe("DelegateCommand", () => {
     expect(demandMatches!.length).toBe(requiredOptions.length)
   })
 
-  test("defines optional options: model, context", async () => {
+  test("defines optional execution and ownership options", async () => {
     const content = await fs.readFile(delegatePath, "utf-8")
 
-    const optionalOptions = ["model", "context"]
+    const optionalOptions = [
+      "model",
+      "context",
+      "run_id",
+      "task_id",
+      "owner_id",
+      "max_turns",
+      "timeout_seconds",
+      "tool_policy",
+    ]
 
     for (const opt of optionalOptions) {
       expect(content).toContain(`"${opt}"`)
@@ -85,6 +94,11 @@ describe("DelegateCommand", () => {
     expect(content).toContain("args.ipc_sock")
     expect(content).toContain("args.model")
     expect(content).toContain("args.context")
+    expect(content).toContain("args.run_id")
+    expect(content).toContain("args.owner_id")
+    expect(content).toContain("args.max_turns")
+    expect(content).toContain("args.tool_policy")
+    expect(content).toContain("args.timeout_seconds")
   })
 
   test("handler calls HeadlessMode.run()", async () => {

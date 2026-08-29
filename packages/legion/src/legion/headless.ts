@@ -18,8 +18,9 @@ import { Provider } from "../provider/provider"
 import { PermissionNext } from "../permission/next"
 import { ExtractionDrain } from "../extraction/drain"
 import { authenticateLegion, getLegionClient } from "./auth"
-// import { bootstrapLegion } from "./bootstrap"
+import { bootstrapLegion } from "./bootstrap"
 import { Log } from "../util/log"
+import { randomUUID } from "crypto"
 
 const log = Log.create({ service: "legion.headless" })
 
@@ -32,15 +33,23 @@ export namespace HeadlessMode {
     projectId: string
     targetPath: string
     companyId: string
+    runId?: string
     taskId?: string
     ipcSock: string
     model?: string
     context?: string
+    ownerId?: string
+    maxTurns?: number
+    timeoutSeconds?: number
+    toolPolicy?: unknown
     // mcpConfig?: string
   }
 
   export async function run(params: Params): Promise<void> {
     const started = Date.now()
+    const ownerId = params.ownerId ?? `pid-${process.pid}`
+    const maxTurns = Math.max(1, params.maxTurns ?? 50)
+    const timeoutSeconds = Math.max(30, params.timeoutSeconds ?? 3600)
     const ipc = await IpcClient.connect(params.ipcSock, params.delegationId)
 
     // Graceful shutdown on signals
@@ -51,6 +60,9 @@ export namespace HeadlessMode {
         legion
           .updateDelegationStatus(params.delegationId, "cancelled", {
             errorMessage: "Process terminated by signal",
+            ownerId,
+            objectiveStatus: "blocked",
+            objectiveDetail: "Process terminated by signal",
           })
           .catch((err) => {
             log.warn("failed to set delegation cancelled on signal", {
@@ -83,27 +95,27 @@ export namespace HeadlessMode {
         process.env.LEGION_PROJECT_ID = params.projectId
         process.env.LEGION_AGENT_ID = params.agentId
         process.env.LEGION_COMPANY_ID = params.companyId
+        if (params.runId) process.env.LEGION_AGENT_RUN_ID = params.runId
 
         // ---------------------------------------------------------------
         // LEGION gRPC: authenticate and create delegation record
         // ---------------------------------------------------------------
         await authenticateLegion()
 
-        // Bootstrap agent identity so getLegionIdentity() returns the correct
-        // persona/system_prompt for this delegated agent (not null).
-        // if (getLegionClient()) {
-        //   await bootstrapLegion({
-        //     agentId: params.agentId,
-        //     companyId: params.companyId,
-        //     projectId: params.projectId,
-        //   }).catch((err) => {
-        //     log.warn("bootstrapLegion failed in delegation subprocess — agent will run without identity", {
-        //       delegationId: params.delegationId,
-        //       agentId: params.agentId,
-        //       error: err instanceof Error ? err.message : String(err),
-        //     })
-        //   })
-        // }
+        // Never execute a business request under a generic/default persona.
+        // The authenticated identity also supplies the approved project team
+        // and role-specific system prompt used by bounded orchestration.
+        const identity = await bootstrapLegion({
+          agentId: params.agentId,
+          companyId: params.companyId,
+          projectId: params.projectId,
+        })
+        if (!identity) {
+          throw new Error("The assigned LEGION agent identity could not be loaded")
+        }
+        if (identity.raw.agent_id && identity.raw.agent_id !== params.agentId) {
+          throw new Error("The loaded LEGION agent identity does not match the assigned agent")
+        }
 
         if (!getLegionClient()) {
           log.warn(
@@ -120,24 +132,20 @@ export namespace HeadlessMode {
 
 
         if (getLegionClient()) {
-          log.info("setting delegation to running", { delegationId: params.delegationId })
-          getLegionClient()!.updateDelegationStatus(params.delegationId, "running").then(() => {
-            log.info("delegation set to running OK", { delegationId: params.delegationId })
-          }).catch((err) => {
-            log.warn("failed to set delegation running", {
-              delegationId: params.delegationId,
-              error: err instanceof Error ? err.message : String(err),
-            })
+          // Ownership must be established before any lifecycle mutation.
+          // Web-dispatched jobs are already leased to this same owner; the
+          // claim is therefore an idempotent fence check.
+          const claim = await getLegionClient()!.claimDelegation(params.delegationId, ownerId)
+          if (claim.status !== "success" || !claim.claimed) {
+            throw new Error(claim.error_message || "Delegation ownership could not be established")
+          }
+          log.info("setting delegation to running", { delegationId: params.delegationId, ownerId })
+          const running = await getLegionClient()!.updateDelegationStatus(params.delegationId, "running", {
+            ownerId,
           })
-
-          // Claim ownership and start heartbeat so the server knows we're alive
-          const ownerId = `pid-${process.pid}`
-          getLegionClient()!.claimDelegation(params.delegationId, ownerId).catch((err) => {
-            log.warn("failed to claim delegation", {
-              delegationId: params.delegationId,
-              error: err instanceof Error ? err.message : String(err),
-            })
-          })
+          if (running.status !== "success") {
+            throw new Error(running.error_message || "Delegation could not transition to running")
+          }
           heartbeatInterval = setInterval(() => {
             getLegionClient()?.updateHeartbeat(params.delegationId, ownerId).catch((err) => {
               log.warn("heartbeat failed", {
@@ -201,9 +209,43 @@ export namespace HeadlessMode {
 
         ipc?.emitStatus("initializing")
 
-        // Delegations run autonomously — allow everything except interactive prompts
+        const rawPolicy = params.toolPolicy as
+          | { rules?: unknown; allow?: unknown; deny?: unknown }
+          | unknown[]
+          | undefined
+        const explicitRules = Array.isArray(rawPolicy)
+          ? rawPolicy
+          : Array.isArray(rawPolicy?.rules)
+            ? rawPolicy.rules
+            : []
+        const configuredRules: PermissionNext.Ruleset = explicitRules
+          .filter(
+            (rule): rule is PermissionNext.Rule =>
+              !!rule &&
+              typeof rule === "object" &&
+              typeof (rule as PermissionNext.Rule).permission === "string" &&
+              typeof (rule as PermissionNext.Rule).pattern === "string" &&
+              ["allow", "deny", "ask"].includes((rule as PermissionNext.Rule).action),
+          )
+          .map((rule) => ({ ...rule }))
+        if (!Array.isArray(rawPolicy)) {
+          for (const permission of Array.isArray(rawPolicy?.allow) ? rawPolicy.allow : []) {
+            if (typeof permission === "string") {
+              configuredRules.push({ permission, pattern: "*", action: "allow" })
+            }
+          }
+          for (const permission of Array.isArray(rawPolicy?.deny) ? rawPolicy.deny : []) {
+            if (typeof permission === "string") {
+              configuredRules.push({ permission, pattern: "*", action: "deny" })
+            }
+          }
+        }
+
+        // Later rules win. Organisation policy therefore constrains the
+        // autonomous default, while interactive prompts remain impossible.
         const rules: PermissionNext.Ruleset = [
           { permission: "*", action: "allow", pattern: "*" },
+          ...configuredRules,
           { permission: "question", action: "deny", pattern: "*" },
           { permission: "plan_enter", action: "deny", pattern: "*" },
           { permission: "plan_exit", action: "deny", pattern: "*" },
@@ -216,10 +258,57 @@ export namespace HeadlessMode {
         const sessionID = session.data?.id
         if (!sessionID) throw new Error("Failed to create session")
 
+        let auditChain = Promise.resolve()
+        const audit = (
+          eventType: string,
+          payload: Record<string, unknown> = {},
+          toolCallId?: string,
+        ) => {
+          const legion = getLegionClient()
+          if (!legion) return auditChain
+          auditChain = auditChain
+            .then(async () => {
+              const response = await legion.appendDelegationEvent(params.delegationId, ownerId, {
+                id: randomUUID(),
+                delegation_id: params.delegationId,
+                event_type: eventType,
+                occurred_at: new Date().toISOString(),
+                source: "legion-desktop",
+                runtime: "legion-cli",
+                run_id: params.runId,
+                session_id: sessionID,
+                tool_call_id: toolCallId,
+                payload_json: JSON.stringify(payload),
+                schema_version: 1,
+              })
+              if (response.status !== "success") {
+                log.warn("audit event rejected", {
+                  delegationId: params.delegationId,
+                  eventType,
+                  error: response.error_message || response.error_code,
+                })
+              }
+            })
+            .catch((eventError) => {
+              log.warn("audit event write failed", {
+                delegationId: params.delegationId,
+                eventType,
+                error: eventError instanceof Error ? eventError.message : String(eventError),
+              })
+            })
+          return auditChain
+        }
+        void audit("run.started", { agent_id: params.agentId })
+
         // Build message: inject LEGION context so the delegated agent knows its engagement
         const legionContext = [
           `Your LEGION engagement_id is: ${params.engagementId}`,
           `Use this engagement_id in all addEntry, remember, and LEGION tool calls that require it.`,
+          ...(params.runId && Number(process.env.LEGION_DELEGATION_DEPTH || "1") === 0
+            ? [
+                "You are the accountable team lead for this run. Delegate only when a listed specialist materially improves the outcome, wait for every child delegation to finish, inspect its result, and incorporate verified evidence before completing the parent request.",
+              ]
+            : []),
         ].join(". ")
 
         const message = params.context
@@ -233,6 +322,7 @@ export namespace HeadlessMode {
         const events = await sdk.event.subscribe()
         let error: string | undefined
         let turns = 0
+        let lastAssistantText = ""
         const toolsUsed = new Set<string>()
         let totalCost = 0
         let totalInputTokens = 0
@@ -273,6 +363,7 @@ export namespace HeadlessMode {
               if (part.type === "tool" && part.state.status === "running") {
                 toolTimers.set(part.callID, part.state.time.start)
                 ipc?.emitToolStart(part.tool, part.state.input as Record<string, unknown>)
+                void audit("tool.started", { tool: part.tool }, part.callID)
               }
 
               // tool_end — when tool completes successfully
@@ -282,16 +373,26 @@ export namespace HeadlessMode {
                 const duration = part.state.time.end - startTime
                 const preview = part.state.output?.slice(0, 500)
                 ipc?.emitToolEnd(part.tool, duration, true, preview)
+                void audit(
+                  "tool.completed",
+                  { tool: part.tool, duration_ms: duration, step: stepCount + 1 },
+                  part.callID,
+                )
                 toolTimers.delete(part.callID)
                 stepCount++
                 if (getLegionClient()) {
                   getLegionClient()!
-                    .updateDelegationProgress(params.delegationId, `Tool: ${part.tool}`, {
-                      step: stepCount,
-                      tool: part.tool,
-                      input_summary: JSON.stringify(part.state.input).slice(0, 200),
-                      timestamp: new Date().toISOString(),
-                    })
+                    .updateDelegationProgress(
+                      params.delegationId,
+                      `Tool: ${part.tool}`,
+                      {
+                        step: stepCount,
+                        tool: part.tool,
+                        input_summary: JSON.stringify(part.state.input).slice(0, 200),
+                        timestamp: new Date().toISOString(),
+                      },
+                      ownerId,
+                    )
                     .catch((err) => {
                       log.warn("failed to update delegation progress", {
                         delegationId: params.delegationId,
@@ -310,11 +411,17 @@ export namespace HeadlessMode {
                 const duration = part.state.time.end - startTime
                 ipc?.emitToolEnd(part.tool, duration, false, part.state.error)
                 ipc?.emitError(`Tool ${part.tool} failed: ${part.state.error}`, true, "tool")
+                void audit(
+                  "tool.failed",
+                  { tool: part.tool, duration_ms: duration, error: part.state.error },
+                  part.callID,
+                )
                 toolTimers.delete(part.callID)
               }
 
               // turn — when assistant text completes
               if (part.type === "text" && part.time?.end) {
+                lastAssistantText = part.text.trim() || lastAssistantText
                 turns++
                 ipc?.emitTurn({
                   turn: turns,
@@ -322,6 +429,11 @@ export namespace HeadlessMode {
                   contentPreview: part.text.slice(0, 500),
                   toolCallCount: toolsUsed.size,
                 })
+                void audit("turn.completed", { turn: turns, tool_count: toolsUsed.size })
+                if (turns >= maxTurns) {
+                  error = `Execution stopped after reaching the ${maxTurns}-turn policy limit`
+                  await sdk.session.abort({ sessionID }).catch(() => {})
+                }
               }
 
               // tokens + cost — when a step finishes
@@ -345,6 +457,25 @@ export namespace HeadlessMode {
               // action — when a new LLM step starts
               if (part.type === "step-start") {
                 ipc?.emitAction("LLM step started")
+              }
+            }
+
+            if (event.type === "message.updated") {
+              const info = event.properties.info
+              if (
+                info.sessionID === sessionID &&
+                info.role === "assistant" &&
+                info.providerID &&
+                info.modelID
+              ) {
+                getLegionClient()
+                  ?.recordDelegationModel(
+                    params.delegationId,
+                    info.providerID,
+                    info.modelID,
+                    ownerId,
+                  )
+                  .catch(() => {})
               }
             }
 
@@ -383,13 +514,25 @@ export namespace HeadlessMode {
           error = e instanceof Error ? e.message : String(e)
         })
 
-        await sdk.session.prompt({
-          sessionID,
-          model,
-          parts: [{ type: "text", text: message }],
-        })
+        const timeoutTimer = setTimeout(() => {
+          error = `Execution timed out after ${timeoutSeconds} seconds`
+          sdk.session.abort({ sessionID }).catch(() => {})
+        }, timeoutSeconds * 1000)
 
-        await loopDone
+        try {
+          await sdk.session.prompt({
+            sessionID,
+            model,
+            parts: [{ type: "text", text: message }],
+          })
+          await loopDone
+        } catch (promptError) {
+          error = error || (promptError instanceof Error ? promptError.message : String(promptError))
+          await sdk.session.abort({ sessionID }).catch(() => {})
+          await loopDone
+        } finally {
+          clearTimeout(timeoutTimer)
+        }
 
         // Flush extraction drain and emit final result via IPC
         await ExtractionDrain.stop().catch(() => {})
@@ -406,6 +549,12 @@ export namespace HeadlessMode {
         })
 
         if (error) {
+          await audit("run.failed", {
+            turns,
+            tool_count: tools.length,
+            cost_usd: totalCost,
+            duration_ms: duration,
+          })
           ipc?.emitStatus("failed", error)
           ipc?.emitResult({ summary: error, toolsUsed: tools, turns, costUsd: totalCost, durationMs: duration })
           if (getLegionClient()) {
@@ -417,6 +566,9 @@ export namespace HeadlessMode {
                 turns,
                 costUsd: totalCost,
                 errorMessage: error,
+                ownerId,
+                objectiveStatus: "blocked",
+                objectiveDetail: error,
               })
               log.info("delegation status updated to failed", {
                 delegationId: params.delegationId,
@@ -431,7 +583,15 @@ export namespace HeadlessMode {
           }
           process.exitCode = 1
         } else {
-          const summary = `Completed in ${turns} turn(s), ${tools.length} tool(s) used, ${(duration / 1000).toFixed(1)}s`
+          const summary =
+            lastAssistantText.slice(0, 50_000) ||
+            `Completed in ${turns} turn(s), ${tools.length} tool(s) used, ${(duration / 1000).toFixed(1)}s`
+          await audit("run.completed", {
+            turns,
+            tool_count: tools.length,
+            cost_usd: totalCost,
+            duration_ms: duration,
+          })
           ipc?.emitStatus("completed")
           ipc?.emitResult({ summary, toolsUsed: tools, turns, costUsd: totalCost, durationMs: duration })
           if (getLegionClient()) {
@@ -442,6 +602,9 @@ export namespace HeadlessMode {
                 toolsUsed: tools,
                 turns,
                 costUsd: totalCost,
+                ownerId,
+                objectiveStatus: "succeeded",
+                objectiveDetail: summary,
               })
               log.info("delegation status updated to completed", {
                 delegationId: params.delegationId,
@@ -465,6 +628,9 @@ export namespace HeadlessMode {
         await legion
           .updateDelegationStatus(params.delegationId, "failed", {
             errorMessage: msg,
+            ownerId,
+            objectiveStatus: "blocked",
+            objectiveDetail: msg,
           })
           .catch((statusErr) => {
             log.error("failed to set delegation status to failed (outer catch)", {

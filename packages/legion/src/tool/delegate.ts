@@ -132,6 +132,7 @@ export const DelegateTool = Tool.define("delegate", async () => {
             taskId: params.task_id,
             context: params.context,
             engagementId: params.engagement_id,
+            parentDelegationId: process.env.LEGION_DELEGATION_ID || undefined,
           })
           if (resp.delegation_id) {
             serverDelegationId = resp.delegation_id
@@ -166,6 +167,8 @@ export const DelegateTool = Tool.define("delegate", async () => {
       ]
 
       if (params.task_id) args.push("--task_id", params.task_id)
+      const agentRunId = process.env.LEGION_AGENT_RUN_ID
+      if (agentRunId) args.push("--run_id", agentRunId)
       if (params.model) args.push("--model", params.model)
       if (params.context) args.push("--context", params.context)
       // if (mcpConfigJson) args.push("--mcp_config", mcpConfigJson)
@@ -221,7 +224,18 @@ export const DelegateTool = Tool.define("delegate", async () => {
         cwd: packageDir(),
         stdio: ["ignore", "ignore", stderrFd],
         ...delegationProcessOptions(),
-        env: { ...process.env },
+        env: {
+          ...process.env,
+          LEGION_DELEGATION_ID: serverDelegationId,
+          LEGION_ENGAGEMENT_ID: params.engagement_id,
+          LEGION_PROJECT_ID: delegationProjectId,
+          LEGION_COMPANY_ID: delegationCompanyId,
+          LEGION_AGENT_ID: params.agent_id,
+          ...(agentRunId ? { LEGION_AGENT_RUN_ID: agentRunId } : {}),
+          LEGION_DELEGATION_DEPTH: String(
+            Number(process.env.LEGION_DELEGATION_DEPTH || "0") + 1,
+          ),
+        },
       })
 
       // Detach child so parent can exit independently

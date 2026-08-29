@@ -947,6 +947,8 @@ export interface CreateDelegationRequest {
   task_id?: string
   task_description: string
   context?: string
+  engagement_id?: string
+  parent_delegation_id?: string
 }
 
 export interface CreateDelegationResponse {
@@ -984,6 +986,10 @@ export interface DelegationStatusResponse {
   updated_at: string
   error_message: string
   error_code: string
+  llm_provider: string
+  llm_model: string
+  objective_status: string
+  objective_detail: string
 }
 
 export interface GetDelegationResultRequest {
@@ -1006,6 +1012,10 @@ export interface DelegationResultResponse {
   completed_at: string
   error_message: string
   error_code: string
+  llm_provider: string
+  llm_model: string
+  objective_status: string
+  objective_detail: string
 }
 
 export interface ListDelegationsRequest {
@@ -1015,6 +1025,7 @@ export interface ListDelegationsRequest {
   status_filter?: string
   limit?: number
   offset?: number
+  engagement_id?: string
 }
 
 export interface DelegationInfo {
@@ -1026,6 +1037,8 @@ export interface DelegationInfo {
   steps_completed: number
   created_at: string
   updated_at: string
+  llm_provider: string
+  llm_model: string
 }
 
 export interface ListDelegationsResponse {
@@ -1603,12 +1616,15 @@ export interface DelegationStatusBrief {
   step_description: string
   error_message: string
   error_code: string
+  objective_status: string
+  objective_detail: string
 }
 
 export interface UpdateProgressRequest {
   delegation_id: string
   current_action: string
   step: ProgressStep
+  owner_id: string
 }
 
 export interface UpdateProgressResponse {
@@ -1626,11 +1642,21 @@ export interface UpdateStatusRequest {
   turns?: number
   cost_usd?: number
   error_message?: string
+  owner_id: string
+  objective_status?: string
+  objective_detail?: string
 }
 
 export interface UpdateStatusResponse {
   status: string
   delegation_status: string
+  updated_at: string
+  error_message: string
+  error_code: string
+}
+
+export interface RecordDelegationModelResponse {
+  status: string
   updated_at: string
   error_message: string
   error_code: string
@@ -1668,6 +1694,65 @@ export interface UpdateHeartbeatRequest {
 export interface UpdateHeartbeatResponse {
   status: string
   success: boolean
+  error_message: string
+  error_code: string
+}
+
+export interface DelegationJob {
+  delegation_id: string
+  run_id: string
+  company_id: string
+  project_id: string
+  engagement_id: string
+  task_id: string
+  agent_id: string
+  task: string
+  context: string
+  runtime: string
+  provider: string
+  model: string
+  max_turns: number
+  timeout_seconds: number
+  execution_snapshot_json: string
+}
+
+export interface ClaimPendingDelegationResponse {
+  status: string
+  claimed: boolean
+  job?: DelegationJob
+  error_message: string
+  error_code: string
+}
+
+export interface DelegationExecutionEvent {
+  id: string
+  delegation_id?: string
+  sequence?: number
+  event_type: string
+  occurred_at: string
+  source: string
+  runtime?: string
+  run_id?: string
+  parent_run_id?: string
+  session_id?: string
+  tool_call_id?: string
+  payload_json: string
+  schema_version?: number
+  created_at?: string
+}
+
+export interface AppendDelegationEventResponse {
+  status: string
+  event?: DelegationExecutionEvent
+  error_message: string
+  error_code: string
+}
+
+export interface ListDelegationEventsResponse {
+  status: string
+  events: DelegationExecutionEvent[]
+  next_sequence: number
+  has_more: boolean
   error_message: string
   error_code: string
 }

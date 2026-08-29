@@ -92,6 +92,11 @@ import type {
   MarkInterruptedResponse,
   ClaimDelegationResponse,
   UpdateHeartbeatResponse,
+  ClaimPendingDelegationResponse,
+  RecordDelegationModelResponse,
+  AppendDelegationEventResponse,
+  ListDelegationEventsResponse,
+  DelegationExecutionEvent,
   ProgressStep,
   StoreExtractionResponse,
   RecallContextResponse,
@@ -1434,6 +1439,7 @@ export class LegionClient {
     taskId?: string
     context?: string
     engagementId?: string
+    parentDelegationId?: string
   }): Promise<CreateDelegationResponse> {
     return this.callWithAuth(this.delegationClient, "CreateDelegation", {
       company_id: opts.companyId,
@@ -1443,6 +1449,7 @@ export class LegionClient {
       task_id: opts.taskId ?? "",
       context: opts.context ?? "",
       engagement_id: opts.engagementId ?? "",
+      parent_delegation_id: opts.parentDelegationId ?? "",
     })
   }
 
@@ -1474,6 +1481,7 @@ export class LegionClient {
     statusFilter?: string
     limit?: number
     offset?: number
+    engagementId?: string
   }): Promise<ListDelegationsResponse> {
     return this.callWithAuth(this.delegationClient, "ListDelegations", {
       project_id: opts?.projectId ?? "",
@@ -1481,27 +1489,32 @@ export class LegionClient {
       status_filter: opts?.statusFilter ?? "",
       limit: opts?.limit ?? 20,
       offset: opts?.offset ?? 0,
+      engagement_id: opts?.engagementId ?? "",
     })
   }
 
   // -------------------------------------------------------------------------
-  // Internal Delegation RPCs (no user_token)
+  // Delegation worker RPCs. These still carry the signed-in user's auth
+  // metadata; owner_id is an additional lease fence, not an authentication
+  // mechanism.
   // -------------------------------------------------------------------------
 
-  /** Update delegation progress (internal server RPC, no user_token). */
+  /** Update delegation progress for the current authenticated worker lease. */
   async updateDelegationProgress(
     delegationId: string,
     currentAction: string,
     step: ProgressStep,
+    ownerId: string,
   ): Promise<UpdateProgressResponse> {
-    return callUnary(this.delegationClient, "UpdateDelegationProgress", {
+    return this.callWithAuth(this.delegationClient, "UpdateDelegationProgress", {
       delegation_id: delegationId,
       current_action: currentAction,
       step,
+      owner_id: ownerId,
     })
   }
 
-  /** Update delegation status with row-level locking (internal server RPC, no user_token). */
+  /** Update delegation status with row-level locking and authenticated ownership. */
   async updateDelegationStatus(
     delegationId: string,
     newStatus: string,
@@ -1511,9 +1524,12 @@ export class LegionClient {
       turns?: number
       costUsd?: number
       errorMessage?: string
+      ownerId?: string
+      objectiveStatus?: "succeeded" | "partial" | "blocked"
+      objectiveDetail?: string
     },
   ): Promise<UpdateStatusResponse> {
-    return callUnary(this.delegationClient, "UpdateDelegationStatus", {
+    return this.callWithAuth(this.delegationClient, "UpdateDelegationStatus", {
       delegation_id: delegationId,
       new_status: newStatus,
       result_summary: opts?.resultSummary ?? "",
@@ -1521,30 +1537,89 @@ export class LegionClient {
       turns: opts?.turns ?? 0,
       cost_usd: opts?.costUsd ?? 0,
       error_message: opts?.errorMessage ?? "",
+      owner_id: opts?.ownerId ?? "",
+      objective_status: opts?.objectiveStatus ?? "",
+      objective_detail: opts?.objectiveDetail ?? "",
     })
   }
 
-  /** Mark orphaned delegations as interrupted (internal server RPC, no user_token). */
+  /** Persist the exact model selected by the worker runtime. */
+  async recordDelegationModel(
+    delegationId: string,
+    provider: string,
+    model: string,
+    ownerId: string,
+  ): Promise<RecordDelegationModelResponse> {
+    return this.callWithAuth(this.delegationClient, "RecordDelegationModel", {
+      delegation_id: delegationId,
+      llm_provider: provider,
+      llm_model: model,
+      owner_id: ownerId,
+    })
+  }
+
+  /** Mark orphaned delegations as interrupted. */
   async markInterrupted(opts?: { companyId?: string; ownerId?: string }): Promise<MarkInterruptedResponse> {
-    return callUnary(this.delegationClient, "MarkInterrupted", {
+    return this.callWithAuth(this.delegationClient, "MarkInterrupted", {
       company_id: opts?.companyId ?? "",
       owner_id: opts?.ownerId ?? "",
     })
   }
 
-  /** Claim ownership of a delegation (internal server RPC, no user_token). */
+  /** Claim ownership of a delegation as the authenticated runner. */
   async claimDelegation(delegationId: string, ownerId: string): Promise<ClaimDelegationResponse> {
-    return callUnary(this.delegationClient, "ClaimDelegation", {
+    return this.callWithAuth(this.delegationClient, "ClaimDelegation", {
       delegation_id: delegationId,
       owner_id: ownerId,
     })
   }
 
-  /** Update heartbeat timestamp (internal server RPC, no user_token). */
+  /** Update heartbeat timestamp for the authenticated runner lease. */
   async updateHeartbeat(delegationId: string, ownerId: string): Promise<UpdateHeartbeatResponse> {
-    return callUnary(this.delegationClient, "UpdateHeartbeat", {
+    return this.callWithAuth(this.delegationClient, "UpdateHeartbeat", {
       delegation_id: delegationId,
       owner_id: ownerId,
+    })
+  }
+
+  /** Atomically lease the next web-created delegation for this runner. */
+  async claimPendingDelegation(opts: {
+    projectId: string
+    ownerId: string
+    runtimes?: string[]
+    providers?: string[]
+  }): Promise<ClaimPendingDelegationResponse> {
+    return this.callWithAuth(this.delegationClient, "ClaimPendingDelegation", {
+      project_id: opts.projectId,
+      owner_id: opts.ownerId,
+      runtimes: opts.runtimes ?? ["legion-cli"],
+      providers: opts.providers ?? [],
+    })
+  }
+
+  /** Append one idempotent, redacted execution event to the durable audit stream. */
+  async appendDelegationEvent(
+    delegationId: string,
+    ownerId: string,
+    event: DelegationExecutionEvent,
+  ): Promise<AppendDelegationEventResponse> {
+    return this.callWithAuth(this.delegationClient, "AppendDelegationEvent", {
+      delegation_id: delegationId,
+      owner_id: ownerId,
+      event,
+    })
+  }
+
+  /** Replay durable execution events after a previously observed sequence. */
+  async listDelegationEvents(
+    delegationId: string,
+    afterSequence = 0,
+    limit = 200,
+  ): Promise<ListDelegationEventsResponse> {
+    return this.callWithAuth(this.delegationClient, "ListDelegationEvents", {
+      delegation_id: delegationId,
+      after_sequence: afterSequence,
+      limit,
     })
   }
 

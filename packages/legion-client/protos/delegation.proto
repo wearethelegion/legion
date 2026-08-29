@@ -23,6 +23,8 @@ service DelegationService {
   // Update delegation status with row-level locking
   rpc UpdateDelegationStatus(UpdateStatusRequest) returns (UpdateStatusResponse);
 
+  rpc RecordDelegationModel(RecordDelegationModelRequest) returns (RecordDelegationModelResponse);
+
   // Mark orphaned delegations as interrupted (called on server startup)
   // Uses heartbeat-based detection instead of marking all running as interrupted
   rpc MarkInterrupted(MarkInterruptedRequest) returns (MarkInterruptedResponse);
@@ -35,6 +37,15 @@ service DelegationService {
 
   // Update heartbeat timestamp (called periodically during execution)
   rpc UpdateHeartbeat(UpdateHeartbeatRequest) returns (UpdateHeartbeatResponse);
+
+  // Atomically lease the next web-created job for an authenticated runner.
+  rpc ClaimPendingDelegation(ClaimPendingDelegationRequest) returns (ClaimPendingDelegationResponse);
+
+  // Append one durable, owner-fenced execution event.
+  rpc AppendDelegationEvent(AppendDelegationEventRequest) returns (AppendDelegationEventResponse);
+
+  // Replay execution events in stable per-delegation sequence order.
+  rpc ListDelegationEvents(ListDelegationEventsRequest) returns (ListDelegationEventsResponse);
 }
 
 // Create Delegation
@@ -47,6 +58,7 @@ message CreateDelegationRequest {
   string task_description = 6;  // The actual task to perform
   string context = 7;           // Optional context
   string engagement_id = 8;     // Optional link to engagement
+  string parent_delegation_id = 9; // Optional bounded team hierarchy parent
 }
 
 message CreateDelegationResponse {
@@ -85,6 +97,10 @@ message DelegationStatus {
   string updated_at = 10;
   string error_message = 11;
   string error_code = 12;
+  string llm_provider = 13;
+  string llm_model = 14;
+  string objective_status = 15; // succeeded, partial, blocked (terminal rows only)
+  string objective_detail = 16; // Worker-provided evidence/blocker summary
 }
 
 // Brief status for MCP polling (minimal response)
@@ -95,6 +111,8 @@ message DelegationStatusBrief {
   string step_description = 4;    // From latest progress_log entry input_summary
   string error_message = 5;
   string error_code = 6;
+  string objective_status = 7;
+  string objective_detail = 8;
 }
 
 // Get Result
@@ -118,6 +136,10 @@ message DelegationResult {
   string completed_at = 12;
   string error_message = 13;
   string error_code = 14;
+  string llm_provider = 15;
+  string llm_model = 16;
+  string objective_status = 17;
+  string objective_detail = 18;
 }
 
 // Update Progress (called during async execution)
@@ -125,6 +147,7 @@ message UpdateProgressRequest {
   string delegation_id = 1;
   string current_action = 2;    // Current tool being executed
   ProgressStep step = 3;        // New step to add to progress log
+  string owner_id = 4;          // Claimed worker process; required for mutation
 }
 
 message UpdateProgressResponse {
@@ -143,6 +166,9 @@ message UpdateStatusRequest {
   int32 turns = 5;
   double cost_usd = 6;
   string error_message = 7;     // Optional, for failure
+  string owner_id = 8;          // Claimed worker process; required for mutation
+  string objective_status = 9;
+  string objective_detail = 10;
 }
 
 message UpdateStatusResponse {
@@ -151,6 +177,21 @@ message UpdateStatusResponse {
   string updated_at = 3;
   string error_message = 4;
   string error_code = 5;
+}
+
+message RecordDelegationModelRequest {
+  string delegation_id = 1;
+  string llm_provider = 2;
+  string llm_model = 3;
+  string user_token = 4;
+  string owner_id = 5;
+}
+
+message RecordDelegationModelResponse {
+  string status = 1;
+  string updated_at = 2;
+  string error_message = 3;
+  string error_code = 4;
 }
 
 // Mark Interrupted (server startup cleanup)
@@ -193,6 +234,88 @@ message UpdateHeartbeatResponse {
   string error_code = 4;
 }
 
+message ClaimPendingDelegationRequest {
+  string user_token = 1;
+  string project_id = 2;
+  string owner_id = 3;
+  repeated string runtimes = 4;
+  repeated string providers = 5;
+}
+
+message DelegationJob {
+  string delegation_id = 1;
+  string run_id = 2;
+  string company_id = 3;
+  string project_id = 4;
+  string engagement_id = 5;
+  string task_id = 6;
+  string agent_id = 7;
+  string task = 8;
+  string context = 9;
+  string runtime = 10;
+  string provider = 11;
+  string model = 12;
+  int32 max_turns = 13;
+  int32 timeout_seconds = 14;
+  string execution_snapshot_json = 15;
+}
+
+message ClaimPendingDelegationResponse {
+  string status = 1;
+  bool claimed = 2;
+  DelegationJob job = 3;
+  string error_message = 4;
+  string error_code = 5;
+}
+
+// Canonical execution telemetry envelope. Payload contents are redacted and
+// size-bounded by the server before persistence.
+message DelegationExecutionEvent {
+  string id = 1;
+  string delegation_id = 2;
+  int64 sequence = 3;
+  string event_type = 4;
+  string occurred_at = 5;
+  string source = 6;
+  string runtime = 7;
+  string run_id = 8;
+  string parent_run_id = 9;
+  string session_id = 10;
+  string tool_call_id = 11;
+  string payload_json = 12;
+  int32 schema_version = 13;
+  string created_at = 14;
+}
+
+message AppendDelegationEventRequest {
+  string delegation_id = 1;
+  string owner_id = 2;
+  DelegationExecutionEvent event = 3;
+}
+
+message AppendDelegationEventResponse {
+  string status = 1;
+  DelegationExecutionEvent event = 2;
+  string error_message = 3;
+  string error_code = 4;
+}
+
+message ListDelegationEventsRequest {
+  string user_token = 1;
+  string delegation_id = 2;
+  int64 after_sequence = 3;
+  int32 limit = 4;
+}
+
+message ListDelegationEventsResponse {
+  string status = 1;
+  repeated DelegationExecutionEvent events = 2;
+  int64 next_sequence = 3;
+  bool has_more = 4;
+  string error_message = 5;
+  string error_code = 6;
+}
+
 // List Delegations
 message ListDelegationsRequest {
   string user_token = 1;
@@ -201,6 +324,7 @@ message ListDelegationsRequest {
   string status_filter = 4;     // Optional filter by status
   int32 limit = 5;              // Default 20
   int32 offset = 6;             // Pagination offset
+  string engagement_id = 7;     // Optional filter by linked engagement
 }
 
 message DelegationInfo {
@@ -212,6 +336,8 @@ message DelegationInfo {
   int32 steps_completed = 6;
   string created_at = 7;
   string updated_at = 8;
+  string llm_provider = 9;
+  string llm_model = 10;
 }
 
 message ListDelegationsResponse {

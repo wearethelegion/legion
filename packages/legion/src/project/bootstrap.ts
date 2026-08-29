@@ -58,6 +58,17 @@ export async function InstanceBootstrap() {
       const { ExtractionBuffer, ExtractionDrain } = await import("../extraction")
       ExtractionBuffer.init()
       ExtractionDrain.start()
+
+      const runnerProjectId = process.env.LEGION_PROJECT_ID || cfg.legion.projectId
+      const runnerCompanyId = process.env.LEGION_COMPANY_ID || cfg.legion.companyId
+      if (runnerProjectId && runnerCompanyId) {
+        const { WebDelegationRunner } = await import("../legion/web-runner")
+        WebDelegationRunner.start({
+          companyId: runnerCompanyId,
+          projectId: runnerProjectId,
+          targetPath: Instance.directory,
+        })
+      }
     }
   }
   Share.init()

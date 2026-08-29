@@ -178,9 +178,19 @@ export const rpc = {
         error: err instanceof Error ? err.message : String(err),
       })
     }
+    const { WebDelegationRunner } = await import("@/legion/web-runner")
+    let targetPath: string | undefined
+    try {
+      targetPath = Instance.directory
+    } catch {
+      targetPath = process.cwd()
+    }
+    WebDelegationRunner.start({ ...input, targetPath })
   },
   async shutdown() {
     Log.Default.info("worker shutting down")
+    const { WebDelegationRunner } = await import("@/legion/web-runner")
+    WebDelegationRunner.stop()
     if (eventStream.abort) eventStream.abort.abort()
     await Promise.race([
       Instance.disposeAll(),

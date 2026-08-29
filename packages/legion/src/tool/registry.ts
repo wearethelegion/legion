@@ -30,6 +30,7 @@ import { ApplyPatchTool } from "./apply_patch"
 import { DelegateTool } from "./delegate"
 import { AllLegionTools } from "./legion"
 import { isLegionAvailable } from "../legion/auth"
+import { canUseWorkspaceTeamTool } from "./delegation-policy"
 // import { McpToolSearchTool, McpCallTool } from "../mcp/tool-search"
 
 export namespace ToolRegistry {
@@ -182,7 +183,13 @@ export namespace ToolRegistry {
       items
         .filter((t) => {
           // Delegation subprocesses: exclude orchestration-only tools
-          if (isDelegation && DELEGATION_EXCLUDED.has(t.id)) return false
+          if (
+            isDelegation &&
+            DELEGATION_EXCLUDED.has(t.id) &&
+            !canUseWorkspaceTeamTool(t.id)
+          ) {
+            return false
+          }
 
           // Enable websearch/codesearch for zen users OR via enable flag
           if (t.id === "codesearch" || t.id === "websearch") {

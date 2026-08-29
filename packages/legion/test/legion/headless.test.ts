@@ -31,9 +31,13 @@ describe("HeadlessMode", () => {
       "projectId: string",
       "targetPath: string",
       "companyId: string",
+      "runId?: string",
       "ipcSock: string",
       "model?: string",
       "context?: string",
+      "ownerId?: string",
+      "maxTurns?: number",
+      "timeoutSeconds?: number",
       // "mcpConfig?: string",
     ]
 
@@ -83,6 +87,23 @@ describe("HeadlessMode", () => {
     expect(content).toContain("LEGION_ENGAGEMENT_ID")
     expect(content).toContain("LEGION_DELEGATION_ID")
     expect(content).toContain("LEGION_PROJECT_ID")
+  })
+
+  test("claims ownership before running and records the exact runtime model", async () => {
+    const content = await fs.readFile(headlessPath, "utf-8")
+    const claim = content.indexOf("claimDelegation(")
+    const running = content.indexOf('updateDelegationStatus(params.delegationId, "running"')
+    expect(claim).toBeGreaterThan(0)
+    expect(running).toBeGreaterThan(claim)
+    expect(content).toContain("recordDelegationModel(")
+    expect(content).toContain("await bootstrapLegion({")
+    expect(content).toContain("identity.raw.agent_id !== params.agentId")
+    expect(content).toContain("appendDelegationEvent(")
+    expect(content).toContain('"tool.completed"')
+    expect(content).toContain("params.maxTurns")
+    expect(content).toContain("params.timeoutSeconds")
+    expect(content).toContain("...configuredRules")
+    expect(content).toContain("lastAssistantText.slice(0, 50_000)")
   })
 
   test("denies interactive permissions (question, plan_enter, plan_exit)", async () => {
