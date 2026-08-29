@@ -1,4 +1,9 @@
-import type { Hooks, PluginInput, Plugin as PluginInstance } from "@wearethelegion/plugin"
+import type {
+  Hooks,
+  PluginInput,
+  Plugin as PluginInstance,
+  WorkspaceAdapter,
+} from "@wearethelegion/plugin"
 import { Config } from "../config/config"
 import { Bus } from "../bus"
 import { Log } from "../util/log"
@@ -13,13 +18,26 @@ import { NamedError } from "@wearethelegion/util/error"
 import { CopilotAuthPlugin } from "./copilot"
 import { gitlabAuthPlugin as GitlabAuthPlugin } from "@gitlab/opencode-gitlab-auth"
 
+// The GitLab package is compiled against the upstream OpenCode SDK while
+// Legion ships its compatible SDK fork. Keep that type boundary isolated here
+// instead of weakening the plugin contract throughout the application.
+const GitlabAuthPluginAdapter: PluginInstance = async (input) =>
+  (await GitlabAuthPlugin(
+    input as unknown as Parameters<typeof GitlabAuthPlugin>[0],
+  )) as Hooks
+
 export namespace Plugin {
   const log = Log.create({ service: "plugin" })
+  const workspaceAdapters = new Map<string, WorkspaceAdapter>()
 
   const BUILTIN = ["legion-anthropic-auth@0.0.13"]
 
   // Built-in plugins that are directly imported (not installed from npm)
-  const INTERNAL_PLUGINS: PluginInstance[] = [CodexAuthPlugin, CopilotAuthPlugin, GitlabAuthPlugin]
+  const INTERNAL_PLUGINS: PluginInstance[] = [
+    CodexAuthPlugin,
+    CopilotAuthPlugin,
+    GitlabAuthPluginAdapter,
+  ]
 
   const state = Instance.state(async () => {
     const client = createLegionClient({
@@ -35,6 +53,12 @@ export namespace Plugin {
       project: Instance.project,
       worktree: Instance.worktree,
       directory: Instance.directory,
+      experimental_workspace: {
+        register(type, adapter) {
+          workspaceAdapters.set(type, adapter)
+          log.info("registered workspace adapter", { type, name: adapter.name })
+        },
+      },
       serverUrl: Server.url(),
       $: Bun.$,
     }
@@ -113,6 +137,10 @@ export namespace Plugin {
       await fn(input, output)
     }
     return output
+  }
+
+  export function workspaceAdapter(type: string): WorkspaceAdapter | undefined {
+    return workspaceAdapters.get(type)
   }
 
   export async function list() {
