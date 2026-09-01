@@ -15,12 +15,16 @@ import { bootstrap } from "../cli/bootstrap"
 import { Server } from "../server/server"
 import { createLegionClient } from "@wearethelegion/sdk/v2"
 import { Provider } from "../provider/provider"
-import { PermissionNext } from "../permission/next"
 import { ExtractionDrain } from "../extraction/drain"
 import { authenticateLegion, getLegionClient } from "./auth"
 import { bootstrapLegion } from "./bootstrap"
 import { Log } from "../util/log"
 import { randomUUID } from "crypto"
+import {
+  compileToolPolicy,
+  costBudgetExceeded,
+  normalizeCostBudget,
+} from "./execution-guardrails"
 
 const log = Log.create({ service: "legion.headless" })
 
@@ -42,7 +46,7 @@ export namespace HeadlessMode {
     maxTurns?: number
     timeoutSeconds?: number
     toolPolicy?: unknown
-    // mcpConfig?: string
+    costBudgetUsd?: number
   }
 
   export async function run(params: Params): Promise<void> {
@@ -50,6 +54,7 @@ export namespace HeadlessMode {
     const ownerId = params.ownerId ?? `pid-${process.pid}`
     const maxTurns = Math.max(1, params.maxTurns ?? 50)
     const timeoutSeconds = Math.max(30, params.timeoutSeconds ?? 3600)
+    const costBudgetUsd = normalizeCostBudget(params.costBudgetUsd)
     const ipc = await IpcClient.connect(params.ipcSock, params.delegationId)
 
     // Graceful shutdown on signals
@@ -82,12 +87,6 @@ export namespace HeadlessMode {
     process.on("SIGTERM", shutdown)
     process.on("SIGINT", shutdown)
 
-    // Propagate parent MCP config to subprocess BEFORE bootstrap() so Config.state
-    // // can pick it up during its single lazy-init pass.
-    // if (params.mcpConfig) {
-    //   process.env.LEGION_MCP_CONFIG_OVERRIDE = params.mcpConfig
-    // }
-
     try {
       await bootstrap(params.targetPath, async () => {
         process.env.LEGION_ENGAGEMENT_ID = params.engagementId
@@ -96,6 +95,16 @@ export namespace HeadlessMode {
         process.env.LEGION_AGENT_ID = params.agentId
         process.env.LEGION_COMPANY_ID = params.companyId
         if (params.runId) process.env.LEGION_AGENT_RUN_ID = params.runId
+        process.env.LEGION_EXECUTION_ROOT_PATH = params.targetPath
+        process.env.LEGION_EXECUTION_MAX_TURNS = String(maxTurns)
+        process.env.LEGION_EXECUTION_TIMEOUT_SECONDS = String(timeoutSeconds)
+        if (params.model) process.env.LEGION_EXECUTION_MODEL = params.model
+        if (params.toolPolicy !== undefined) {
+          process.env.LEGION_EXECUTION_TOOL_POLICY = JSON.stringify(params.toolPolicy)
+        }
+        if (costBudgetUsd !== undefined) {
+          process.env.LEGION_EXECUTION_COST_BUDGET_USD = String(costBudgetUsd)
+        }
 
         // ---------------------------------------------------------------
         // LEGION gRPC: authenticate and create delegation record
@@ -129,8 +138,6 @@ export namespace HeadlessMode {
 
         // Heartbeat interval handle — must be accessible to completion handlers
         let heartbeatInterval: ReturnType<typeof setInterval> | undefined
-
-
         if (getLegionClient()) {
           // Ownership must be established before any lifecycle mutation.
           // Web-dispatched jobs are already leased to this same owner; the
@@ -156,42 +163,6 @@ export namespace HeadlessMode {
           }, 15_000) // every 15s
         }
 
-        // if (getLegionClient()) {
-        //   log.info("setting delegation to running", { delegationId: params.delegationId })
-        //   getLegionClient()!
-        //     .updateDelegationStatus(params.delegationId, "running")
-        //     .then(() => {
-        //       log.info("delegation set to running OK", { delegationId: params.delegationId })
-        //     })
-        //     .catch((err) => {
-        //       log.warn("failed to set delegation running", {
-        //         delegationId: params.delegationId,
-        //         error: err instanceof Error ? err.message : String(err),
-        //       })
-        //     })
-
-        //   // Claim ownership and start heartbeat so the server knows we're alive
-        //   const ownerId = `pid-${process.pid}`
-        //   getLegionClient()!
-        //     .claimDelegation(params.delegationId, ownerId)
-        //     .catch((err) => {
-        //       log.warn("failed to claim delegation", {
-        //         delegationId: params.delegationId,
-        //         error: err instanceof Error ? err.message : String(err),
-        //       })
-        //     })
-        //   heartbeatInterval = setInterval(() => {
-        //     getLegionClient()
-        //       ?.updateHeartbeat(params.delegationId, ownerId)
-        //       .catch((err) => {
-        //         log.warn("heartbeat failed", {
-        //           delegationId: params.delegationId,
-        //           error: err instanceof Error ? err.message : String(err),
-        //         })
-        //       })
-        //   }, 15_000) // every 15s
-        // }
-
         // Internal SDK client — same pattern as run.ts line 590-594
         // CRITICAL: pass directory so the server middleware uses the same Instance
         // as our bootstrap() call. Without this, Server.App middleware falls back to
@@ -209,47 +180,7 @@ export namespace HeadlessMode {
 
         ipc?.emitStatus("initializing")
 
-        const rawPolicy = params.toolPolicy as
-          | { rules?: unknown; allow?: unknown; deny?: unknown }
-          | unknown[]
-          | undefined
-        const explicitRules = Array.isArray(rawPolicy)
-          ? rawPolicy
-          : Array.isArray(rawPolicy?.rules)
-            ? rawPolicy.rules
-            : []
-        const configuredRules: PermissionNext.Ruleset = explicitRules
-          .filter(
-            (rule): rule is PermissionNext.Rule =>
-              !!rule &&
-              typeof rule === "object" &&
-              typeof (rule as PermissionNext.Rule).permission === "string" &&
-              typeof (rule as PermissionNext.Rule).pattern === "string" &&
-              ["allow", "deny", "ask"].includes((rule as PermissionNext.Rule).action),
-          )
-          .map((rule) => ({ ...rule }))
-        if (!Array.isArray(rawPolicy)) {
-          for (const permission of Array.isArray(rawPolicy?.allow) ? rawPolicy.allow : []) {
-            if (typeof permission === "string") {
-              configuredRules.push({ permission, pattern: "*", action: "allow" })
-            }
-          }
-          for (const permission of Array.isArray(rawPolicy?.deny) ? rawPolicy.deny : []) {
-            if (typeof permission === "string") {
-              configuredRules.push({ permission, pattern: "*", action: "deny" })
-            }
-          }
-        }
-
-        // Later rules win. Organisation policy therefore constrains the
-        // autonomous default, while interactive prompts remain impossible.
-        const rules: PermissionNext.Ruleset = [
-          { permission: "*", action: "allow", pattern: "*" },
-          ...configuredRules,
-          { permission: "question", action: "deny", pattern: "*" },
-          { permission: "plan_enter", action: "deny", pattern: "*" },
-          { permission: "plan_exit", action: "deny", pattern: "*" },
-        ]
+        const rules = compileToolPolicy(params.toolPolicy)
 
         const session = await sdk.session.create({
           title: `Delegation: ${params.task.slice(0, 50)}`,
@@ -325,10 +256,6 @@ export namespace HeadlessMode {
         let lastAssistantText = ""
         const toolsUsed = new Set<string>()
         let totalCost = 0
-        let totalInputTokens = 0
-        let totalOutputTokens = 0
-        let totalCacheReadTokens = 0
-        let totalCacheWriteTokens = 0
         let stepCount = 0
         const toolTimers = new Map<string, number>()
 
@@ -439,10 +366,6 @@ export namespace HeadlessMode {
               // tokens + cost — when a step finishes
               if (part.type === "step-finish") {
                 totalCost += part.cost
-                totalInputTokens += part.tokens.input
-                totalOutputTokens += part.tokens.output
-                totalCacheReadTokens += part.tokens.cache.read
-                totalCacheWriteTokens += part.tokens.cache.write
                 ipc?.emitTokens({
                   turn: turns,
                   inputTokens: part.tokens.input,
@@ -452,6 +375,14 @@ export namespace HeadlessMode {
                   turnCostUsd: part.cost,
                   totalCostUsd: totalCost,
                 })
+                if (!error && costBudgetExceeded(totalCost, costBudgetUsd)) {
+                  error = `Execution stopped after exceeding the $${costBudgetUsd!.toFixed(4)} cost policy limit`
+                  void audit("cost.limit_exceeded", {
+                    cost_usd: totalCost,
+                    cost_budget_usd: costBudgetUsd,
+                  })
+                  await sdk.session.abort({ sessionID }).catch(() => {})
+                }
               }
 
               // action — when a new LLM step starts

@@ -38,26 +38,13 @@ describe("HeadlessMode", () => {
       "ownerId?: string",
       "maxTurns?: number",
       "timeoutSeconds?: number",
-      // "mcpConfig?: string",
+      "costBudgetUsd?: number",
     ]
 
     for (const field of expectedFields) {
       expect(content).toContain(field)
     }
   })
-
-  // test("propagates mcpConfig to LEGION_MCP_CONFIG_OVERRIDE env var before bootstrap", async () => {
-  //   const content = await fs.readFile(headlessPath, "utf-8")
-  //   // Must set env var BEFORE bootstrap() so Config.state picks it up on first lazy-init
-  //   expect(content).toContain("LEGION_MCP_CONFIG_OVERRIDE")
-  //   expect(content).toContain("params.mcpConfig")
-  //   // Env var must be set prior to the bootstrap() call
-  //   const mcpIdx = content.indexOf("LEGION_MCP_CONFIG_OVERRIDE")
-  //   const bootstrapIdx = content.indexOf("await bootstrap(")
-  //   expect(mcpIdx).toBeGreaterThan(0)
-  //   expect(bootstrapIdx).toBeGreaterThan(0)
-  //   expect(mcpIdx).toBeLessThan(bootstrapIdx)
-  // })
 
   test("imports IpcClient for IPC communication", async () => {
     const content = await fs.readFile(headlessPath, "utf-8")
@@ -102,12 +89,16 @@ describe("HeadlessMode", () => {
     expect(content).toContain('"tool.completed"')
     expect(content).toContain("params.maxTurns")
     expect(content).toContain("params.timeoutSeconds")
-    expect(content).toContain("...configuredRules")
+    expect(content).toContain("compileToolPolicy(params.toolPolicy)")
+    expect(content).toContain("costBudgetExceeded(totalCost, costBudgetUsd)")
     expect(content).toContain("lastAssistantText.slice(0, 50_000)")
   })
 
   test("denies interactive permissions (question, plan_enter, plan_exit)", async () => {
-    const content = await fs.readFile(headlessPath, "utf-8")
+    const content = await fs.readFile(
+      path.resolve(__dirname, "../../src/legion/execution-guardrails.ts"),
+      "utf-8",
+    )
     expect(content).toContain('"question"')
     expect(content).toContain('"plan_enter"')
     expect(content).toContain('"plan_exit"')

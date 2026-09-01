@@ -64,6 +64,7 @@ describe("DelegateCommand", () => {
       "max_turns",
       "timeout_seconds",
       "tool_policy",
+      "cost_budget_usd",
     ]
 
     for (const opt of optionalOptions) {
@@ -99,6 +100,7 @@ describe("DelegateCommand", () => {
     expect(content).toContain("args.max_turns")
     expect(content).toContain("args.tool_policy")
     expect(content).toContain("args.timeout_seconds")
+    expect(content).toContain("args.cost_budget_usd")
   })
 
   test("handler calls HeadlessMode.run()", async () => {

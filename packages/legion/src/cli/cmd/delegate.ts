@@ -22,6 +22,7 @@ export const DelegateCommand = cmd({
       .option("owner_id", { type: "string", describe: "pre-claimed runner owner ID" })
       .option("max_turns", { type: "number", describe: "maximum autonomous turns" })
       .option("timeout_seconds", { type: "number", describe: "execution timeout in seconds" })
+      .option("cost_budget_usd", { type: "number", describe: "maximum execution cost in USD" })
       .option("tool_policy", { type: "string", describe: "snapshotted execution-policy JSON" }),
       // .option("mcp_config", { type: "string", describe: "JSON-serialised parent MCP config for inheritance" }),
   handler: async (args) => {
@@ -41,6 +42,7 @@ export const DelegateCommand = cmd({
       ownerId: args.owner_id as string | undefined,
       maxTurns: args.max_turns as number | undefined,
       timeoutSeconds: args.timeout_seconds as number | undefined,
+      costBudgetUsd: args.cost_budget_usd as number | undefined,
       toolPolicy: args.tool_policy
         ? (JSON.parse(args.tool_policy as string) as unknown)
         : undefined,

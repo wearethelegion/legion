@@ -15,7 +15,7 @@ import { IpcServer } from "../legion/ipc/server"
 import type { StatusEvent } from "../legion/ipc/protocol"
 import { DelegationTracker } from "../legion/delegation"
 import { delegationProcessOptions } from "./delegation-process"
-// import { Config } from "../config/config"
+import { resolveContainedPath } from "../legion/execution-guardrails"
 import DESCRIPTION from "./delegate.txt"
 
 const log = Log.create({ service: "tool.delegate" })
@@ -101,23 +101,12 @@ export const DelegateTool = Tool.define("delegate", async () => {
       const delegationProjectId = getProjectId()
 
       const delegationId = randomUUID()
-      const targetPath = params.target_path ?? Instance.directory
-
-      // Capture parent MCP config snapshot for propagation to subprocess.
-      // Wrapped in try/catch — MCP config inheritance is best-effort; delegation
-      // must not fail if Config.get() throws (e.g. during early startup).
-      // let mcpConfigJson: string | undefined
-      // try {
-      //   const cfg = await Config.get()
-      //   if (cfg.mcp && Object.keys(cfg.mcp).length > 0) {
-      //     mcpConfigJson = JSON.stringify(cfg.mcp)
-      //     log.info("captured MCP config for subprocess", { servers: Object.keys(cfg.mcp).join(", ") })
-      //   }
-      // } catch (err) {
-      //   log.warn("failed to capture MCP config for subprocess — sub-agent will have no MCP servers", {
-      //     error: err instanceof Error ? err.message : String(err),
-      //   })
-      // }
+      const executionRoot = process.env.LEGION_EXECUTION_ROOT_PATH || Instance.directory
+      const targetPath = resolveContainedPath(executionRoot, params.target_path ?? Instance.directory)
+      const inheritedModel = process.env.LEGION_EXECUTION_MODEL
+      if (inheritedModel && params.model && params.model !== inheritedModel) {
+        throw new Error("Child delegations cannot override the snapshotted execution model")
+      }
 
       // Create delegation record in LEGION BEFORE spawning child
       let serverDelegationId: string = delegationId
@@ -169,10 +158,19 @@ export const DelegateTool = Tool.define("delegate", async () => {
       if (params.task_id) args.push("--task_id", params.task_id)
       const agentRunId = process.env.LEGION_AGENT_RUN_ID
       if (agentRunId) args.push("--run_id", agentRunId)
-      if (params.model) args.push("--model", params.model)
+      const childModel = inheritedModel || params.model
+      if (childModel) args.push("--model", childModel)
       if (params.context) args.push("--context", params.context)
-      // if (mcpConfigJson) args.push("--mcp_config", mcpConfigJson)
-
+      const inheritedOptions = [
+        ["LEGION_EXECUTION_MAX_TURNS", "--max_turns"],
+        ["LEGION_EXECUTION_TIMEOUT_SECONDS", "--timeout_seconds"],
+        ["LEGION_EXECUTION_COST_BUDGET_USD", "--cost_budget_usd"],
+        ["LEGION_EXECUTION_TOOL_POLICY", "--tool_policy"],
+      ] as const
+      for (const [environmentName, option] of inheritedOptions) {
+        const value = process.env[environmentName]
+        if (value !== undefined) args.push(option, value)
+      }
       const cmd = command(args)
 
       log.info("spawning delegation", {
@@ -284,14 +282,8 @@ export const DelegateTool = Tool.define("delegate", async () => {
         `pid: ${pid}`,
         `socket: ${socketPath}`,
         ``,
-        `The delegation is now running in a separate process.`,
-        `CRITICAL: After every delegation you MUST call the Bash tool with "sleep 60" — this blocks in the foreground and is mandatory. Do NOT skip it. Do NOT say "will surface when done".`,
-        `Polling loop:`,
-        `  1. Bash tool: sleep 60  ← BLOCKING. Required. No exceptions.`,
-        `  2. getDelegationStatus(delegation_id) — is status "completed"?`,
-        `  3. If running → go to step 1`,
-        `  4. If completed → getDelegationResult(delegation_id)`,
-        `  5. Verify result, report to user`,
+        `The delegation is running under the parent run's model, policy, budget, timeout, and workspace boundary.`,
+        `Use getDelegationStatus and getDelegationResult to verify and incorporate the result before completing the parent request.`,
       ].join("\n")
 
       return {

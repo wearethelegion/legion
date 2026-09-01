@@ -66,6 +66,7 @@ describe("WebDelegationRunner", () => {
     expect(content).toContain('"--max_turns"')
     expect(content).toContain('"--timeout_seconds"')
     expect(content).toContain('args.push("--tool_policy"')
+    expect(content).toContain('args.push("--cost_budget_usd"')
   })
 
   test("uses hidden cross-platform process options and reconciles hard exits", async () => {

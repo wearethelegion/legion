@@ -133,10 +133,23 @@ async function launch(job: DelegationJob, ownerId: string) {
   try {
     const snapshot = JSON.parse(job.execution_snapshot_json || "{}") as {
       tool_policy?: unknown
+      cost_budget_usd?: unknown
     }
-    if (snapshot.tool_policy) args.push("--tool_policy", JSON.stringify(snapshot.tool_policy))
+    if (snapshot.tool_policy !== undefined) {
+      args.push("--tool_policy", JSON.stringify(snapshot.tool_policy))
+    }
+    if (snapshot.cost_budget_usd !== undefined && snapshot.cost_budget_usd !== null) {
+      if (
+        typeof snapshot.cost_budget_usd !== "number" ||
+        !Number.isFinite(snapshot.cost_budget_usd) ||
+        snapshot.cost_budget_usd < 0
+      ) {
+        throw new Error("The snapshotted execution cost budget is invalid")
+      }
+      args.push("--cost_budget_usd", String(snapshot.cost_budget_usd))
+    }
   } catch {
-    await failClaimedJob(job.delegation_id, ownerId, "The snapshotted execution policy is invalid JSON")
+    await failClaimedJob(job.delegation_id, ownerId, "The snapshotted execution policy is invalid")
     ipc?.close()
     return
   }
