@@ -19,6 +19,11 @@ import { getLegionClient } from "./auth"
 import { IpcServer } from "./ipc/server"
 import { delegationProcessOptions } from "../tool/delegation-process"
 import type { DelegationJob } from "@wearethelegion/legion-client"
+import {
+  createApplicationWorkspace,
+  removeApplicationWorkspace,
+  type ApplicationWorkspace,
+} from "./application-workspace"
 
 const log = Log.create({ service: "legion.web-runner" })
 const POLL_MS = 5_000
@@ -77,14 +82,66 @@ async function failClaimedJob(delegationId: string, ownerId: string, message: st
 }
 
 async function launch(job: DelegationJob, ownerId: string) {
-  const targetPath = projectPath(job.project_id)
-  if (!existsSync(targetPath) || !statSync(targetPath).isDirectory()) {
+  const sourceTargetPath = projectPath(job.project_id)
+  if (!existsSync(sourceTargetPath) || !statSync(sourceTargetPath).isDirectory()) {
     await failClaimedJob(
       job.delegation_id,
       ownerId,
-      `Runner workspace is unavailable for project ${job.project_id}: ${targetPath}`,
+      `Runner workspace is unavailable for project ${job.project_id}: ${sourceTargetPath}`,
     )
     return
+  }
+
+  let snapshot: {
+    tool_policy?: unknown
+    cost_budget_usd?: unknown
+    request_kind?: unknown
+  }
+  try {
+    snapshot = JSON.parse(job.execution_snapshot_json || "{}")
+    if (snapshot.cost_budget_usd !== undefined && snapshot.cost_budget_usd !== null) {
+      if (
+        typeof snapshot.cost_budget_usd !== "number" ||
+        !Number.isFinite(snapshot.cost_budget_usd) ||
+        snapshot.cost_budget_usd < 0
+      ) {
+        throw new Error("The snapshotted execution cost budget is invalid")
+      }
+    }
+    if (
+      snapshot.request_kind !== undefined &&
+      snapshot.request_kind !== "task" &&
+      snapshot.request_kind !== "application"
+    ) {
+      throw new Error("The snapshotted request kind is invalid")
+    }
+  } catch {
+    await failClaimedJob(job.delegation_id, ownerId, "The snapshotted execution policy is invalid")
+    return
+  }
+
+  let applicationWorkspace: ApplicationWorkspace | undefined
+  let targetPath = sourceTargetPath
+  if (snapshot.request_kind === "application") {
+    try {
+      applicationWorkspace = createApplicationWorkspace(sourceTargetPath, job.run_id)
+      targetPath = applicationWorkspace.targetPath
+      if (!existsSync(targetPath) || !statSync(targetPath).isDirectory()) {
+        throw new Error("The application target does not exist in the committed source revision")
+      }
+    } catch (error) {
+      if (applicationWorkspace) {
+        try {
+          removeApplicationWorkspace(applicationWorkspace, true)
+        } catch {}
+      }
+      await failClaimedJob(
+        job.delegation_id,
+        ownerId,
+        `Could not create an isolated application workspace: ${error instanceof Error ? error.message : String(error)}`,
+      )
+      return
+    }
   }
 
   const socketPath =
@@ -130,35 +187,14 @@ async function launch(job: DelegationJob, ownerId: string) {
   if (job.task_id) args.push("--task_id", job.task_id)
   if (job.model) args.push("--model", `${job.provider ? `${job.provider}/` : ""}${job.model}`)
   if (job.context) args.push("--context", job.context)
-  try {
-    const snapshot = JSON.parse(job.execution_snapshot_json || "{}") as {
-      tool_policy?: unknown
-      cost_budget_usd?: unknown
-      request_kind?: unknown
-    }
-    if (snapshot.tool_policy !== undefined) {
-      args.push("--tool_policy", JSON.stringify(snapshot.tool_policy))
-    }
-    if (snapshot.cost_budget_usd !== undefined && snapshot.cost_budget_usd !== null) {
-      if (
-        typeof snapshot.cost_budget_usd !== "number" ||
-        !Number.isFinite(snapshot.cost_budget_usd) ||
-        snapshot.cost_budget_usd < 0
-      ) {
-        throw new Error("The snapshotted execution cost budget is invalid")
-      }
-      args.push("--cost_budget_usd", String(snapshot.cost_budget_usd))
-    }
-    if (snapshot.request_kind !== undefined) {
-      if (snapshot.request_kind !== "task" && snapshot.request_kind !== "application") {
-        throw new Error("The snapshotted request kind is invalid")
-      }
-      args.push("--request_kind", snapshot.request_kind)
-    }
-  } catch {
-    await failClaimedJob(job.delegation_id, ownerId, "The snapshotted execution policy is invalid")
-    ipc?.close()
-    return
+  if (snapshot.tool_policy !== undefined) {
+    args.push("--tool_policy", JSON.stringify(snapshot.tool_policy))
+  }
+  if (snapshot.cost_budget_usd !== undefined && snapshot.cost_budget_usd !== null) {
+    args.push("--cost_budget_usd", String(snapshot.cost_budget_usd))
+  }
+  if (snapshot.request_kind !== undefined) {
+    args.push("--request_kind", snapshot.request_kind)
   }
 
   const cmd = command(args)
@@ -181,10 +217,21 @@ async function launch(job: DelegationJob, ownerId: string) {
         LEGION_AGENT_ID: job.agent_id,
         LEGION_AGENT_RUN_ID: job.run_id,
         LEGION_DELEGATION_DEPTH: "0",
+        ...(applicationWorkspace
+          ? {
+              LEGION_APPLICATION_WORKTREE: "true",
+              LEGION_APPLICATION_SOURCE_BRANCH: applicationWorkspace.branch,
+            }
+          : {}),
       },
     })
   } catch (error) {
     ipc?.close()
+    if (applicationWorkspace) {
+      try {
+        removeApplicationWorkspace(applicationWorkspace, true)
+      } catch {}
+    }
     await failClaimedJob(
       job.delegation_id,
       ownerId,
@@ -199,6 +246,11 @@ async function launch(job: DelegationJob, ownerId: string) {
   if (!proc) return
   if (!proc.pid) {
     ipc?.close()
+    if (applicationWorkspace) {
+      try {
+        removeApplicationWorkspace(applicationWorkspace, true)
+      } catch {}
+    }
     await failClaimedJob(job.delegation_id, ownerId, "Legion runner failed to spawn the agent process")
     return
   }
@@ -226,6 +278,17 @@ async function launch(job: DelegationJob, ownerId: string) {
     void getLegionClient()
       ?.getDelegationStatusBrief(job.delegation_id)
       .then((status) => {
+        if (status.status === "success" && status.delegation_status === "completed" && applicationWorkspace) {
+          try {
+            removeApplicationWorkspace(applicationWorkspace)
+          } catch (cleanupError) {
+            log.warn("completed application workspace cleanup failed", {
+              delegationId: job.delegation_id,
+              path: applicationWorkspace.workspaceRoot,
+              error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+            })
+          }
+        }
         if (
           status.status === "success" &&
           !["completed", "failed", "cancelled", "interrupted"].includes(status.delegation_status)
@@ -246,7 +309,7 @@ async function poll() {
   if (stopped || polling || !selectedProjectId) return
   const client = getLegionClient()
   if (!client) return schedule()
-  const maxParallel = Math.max(1, Number(process.env.LEGION_RUNNER_CONCURRENCY || 2))
+  const maxParallel = Math.max(1, Number(process.env.LEGION_RUNNER_CONCURRENCY || 1))
   if (active.size >= maxParallel) return schedule()
 
   polling = true
@@ -301,7 +364,9 @@ export namespace WebDelegationRunner {
       runnerPools: values(env.LEGION_RUNNER_POOLS, ["default"]),
       dataResidencies: values(env.LEGION_RUNNER_RESIDENCIES),
       local: truthy(env.LEGION_RUNNER_LOCAL),
-      networkIsolated: truthy(env.LEGION_RUNNER_NETWORK_ISOLATED),
+      networkIsolated:
+        truthy(env.LEGION_RUNNER_NETWORK_ISOLATED) &&
+        truthy(env.LEGION_RUNNER_NETWORK_ISOLATION_ATTESTED),
     }
   }
 

@@ -15,6 +15,11 @@ export interface ApplicationHandover {
   ownership: "company"
 }
 
+export interface CommandExecution {
+  command: string
+  exitCode: number | null
+}
+
 function requiredString(value: unknown, field: string, maxLength = 1000): string {
   if (typeof value !== "string" || !value.trim()) {
     throw new Error(`Application handover field ${field} is required`)
@@ -65,5 +70,30 @@ export async function loadApplicationHandover(workspace: string): Promise<Applic
     documentation_path: documentationPath,
     deployment_target: "local",
     ownership: "company",
+  }
+}
+
+export function verifyApplicationCommands(
+  handover: ApplicationHandover,
+  executions: CommandExecution[],
+): { build_command: string; test_command: string } {
+  const succeeded = new Set(
+    executions
+      .filter((execution) => execution.exitCode === 0)
+      .map((execution) => execution.command.trim()),
+  )
+  if (!succeeded.has(handover.build_command)) {
+    throw new Error(
+      `Application build command was not observed succeeding exactly as declared: ${handover.build_command}`,
+    )
+  }
+  if (!succeeded.has(handover.test_command)) {
+    throw new Error(
+      `Application test command was not observed succeeding exactly as declared: ${handover.test_command}`,
+    )
+  }
+  return {
+    build_command: handover.build_command,
+    test_command: handover.test_command,
   }
 }

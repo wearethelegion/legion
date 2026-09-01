@@ -93,6 +93,10 @@ describe("HeadlessMode", () => {
     expect(content).toContain("compileToolPolicy(params.toolPolicy)")
     expect(content).toContain("costBudgetExceeded(totalCost, costBudgetUsd)")
     expect(content).toContain('audit("artifact.manifest"')
+    expect(content).toContain('heartbeat.delegation_status === "cancelled"')
+    expect(content).toContain('audit("run.cancelled"')
+    expect(content).toContain("verifyApplicationCommands(handover, commandExecutions)")
+    expect(content).toContain('audit("application.verification"')
     expect(content).toContain("lastAssistantText.slice(0, 50_000)")
   })
 

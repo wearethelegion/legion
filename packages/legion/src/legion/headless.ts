@@ -27,7 +27,12 @@ import {
 } from "./execution-guardrails"
 import { captureWorkspaceSnapshot, workspaceChanges } from "./workspace-manifest"
 import { RunCostLedger } from "./cost-ledger"
-import { loadApplicationHandover } from "./application-handover"
+import {
+  loadApplicationHandover,
+  verifyApplicationCommands,
+  type CommandExecution,
+} from "./application-handover"
+import { commitApplicationWorkspace } from "./application-workspace"
 
 const log = Log.create({ service: "legion.headless" })
 
@@ -160,14 +165,6 @@ export namespace HeadlessMode {
           if (running.status !== "success") {
             throw new Error(running.error_message || "Delegation could not transition to running")
           }
-          heartbeatInterval = setInterval(() => {
-            getLegionClient()?.updateHeartbeat(params.delegationId, ownerId).catch((err) => {
-              log.warn("heartbeat failed", {
-                delegationId: params.delegationId,
-                error: err instanceof Error ? err.message : String(err),
-              })
-            })
-          }, 15_000) // every 15s
         }
 
         // Internal SDK client — same pattern as run.ts line 590-594
@@ -268,6 +265,43 @@ export namespace HeadlessMode {
         let totalCost = 0
         let stepCount = 0
         const toolTimers = new Map<string, number>()
+        const commandExecutions: CommandExecution[] = []
+        let cancelledByControlPlane = false
+        let heartbeatInFlight = false
+
+        const abortFromControlPlane = (reason: string) => {
+          if (cancelledByControlPlane) return
+          cancelledByControlPlane = true
+          error = reason
+          ipc?.emitStatus("cancelled", reason)
+          void audit("run.cancel_requested", { reason })
+          void sdk.session.abort({ sessionID }).catch(() => {})
+        }
+
+        if (getLegionClient()) {
+          heartbeatInterval = setInterval(() => {
+            if (heartbeatInFlight || cancelledByControlPlane) return
+            heartbeatInFlight = true
+            getLegionClient()!
+              .updateHeartbeat(params.delegationId, ownerId)
+              .then((heartbeat) => {
+                if (heartbeat.delegation_status === "cancelled") {
+                  abortFromControlPlane("Execution cancelled by user")
+                } else if (heartbeat.status === "success" && !heartbeat.success) {
+                  abortFromControlPlane("Execution stopped because the runner lease was lost")
+                }
+              })
+              .catch((heartbeatError) => {
+                log.warn("heartbeat failed", {
+                  delegationId: params.delegationId,
+                  error: heartbeatError instanceof Error ? heartbeatError.message : String(heartbeatError),
+                })
+              })
+              .finally(() => {
+                heartbeatInFlight = false
+              })
+          }, 5_000)
+        }
 
         ipc?.emitStatus("running")
         ipc?.emitConnected({
@@ -282,7 +316,15 @@ export namespace HeadlessMode {
         // Handle cancel commands from parent via IPC
         ipc?.onCommand((cmd) => {
           if (cmd.type === "cancel") {
-            sdk.session.abort({ sessionID }).catch(() => {})
+            abortFromControlPlane("Execution cancelled by parent")
+            void getLegionClient()
+              ?.updateDelegationStatus(params.delegationId, "cancelled", {
+                ownerId,
+                errorMessage: "Execution cancelled by parent",
+                objectiveStatus: "blocked",
+                objectiveDetail: "Execution cancelled by parent",
+              })
+              .catch(() => {})
           }
           if (cmd.type === "ping") {
             ipc?.emitPong()
@@ -306,6 +348,16 @@ export namespace HeadlessMode {
               // tool_end — when tool completes successfully
               if (part.type === "tool" && part.state.status === "completed") {
                 toolsUsed.add(part.tool)
+                if (part.tool === "bash") {
+                  const input = part.state.input as { command?: unknown }
+                  const metadata = part.state.metadata as { exit?: unknown } | undefined
+                  if (typeof input.command === "string") {
+                    commandExecutions.push({
+                      command: input.command.trim(),
+                      exitCode: typeof metadata?.exit === "number" ? metadata.exit : null,
+                    })
+                  }
+                }
                 const startTime = toolTimers.get(part.callID) ?? part.state.time.start
                 const duration = part.state.time.end - startTime
                 const preview = part.state.output?.slice(0, 500)
@@ -489,7 +541,7 @@ export namespace HeadlessMode {
 
         const duration = Date.now() - started
         const tools = [...toolsUsed]
-        if (workspaceBefore) {
+        if (workspaceBefore && !cancelledByControlPlane) {
           const changedFiles = workspaceChanges(
             workspaceBefore,
             await captureWorkspaceSnapshot(params.targetPath),
@@ -509,11 +561,21 @@ export namespace HeadlessMode {
             if (!changedFiles.length) {
               throw new Error("Application delivery produced no auditable workspace files")
             }
-            if (!toolsUsed.has("bash")) {
-              throw new Error("Application delivery did not execute an approved verification command")
-            }
             const handover = await loadApplicationHandover(params.targetPath)
-            await audit("application.handover", { ...handover })
+            const verification = verifyApplicationCommands(handover, commandExecutions)
+            const source = process.env.LEGION_APPLICATION_WORKTREE === "true"
+              ? commitApplicationWorkspace(
+                  params.targetPath,
+                  process.env.LEGION_APPLICATION_SOURCE_BRANCH,
+                )
+              : undefined
+            await audit("application.verification", { ...verification })
+            await audit("application.handover", {
+              ...handover,
+              verification,
+              source_branch: source?.branch,
+              source_commit: source?.commit,
+            })
           } catch (handoverError) {
             const message = handoverError instanceof Error ? handoverError.message : String(handoverError)
             error = error ? `${error}\n${message}` : message
@@ -528,7 +590,23 @@ export namespace HeadlessMode {
           durationMs: String(duration),
         })
 
-        if (error) {
+        if (cancelledByControlPlane) {
+          await audit("run.cancelled", {
+            turns,
+            tool_count: tools.length,
+            cost_usd: totalCost,
+            duration_ms: duration,
+          })
+          ipc?.emitStatus("cancelled", error)
+          ipc?.emitResult({
+            summary: error || "Execution cancelled by user",
+            toolsUsed: tools,
+            turns,
+            costUsd: totalCost,
+            durationMs: duration,
+          })
+          process.exitCode = 1
+        } else if (error) {
           await audit("run.failed", {
             turns,
             tool_count: tools.length,

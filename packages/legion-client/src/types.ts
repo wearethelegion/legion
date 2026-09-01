@@ -1696,6 +1696,7 @@ export interface UpdateHeartbeatResponse {
   success: boolean
   error_message: string
   error_code: string
+  delegation_status: string
 }
 
 export interface DelegationJob {

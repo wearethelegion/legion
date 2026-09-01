@@ -234,6 +234,7 @@ message UpdateHeartbeatResponse {
   bool success = 2;             // false if ownership lost
   string error_message = 3;
   string error_code = 4;
+  string delegation_status = 5; // current status; cancelled tells the worker to stop
 }
 
 message ClaimPendingDelegationRequest {

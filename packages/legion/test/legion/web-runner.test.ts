@@ -40,6 +40,7 @@ describe("WebDelegationRunner", () => {
         LEGION_RUNNER_RESIDENCIES: "ua",
         LEGION_RUNNER_LOCAL: "true",
         LEGION_RUNNER_NETWORK_ISOLATED: "1",
+        LEGION_RUNNER_NETWORK_ISOLATION_ATTESTED: "true",
       }),
     ).toEqual({
       runtimes: ["legion-cli"],
@@ -50,6 +51,9 @@ describe("WebDelegationRunner", () => {
       local: true,
       networkIsolated: true,
     })
+    expect(
+      WebDelegationRunner.capabilities({ LEGION_RUNNER_NETWORK_ISOLATED: "true" }).networkIsolated,
+    ).toBe(false)
   })
 
   test("claims authenticated project work with bounded local execution", async () => {
@@ -68,6 +72,9 @@ describe("WebDelegationRunner", () => {
     expect(content).toContain('args.push("--tool_policy"')
     expect(content).toContain('args.push("--cost_budget_usd"')
     expect(content).toContain('args.push("--request_kind"')
+    expect(content).toContain("createApplicationWorkspace")
+    expect(content).toContain("LEGION_APPLICATION_SOURCE_BRANCH")
+    expect(content).toContain("LEGION_RUNNER_CONCURRENCY || 1")
   })
 
   test("uses hidden cross-platform process options and reconciles hard exits", async () => {
