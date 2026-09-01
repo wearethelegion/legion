@@ -27,6 +27,7 @@ import {
 } from "./execution-guardrails"
 import { captureWorkspaceSnapshot, workspaceChanges } from "./workspace-manifest"
 import { RunCostLedger } from "./cost-ledger"
+import { loadApplicationHandover } from "./application-handover"
 
 const log = Log.create({ service: "legion.headless" })
 
@@ -503,6 +504,20 @@ export namespace HeadlessMode {
               batches,
               ownership: "company-workspace",
             })
+          }
+          try {
+            if (!changedFiles.length) {
+              throw new Error("Application delivery produced no auditable workspace files")
+            }
+            if (!toolsUsed.has("bash")) {
+              throw new Error("Application delivery did not execute an approved verification command")
+            }
+            const handover = await loadApplicationHandover(params.targetPath)
+            await audit("application.handover", { ...handover })
+          } catch (handoverError) {
+            const message = handoverError instanceof Error ? handoverError.message : String(handoverError)
+            error = error ? `${error}\n${message}` : message
+            await audit("application.handover_failed", { error: message })
           }
         }
         log.info("delegation execution finished", {
