@@ -23,6 +23,7 @@ service DelegationService {
   // Update delegation status with row-level locking
   rpc UpdateDelegationStatus(UpdateStatusRequest) returns (UpdateStatusResponse);
 
+  // Record the exact worker model after runtime model resolution
   rpc RecordDelegationModel(RecordDelegationModelRequest) returns (RecordDelegationModelResponse);
 
   // Mark orphaned delegations as interrupted (called on server startup)
@@ -57,7 +58,7 @@ message CreateDelegationRequest {
   string task_id = 5;           // Optional link to task
   string task_description = 6;  // The actual task to perform
   string context = 7;           // Optional context
-  string engagement_id = 8;     // Optional link to engagement
+  string engagement_id = 8;    // Optional link to engagement
   string parent_delegation_id = 9; // Optional bounded team hierarchy parent
 }
 
@@ -166,9 +167,9 @@ message UpdateStatusRequest {
   int32 turns = 5;
   double cost_usd = 6;
   string error_message = 7;     // Optional, for failure
-  string owner_id = 8;          // Claimed worker process; required for mutation
-  string objective_status = 9;
-  string objective_detail = 10;
+  string owner_id = 8;          // Claimed worker; optional only for user cancel/bootstrap failure
+  string objective_status = 9;  // succeeded, partial, blocked (terminal rows only)
+  string objective_detail = 10; // Evidence or blockers supporting objective_status
 }
 
 message UpdateStatusResponse {
@@ -179,12 +180,13 @@ message UpdateStatusResponse {
   string error_code = 5;
 }
 
+// Record the resolved worker model independently of lifecycle transitions.
 message RecordDelegationModelRequest {
   string delegation_id = 1;
   string llm_provider = 2;
   string llm_model = 3;
   string user_token = 4;
-  string owner_id = 5;
+  string owner_id = 5;          // Claimed worker process; required for mutation
 }
 
 message RecordDelegationModelResponse {
