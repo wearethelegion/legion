@@ -21,10 +21,44 @@ describe("WebDelegationRunner", () => {
     expect(WebDelegationRunner.isEnabled({ LEGION_AGENT_WORKSPACE_ENABLED: "1" })).toBe(true)
   })
 
+  test("advertises explicit runner scheduling and sovereignty capabilities", async () => {
+    const { WebDelegationRunner } = await import("../../src/legion/web-runner")
+    expect(WebDelegationRunner.capabilities({})).toEqual({
+      runtimes: ["legion-cli"],
+      providers: [],
+      models: [],
+      runnerPools: ["default"],
+      dataResidencies: [],
+      local: false,
+      networkIsolated: false,
+    })
+    expect(
+      WebDelegationRunner.capabilities({
+        LEGION_RUNNER_PROVIDERS: "ollama, ollama",
+        LEGION_RUNNER_MODELS: "llama3.3:70b",
+        LEGION_RUNNER_POOLS: "sovereign-ua",
+        LEGION_RUNNER_RESIDENCIES: "ua",
+        LEGION_RUNNER_LOCAL: "true",
+        LEGION_RUNNER_NETWORK_ISOLATED: "1",
+      }),
+    ).toEqual({
+      runtimes: ["legion-cli"],
+      providers: ["ollama"],
+      models: ["llama3.3:70b"],
+      runnerPools: ["sovereign-ua"],
+      dataResidencies: ["ua"],
+      local: true,
+      networkIsolated: true,
+    })
+  })
+
   test("claims authenticated project work with bounded local execution", async () => {
     const content = await fs.readFile(runnerPath, "utf-8")
     expect(content).toContain("claimPendingDelegation")
     expect(content).toContain('runtimes: ["legion-cli"]')
+    expect(content).toContain("LEGION_RUNNER_POOLS")
+    expect(content).toContain("LEGION_RUNNER_RESIDENCIES")
+    expect(content).toContain("LEGION_RUNNER_MODELS")
     expect(content).toContain("LEGION_RUNNER_CONCURRENCY")
     expect(content).toContain("LEGION_PROJECT_PATHS")
     expect(content).toContain('"--owner_id"')

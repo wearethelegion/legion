@@ -1588,12 +1588,22 @@ export class LegionClient {
     ownerId: string
     runtimes?: string[]
     providers?: string[]
+    models?: string[]
+    runnerPools?: string[]
+    dataResidencies?: string[]
+    local?: boolean
+    networkIsolated?: boolean
   }): Promise<ClaimPendingDelegationResponse> {
     return this.callWithAuth(this.delegationClient, "ClaimPendingDelegation", {
       project_id: opts.projectId,
       owner_id: opts.ownerId,
       runtimes: opts.runtimes ?? ["legion-cli"],
       providers: opts.providers ?? [],
+      models: opts.models ?? [],
+      runner_pools: opts.runnerPools ?? ["default"],
+      data_residencies: opts.dataResidencies ?? [],
+      local: opts.local ?? false,
+      network_isolated: opts.networkIsolated ?? false,
     })
   }
 

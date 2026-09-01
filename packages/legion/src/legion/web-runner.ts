@@ -232,15 +232,11 @@ async function poll() {
   polling = true
   try {
     const ownerId = `runner-${os.hostname()}-${process.pid}-${randomUUID()}`
-    const providers = (process.env.LEGION_RUNNER_PROVIDERS || "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean)
+    const capabilities = WebDelegationRunner.capabilities()
     const response = await client.claimPendingDelegation({
       projectId: selectedProjectId,
       ownerId,
-      runtimes: ["legion-cli"],
-      providers,
+      ...capabilities,
     })
     if (response.status === "success" && response.claimed && response.job) {
       await launch(response.job, ownerId)
@@ -264,9 +260,33 @@ async function poll() {
 }
 
 export namespace WebDelegationRunner {
-  export function isEnabled(env: Record<string, string | undefined> = process.env) {
-    const value = env.LEGION_AGENT_WORKSPACE_ENABLED?.trim().toLowerCase()
+  function values(raw: string | undefined, fallback: string[] = []) {
+    const result = (raw || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean)
+    return result.length ? [...new Set(result)] : fallback
+  }
+
+  function truthy(raw: string | undefined) {
+    const value = raw?.trim().toLowerCase()
     return value === "1" || value === "true" || value === "yes" || value === "on"
+  }
+
+  export function capabilities(env: Record<string, string | undefined> = process.env) {
+    return {
+      runtimes: ["legion-cli"],
+      providers: values(env.LEGION_RUNNER_PROVIDERS),
+      models: values(env.LEGION_RUNNER_MODELS),
+      runnerPools: values(env.LEGION_RUNNER_POOLS, ["default"]),
+      dataResidencies: values(env.LEGION_RUNNER_RESIDENCIES),
+      local: truthy(env.LEGION_RUNNER_LOCAL),
+      networkIsolated: truthy(env.LEGION_RUNNER_NETWORK_ISOLATED),
+    }
+  }
+
+  export function isEnabled(env: Record<string, string | undefined> = process.env) {
+    return truthy(env.LEGION_AGENT_WORKSPACE_ENABLED)
   }
 
   export function start(input: { companyId: string; projectId: string; targetPath?: string }) {

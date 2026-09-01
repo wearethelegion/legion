@@ -240,6 +240,11 @@ message ClaimPendingDelegationRequest {
   string owner_id = 3;
   repeated string runtimes = 4;
   repeated string providers = 5;
+  repeated string models = 6;
+  repeated string runner_pools = 7;
+  repeated string data_residencies = 8;
+  bool local = 9;
+  bool network_isolated = 10;
 }
 
 message DelegationJob {
