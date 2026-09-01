@@ -12,12 +12,17 @@ import type { MessageV2 } from "./message-v2"
 const log = Log.create({ service: "instruction" })
 
 const FILES = [
+  "AGENTS.md",
   "CLAUDE.md",
   "CONTEXT.md", // deprecated
 ]
 
 function globalFiles() {
-  const files = []
+  const files: string[] = []
+  if (Flag.LEGION_CONFIG_DIR) {
+    files.push(path.join(Flag.LEGION_CONFIG_DIR, "AGENTS.md"))
+  }
+  files.push(path.join(Global.Path.config, "AGENTS.md"))
   if (!Flag.LEGION_DISABLE_CLAUDE_CODE_PROMPT) {
     files.push(path.join(os.homedir(), ".claude", "CLAUDE.md"))
   }

@@ -1,60 +1,102 @@
-import { describe, test, expect } from "bun:test"
-import { Discovery } from "../../src/skill/discovery"
+import { describe, expect, test } from "bun:test"
 import path from "path"
+import { Discovery } from "../../src/skill/discovery"
+import { Global } from "../../src/global"
+import { tmpdir } from "../fixture/fixture"
 
-const CLOUDFLARE_SKILLS_URL = "https://developers.cloudflare.com/.well-known/skills/"
+interface SkillServer {
+  url: string
+  requests: Map<string, number>
+}
 
-describe("Discovery.pull", () => {
-  test("downloads skills from cloudflare url", async () => {
-    const dirs = await Discovery.pull(CLOUDFLARE_SKILLS_URL)
-    expect(dirs.length).toBeGreaterThan(0)
-    for (const dir of dirs) {
-      expect(dir).toStartWith(Discovery.dir())
-      const md = path.join(dir, "SKILL.md")
-      expect(await Bun.file(md).exists()).toBe(true)
-    }
-  }, 30_000)
-
-  test("url without trailing slash works", async () => {
-    const dirs = await Discovery.pull(CLOUDFLARE_SKILLS_URL.replace(/\/$/, ""))
-    expect(dirs.length).toBeGreaterThan(0)
-    for (const dir of dirs) {
-      const md = path.join(dir, "SKILL.md")
-      expect(await Bun.file(md).exists()).toBe(true)
-    }
-  }, 30_000)
-
-  test("returns empty array for invalid url", async () => {
-    const dirs = await Discovery.pull("https://example.invalid/.well-known/skills/")
-    expect(dirs).toEqual([])
+async function withSkillServer(fn: (server: SkillServer) => Promise<void>, options: { invalidIndex?: boolean } = {}) {
+  await using cache = await tmpdir()
+  const originalCache = Global.Path.cache
+  ;(Global.Path as { cache: string }).cache = cache.path
+  const requests = new Map<string, number>()
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch(request) {
+      const pathname = new URL(request.url).pathname
+      requests.set(pathname, (requests.get(pathname) ?? 0) + 1)
+      if (pathname === "/skills/index.json") {
+        if (options.invalidIndex) return new Response("not-json")
+        return Response.json({
+          skills: [
+            {
+              name: "agents-sdk",
+              description: "Test skill",
+              files: ["SKILL.md", "references/api.md"],
+            },
+          ],
+        })
+      }
+      if (pathname === "/skills/agents-sdk/SKILL.md") {
+        return new Response("---\nname: agents-sdk\ndescription: Test skill\n---\n# Agents SDK\n")
+      }
+      if (pathname === "/skills/agents-sdk/references/api.md") {
+        return new Response("# API reference\n")
+      }
+      return new Response("not found", { status: 404 })
+    },
   })
 
-  test("returns empty array for non-json response", async () => {
-    const dirs = await Discovery.pull("https://example.com/")
-    expect(dirs).toEqual([])
+  try {
+    await fn({ url: `${server.url}skills/`, requests })
+  } finally {
+    server.stop(true)
+    ;(Global.Path as { cache: string }).cache = originalCache
+  }
+}
+
+describe("Discovery.pull", () => {
+  test("downloads skills from a standards-compatible index", async () => {
+    await withSkillServer(async ({ url }) => {
+      const dirs = await Discovery.pull(url)
+      expect(dirs).toHaveLength(1)
+      expect(dirs[0]).toStartWith(Discovery.dir())
+      expect(await Bun.file(path.join(dirs[0], "SKILL.md")).exists()).toBe(true)
+    })
+  })
+
+  test("accepts an index URL without a trailing slash", async () => {
+    await withSkillServer(async ({ url }) => {
+      const dirs = await Discovery.pull(url.replace(/\/$/, ""))
+      expect(dirs).toHaveLength(1)
+      expect(await Bun.file(path.join(dirs[0], "SKILL.md")).exists()).toBe(true)
+    })
+  })
+
+  test("returns an empty array when the index is unreachable", async () => {
+    expect(await Discovery.pull("http://127.0.0.1:1/skills/")).toEqual([])
+  })
+
+  test("returns an empty array for a non-JSON index", async () => {
+    await withSkillServer(
+      async ({ url }) => {
+        expect(await Discovery.pull(url)).toEqual([])
+      },
+      { invalidIndex: true },
+    )
   })
 
   test("downloads reference files alongside SKILL.md", async () => {
-    const dirs = await Discovery.pull(CLOUDFLARE_SKILLS_URL)
-    // find a skill dir that should have reference files (e.g. agents-sdk)
-    const agentsSdk = dirs.find((d) => d.endsWith("/agents-sdk"))
-    if (agentsSdk) {
-      const refs = path.join(agentsSdk, "references")
-      expect(await Bun.file(path.join(agentsSdk, "SKILL.md")).exists()).toBe(true)
-      // agents-sdk has reference files per the index
-      const refDir = await Array.fromAsync(new Bun.Glob("**/*.md").scan({ cwd: refs, onlyFiles: true }))
-      expect(refDir.length).toBeGreaterThan(0)
-    }
-  }, 30_000)
+    await withSkillServer(async ({ url }) => {
+      const dirs = await Discovery.pull(url)
+      expect(await Bun.file(path.join(dirs[0], "references", "api.md")).exists()).toBe(true)
+    })
+  })
 
-  test("caches downloaded files on second pull", async () => {
-    // first pull to populate cache
-    const first = await Discovery.pull(CLOUDFLARE_SKILLS_URL)
-    expect(first.length).toBeGreaterThan(0)
+  test("reuses cached files on a second pull", async () => {
+    await withSkillServer(async ({ url, requests }) => {
+      const first = await Discovery.pull(url)
+      const skillRequests = requests.get("/skills/agents-sdk/SKILL.md")
+      const second = await Discovery.pull(url)
 
-    // second pull should return same results from cache
-    const second = await Discovery.pull(CLOUDFLARE_SKILLS_URL)
-    expect(second.length).toBe(first.length)
-    expect(second.sort()).toEqual(first.sort())
-  }, 60_000)
+      expect(second).toEqual(first)
+      expect(requests.get("/skills/agents-sdk/SKILL.md")).toBe(skillRequests)
+      expect(requests.get("/skills/index.json")).toBe(2)
+    })
+  })
 })

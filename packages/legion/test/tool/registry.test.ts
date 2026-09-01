@@ -88,7 +88,6 @@ describe("tool.registry", () => {
           JSON.stringify({
             name: "custom-tools",
             dependencies: {
-              "@wearethelegion/plugin": "^0.0.0",
               cowsay: "^1.6.0",
             },
           }),

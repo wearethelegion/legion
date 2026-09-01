@@ -274,14 +274,16 @@ export namespace Config {
 
   export async function installDependencies(dir: string) {
     const pkg = path.join(dir, "package.json")
-    const targetVersion = Installation.isLocal() ? "*" : Installation.VERSION
-
-    const json = await Filesystem.readJson<{ dependencies?: Record<string, string> }>(pkg).catch(() => ({
-      dependencies: {},
-    }))
-    json.dependencies = {
-      ...json.dependencies,
-      "@wearethelegion/plugin": targetVersion,
+    const json: { dependencies?: Record<string, string> } = await Filesystem.readJson<{
+      dependencies?: Record<string, string>
+    }>(pkg).catch(() => ({ dependencies: {} }))
+    json.dependencies = { ...json.dependencies }
+    // The released runtime has a matching published plugin package. A source
+    // checkout already owns the workspace package; injecting workspace-only
+    // metadata into an external config directory makes every dependency
+    // install fail, including unrelated custom-tool dependencies.
+    if (!Installation.isLocal()) {
+      json.dependencies["@wearethelegion/plugin"] = Installation.VERSION
     }
     await Filesystem.writeJson(pkg, json)
     await new Promise((resolve) => setTimeout(resolve, 3000))

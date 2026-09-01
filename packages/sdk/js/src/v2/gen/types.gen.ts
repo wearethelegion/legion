@@ -715,6 +715,16 @@ export type EventTodoUpdated = {
   }
 }
 
+export type EventLegionDelegationResultReady = {
+  type: "legion.delegation.result_ready"
+  properties: {
+    delegationId: string
+    agentName: string
+    status: "completed" | "failed"
+    summary: string
+  }
+}
+
 export type EventTuiPromptAppend = {
   type: "tui.prompt.append"
   properties: {
@@ -966,6 +976,7 @@ export type Event =
   | EventSessionCompacted
   | EventFileWatcherUpdated
   | EventTodoUpdated
+  | EventLegionDelegationResultReady
   | EventTuiPromptAppend
   | EventTuiCommandExecute
   | EventTuiToastShow
@@ -1667,6 +1678,38 @@ export type McpRemoteConfig = {
  */
 export type LayoutConfig = "auto" | "stretch"
 
+/**
+ * LEGION integration configuration
+ */
+export type LegionConfig = {
+  /**
+   * LEGION gRPC server URL, e.g. localhost:50051
+   */
+  url?: string
+  /**
+   * LEGION company UUID
+   */
+  companyId?: string
+  /**
+   * LEGION project UUID
+   */
+  projectId?: string
+  /**
+   * LEGION auth email
+   */
+  email?: string
+  /**
+   * LEGION auth password
+   */
+  password?: string
+  extraction?: {
+    /**
+     * Enable or disable Haiku conversation extraction
+     */
+    enabled?: boolean
+  }
+}
+
 export type Config = {
   /**
    * JSON schema reference for configuration validation
@@ -1887,7 +1930,12 @@ export type Config = {
      * Timeout in milliseconds for model context protocol (MCP) requests
      */
     mcp_timeout?: number
+    /**
+     * Enable MCP tool search mode. When enabled, exposes only mcp_tool_search and mcp_call_tool meta-tools instead of loading all MCP tools upfront.
+     */
+    mcp_tool_search?: "auto" | boolean
   }
+  legion?: LegionConfig
 }
 
 export type BadRequestError = {

@@ -17,11 +17,15 @@ const cleanupServers: IpcServer[] = []
 
 afterEach(() => {
   for (const s of cleanupServers) {
-    try { s.close() } catch {}
+    try {
+      s.close()
+    } catch {}
   }
   cleanupServers.length = 0
   for (const p of cleanupPaths) {
-    try { fs.unlinkSync(p) } catch {}
+    try {
+      fs.unlinkSync(p)
+    } catch {}
   }
   cleanupPaths.length = 0
 })
@@ -63,9 +67,9 @@ describe("IpcServer", () => {
     expect(fs.existsSync(sockPath)).toBe(true)
   })
 
-  test("listen() throws for socket path exceeding macOS 104-char limit", async () => {
+  test("listen() throws for a path exceeding the portable Unix socket limit", async () => {
     const longPath = "/tmp/" + "a".repeat(110) + ".sock"
-    await expect(IpcServer.listen(longPath)).rejects.toThrow("macOS limit")
+    await expect(IpcServer.listen(longPath)).rejects.toThrow("Unix socket limit")
   })
 
   // ---------------------------------------------------------------------------
