@@ -65,6 +65,7 @@ describe("DelegateCommand", () => {
       "timeout_seconds",
       "tool_policy",
       "cost_budget_usd",
+      "request_kind",
     ]
 
     for (const opt of optionalOptions) {
@@ -101,6 +102,7 @@ describe("DelegateCommand", () => {
     expect(content).toContain("args.tool_policy")
     expect(content).toContain("args.timeout_seconds")
     expect(content).toContain("args.cost_budget_usd")
+    expect(content).toContain("args.request_kind")
   })
 
   test("handler calls HeadlessMode.run()", async () => {

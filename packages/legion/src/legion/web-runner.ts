@@ -134,6 +134,7 @@ async function launch(job: DelegationJob, ownerId: string) {
     const snapshot = JSON.parse(job.execution_snapshot_json || "{}") as {
       tool_policy?: unknown
       cost_budget_usd?: unknown
+      request_kind?: unknown
     }
     if (snapshot.tool_policy !== undefined) {
       args.push("--tool_policy", JSON.stringify(snapshot.tool_policy))
@@ -147,6 +148,12 @@ async function launch(job: DelegationJob, ownerId: string) {
         throw new Error("The snapshotted execution cost budget is invalid")
       }
       args.push("--cost_budget_usd", String(snapshot.cost_budget_usd))
+    }
+    if (snapshot.request_kind !== undefined) {
+      if (snapshot.request_kind !== "task" && snapshot.request_kind !== "application") {
+        throw new Error("The snapshotted request kind is invalid")
+      }
+      args.push("--request_kind", snapshot.request_kind)
     }
   } catch {
     await failClaimedJob(job.delegation_id, ownerId, "The snapshotted execution policy is invalid")

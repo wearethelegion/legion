@@ -25,6 +25,7 @@ import {
   costBudgetExceeded,
   normalizeCostBudget,
 } from "./execution-guardrails"
+import { captureWorkspaceSnapshot, workspaceChanges } from "./workspace-manifest"
 
 const log = Log.create({ service: "legion.headless" })
 
@@ -47,6 +48,7 @@ export namespace HeadlessMode {
     timeoutSeconds?: number
     toolPolicy?: unknown
     costBudgetUsd?: number
+    requestKind?: "task" | "application"
   }
 
   export async function run(params: Params): Promise<void> {
@@ -181,6 +183,9 @@ export namespace HeadlessMode {
         ipc?.emitStatus("initializing")
 
         const rules = compileToolPolicy(params.toolPolicy)
+        const workspaceBefore = params.requestKind === "application"
+          ? await captureWorkspaceSnapshot(params.targetPath)
+          : undefined
 
         const session = await sdk.session.create({
           title: `Delegation: ${params.task.slice(0, 50)}`,
@@ -471,6 +476,17 @@ export namespace HeadlessMode {
 
         const duration = Date.now() - started
         const tools = [...toolsUsed]
+        if (workspaceBefore) {
+          const changedFiles = workspaceChanges(
+            workspaceBefore,
+            await captureWorkspaceSnapshot(params.targetPath),
+          )
+          await audit("artifact.manifest", {
+            files: changedFiles,
+            total_files: changedFiles.length,
+            ownership: "company-workspace",
+          })
+        }
         log.info("delegation execution finished", {
           delegationId: params.delegationId,
           hasError: String(!!error),

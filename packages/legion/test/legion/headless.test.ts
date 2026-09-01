@@ -39,6 +39,7 @@ describe("HeadlessMode", () => {
       "maxTurns?: number",
       "timeoutSeconds?: number",
       "costBudgetUsd?: number",
+      'requestKind?: "task" | "application"',
     ]
 
     for (const field of expectedFields) {
@@ -91,6 +92,7 @@ describe("HeadlessMode", () => {
     expect(content).toContain("params.timeoutSeconds")
     expect(content).toContain("compileToolPolicy(params.toolPolicy)")
     expect(content).toContain("costBudgetExceeded(totalCost, costBudgetUsd)")
+    expect(content).toContain('audit("artifact.manifest"')
     expect(content).toContain("lastAssistantText.slice(0, 50_000)")
   })
 
