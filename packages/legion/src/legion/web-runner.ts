@@ -264,8 +264,13 @@ async function poll() {
 }
 
 export namespace WebDelegationRunner {
+  export function isEnabled(env: Record<string, string | undefined> = process.env) {
+    const value = env.LEGION_AGENT_WORKSPACE_ENABLED?.trim().toLowerCase()
+    return value === "1" || value === "true" || value === "yes" || value === "on"
+  }
+
   export function start(input: { companyId: string; projectId: string; targetPath?: string }) {
-    if (process.env.LEGION_WEB_RUNNER_DISABLED === "1") return
+    if (!isEnabled() || process.env.LEGION_WEB_RUNNER_DISABLED === "1") return
     selectedCompanyId = input.companyId
     selectedProjectId = input.projectId
     fallbackTargetPath = input.targetPath

@@ -9,7 +9,16 @@ describe("WebDelegationRunner", () => {
     const mod = await import("../../src/legion/web-runner")
     expect(typeof mod.WebDelegationRunner.start).toBe("function")
     expect(typeof mod.WebDelegationRunner.stop).toBe("function")
+    expect(typeof mod.WebDelegationRunner.isEnabled).toBe("function")
     mod.WebDelegationRunner.stop()
+  })
+
+  test("requires an explicit coordinated rollout flag", async () => {
+    const { WebDelegationRunner } = await import("../../src/legion/web-runner")
+    expect(WebDelegationRunner.isEnabled({})).toBe(false)
+    expect(WebDelegationRunner.isEnabled({ LEGION_AGENT_WORKSPACE_ENABLED: "false" })).toBe(false)
+    expect(WebDelegationRunner.isEnabled({ LEGION_AGENT_WORKSPACE_ENABLED: "true" })).toBe(true)
+    expect(WebDelegationRunner.isEnabled({ LEGION_AGENT_WORKSPACE_ENABLED: "1" })).toBe(true)
   })
 
   test("claims authenticated project work with bounded local execution", async () => {
