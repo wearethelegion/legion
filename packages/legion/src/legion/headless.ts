@@ -26,6 +26,7 @@ import {
   normalizeCostBudget,
 } from "./execution-guardrails"
 import { captureWorkspaceSnapshot, workspaceChanges } from "./workspace-manifest"
+import { RunCostLedger } from "./cost-ledger"
 
 const log = Log.create({ service: "legion.headless" })
 
@@ -57,6 +58,9 @@ export namespace HeadlessMode {
     const maxTurns = Math.max(1, params.maxTurns ?? 50)
     const timeoutSeconds = Math.max(30, params.timeoutSeconds ?? 3600)
     const costBudgetUsd = normalizeCostBudget(params.costBudgetUsd)
+    const costLedger = params.runId && costBudgetUsd !== undefined
+      ? new RunCostLedger(params.runId, costBudgetUsd)
+      : undefined
     const ipc = await IpcClient.connect(params.ipcSock, params.delegationId)
 
     // Graceful shutdown on signals
@@ -380,10 +384,18 @@ export namespace HeadlessMode {
                   turnCostUsd: part.cost,
                   totalCostUsd: totalCost,
                 })
-                if (!error && costBudgetExceeded(totalCost, costBudgetUsd)) {
-                  error = `Execution stopped after exceeding the $${costBudgetUsd!.toFixed(4)} cost policy limit`
+                const aggregateCost = costLedger?.consume(part.cost)
+                const policyCost = aggregateCost?.spentUsd ?? totalCost
+                void audit("cost.updated", {
+                  delegation_cost_usd: totalCost,
+                  run_cost_usd: policyCost,
+                  cost_budget_usd: costBudgetUsd,
+                })
+                if (!error && (aggregateCost?.exceeded || costBudgetExceeded(totalCost, costBudgetUsd))) {
+                  error = `Execution stopped after exceeding the $${costBudgetUsd!.toFixed(4)} run cost policy limit`
                   void audit("cost.limit_exceeded", {
-                    cost_usd: totalCost,
+                    delegation_cost_usd: totalCost,
+                    run_cost_usd: policyCost,
                     cost_budget_usd: costBudgetUsd,
                   })
                   await sdk.session.abort({ sessionID }).catch(() => {})
@@ -481,11 +493,17 @@ export namespace HeadlessMode {
             workspaceBefore,
             await captureWorkspaceSnapshot(params.targetPath),
           )
-          await audit("artifact.manifest", {
-            files: changedFiles,
-            total_files: changedFiles.length,
-            ownership: "company-workspace",
-          })
+          const batchSize = 80
+          const batches = Math.max(1, Math.ceil(changedFiles.length / batchSize))
+          for (let batch = 0; batch < batches; batch++) {
+            await audit("artifact.manifest", {
+              files: changedFiles.slice(batch * batchSize, (batch + 1) * batchSize),
+              total_files: changedFiles.length,
+              batch: batch + 1,
+              batches,
+              ownership: "company-workspace",
+            })
+          }
         }
         log.info("delegation execution finished", {
           delegationId: params.delegationId,
@@ -588,6 +606,7 @@ export namespace HeadlessMode {
       }
       process.exitCode = 1
     } finally {
+      costLedger?.close()
       ipc?.close()
     }
   }
